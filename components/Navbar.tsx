@@ -48,12 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* Збільшений відступ до mt-24, щоб логотип опустився ще нижче */
+          /* mt-24 забезпечує ідеальний відступ від системних кнопок Telegram */
           ${isMobileApp ? 'mt-24 mb-2' : 'py-5 md:py-7'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Bold Red Style */}
+          {/* Logo - Classic Bold Red */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}

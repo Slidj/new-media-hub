@@ -8,8 +8,12 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Забезпечуємо наявність об'єкта process.env, але не перезаписуємо його, якщо він вже існує з ключами
-      window.process = window.process || { env: {} };
+      // Безпечна ініціалізація process.env, щоб не затирати існуючі змінні середовища
+      if (typeof window.process === 'undefined') {
+        window.process = { env: {} };
+      } else if (typeof window.process.env === 'undefined') {
+        window.process.env = {};
+      }
       
       tailwind.config = {
         theme: {
