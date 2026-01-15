@@ -17,11 +17,11 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   return (
     <div className="relative h-[75vh] md:h-screen w-full text-white overflow-hidden bg-black">
       {/* Background Image Container */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-10">
         <img
           src={movie.bannerUrl}
           alt={movie.title}
-          className="w-full h-full object-cover object-top md:scale-105" // Remove scale on mobile for less zoom
+          className="w-full h-full object-cover object-top md:scale-105"
         />
         
         {/* Dynamic Gradients */}
@@ -29,8 +29,8 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <div className="absolute bottom-0 left-0 w-full h-[70%] bg-gradient-to-t from-black via-black/60 to-transparent"></div>
       </div>
 
-      {/* Content Area - Added pointer-events-none to fix dead zones on cards below */}
-      <div className="relative z-20 h-full flex flex-col justify-end pb-24 md:pb-[25vh] px-4 md:px-12 w-full max-w-full pointer-events-none">
+      {/* Content Area - Higher z-index than the grid to ensure buttons are on top */}
+      <div className="relative z-40 h-full flex flex-col justify-end pb-24 md:pb-[35vh] px-4 md:px-12 w-full max-w-full pointer-events-none">
         
         {/* All interactive elements inside need pointer-events-auto */}
         <div className="pointer-events-auto">
