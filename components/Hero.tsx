@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, Info } from 'lucide-react';
 import { Movie } from '../types';
@@ -14,85 +15,82 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   const t = translations[lang];
 
   return (
-    <div className="relative h-[80vh] md:h-[95vh] w-full text-white">
-      {/* Background Image - Mobile (Poster) - Fallback to banner if poster fails or design pref */}
-      <div className="absolute top-0 left-0 w-full h-full md:hidden">
-        <img
-          src={movie.posterUrl || movie.bannerUrl}
-          alt={movie.title}
-          className="w-full h-full object-cover"
-        />
-        {/* Mobile Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent via-60% to-black"></div>
-      </div>
-
-      {/* Background Image - Desktop (Banner) */}
-      <div className="hidden md:block absolute top-0 left-0 w-full h-full">
+    <div className="relative h-screen w-full text-white overflow-hidden">
+      {/* Background Image Container */}
+      <div className="absolute top-0 left-0 w-full h-full">
         <img
           src={movie.bannerUrl}
           alt={movie.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top"
         />
-        {/* Desktop Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent opacity-90"></div>
-        <div className="absolute bottom-0 left-0 w-full h-44 bg-gradient-to-t from-black to-transparent"></div>
+        
+        {/* Dynamic Gradients (Netflix Style) */}
+        {/* Left Side Shadow for Text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent opacity-90"></div>
+        
+        {/* Bottom Fade to main content */}
+        <div className="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black via-black/20 to-transparent"></div>
       </div>
 
-      {/* Content - Increased Z-Index to 40 to ensure it sits ABOVE the negative margin list section */}
-      <div className="absolute bottom-0 left-0 w-full p-6 lg:top-[25%] lg:left-14 lg:bottom-auto lg:max-w-xl flex flex-col items-center lg:items-start text-center lg:text-left space-y-4 pb-14 md:pb-0 z-40 pointer-events-none">
+      {/* Content Area */}
+      <div className="relative z-40 h-full flex flex-col justify-end pb-[15vh] px-4 md:px-12 lg:max-w-3xl">
         
-        {/* Genre Tags (Mobile Only - visible below LG) */}
-        <div className="flex lg:hidden items-center gap-2 text-sm text-gray-200 mb-2 pointer-events-auto">
+        {/* Genre Tags (Compact) */}
+        <div className="flex items-center gap-2 text-sm md:text-base text-gray-200 mb-4 font-semibold drop-shadow-md">
             {movie.genre.slice(0, 3).map((g, i) => (
                 <React.Fragment key={i}>
                     {i > 0 && <span className="text-gray-400 text-[8px] mx-1">●</span>}
-                    <span>{g}</span>
+                    <span className="uppercase tracking-widest">{g}</span>
                 </React.Fragment>
             ))}
         </div>
 
-        {/* Title or Logo */}
-        <div className="pointer-events-auto">
+        {/* Title / Logo */}
+        <div className="mb-6">
             {movie.logoUrl ? (
                 <img 
                     src={movie.logoUrl} 
                     alt={movie.title} 
-                    className="w-[80%] lg:w-full max-h-[150px] lg:max-h-[200px] object-contain mb-4 lg:mb-6 drop-shadow-2xl mx-auto lg:mx-0"
+                    className="w-full max-w-[400px] lg:max-w-[500px] max-h-[120px] lg:max-h-[220px] object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]"
                 />
             ) : (
-                <h1 className="text-5xl lg:text-7xl font-bold drop-shadow-lg tracking-tight mb-2 lg:mb-4">{movie.title}</h1>
+                <h1 className="text-5xl lg:text-8xl font-black drop-shadow-2xl tracking-tighter uppercase leading-none">
+                  {movie.title}
+                </h1>
             )}
         </div>
         
         {/* Info Row */}
-        <div className="flex items-center gap-4 text-sm md:text-lg font-medium drop-shadow-md justify-center lg:justify-start pointer-events-auto">
-            <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
-            <span className="text-gray-200">{movie.year}</span>
-            <span className="bg-[#333]/60 px-2 py-0.5 rounded text-xs border border-gray-400/40">{movie.rating}</span>
-            {movie.duration !== 'N/A' && <span className="text-gray-200">{movie.duration}</span>}
+        <div className="flex items-center gap-4 text-sm md:text-xl font-bold mb-6 drop-shadow-lg">
+            <span className="text-[#46d369]">{movie.match}% {t.match}</span>
+            <span className="text-gray-100">{movie.year}</span>
+            <span className="bg-[#333]/80 px-2 py-0.5 rounded text-xs border border-gray-400/40 uppercase tracking-tighter">
+              {movie.rating}
+            </span>
+            <span className="text-gray-100">{movie.duration}</span>
         </div>
 
-        {/* Desktop Description - Hidden on Mobile and Landscape Phones (LG and up only) */}
-        <p className="hidden lg:block text-lg text-gray-200 line-clamp-3 drop-shadow-md font-light shadow-black pointer-events-auto">
+        {/* Description - Clearly separated and limited width */}
+        <p className="text-base md:text-lg lg:text-xl text-gray-200 line-clamp-3 md:line-clamp-4 drop-shadow-lg font-medium max-w-2xl leading-relaxed mb-8">
           {movie.description}
         </p>
 
-        {/* Action Buttons - pointer-events-auto ensures they catch clicks even if container passes them through */}
-        <div className="flex items-center gap-3 mt-4 lg:mt-6 w-full lg:w-auto px-4 lg:px-0 pointer-events-auto">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-4">
           <button 
             onClick={onPlay}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition-transform active:scale-95 touch-manipulation cursor-pointer"
+            className="flex items-center justify-center gap-2 px-8 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/80 transition-all active:scale-95 shadow-xl"
           >
             <Play className="w-6 h-6 fill-black" />
-            <span className="text-base font-bold">{t.play}</span>
+            <span className="text-lg uppercase tracking-tight">{t.play}</span>
           </button>
           
           <button 
             onClick={onMoreInfo}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-[#6d6d6eb3] text-white font-bold rounded-[4px] hover:bg-[#6d6d6e66] transition-transform active:scale-95 backdrop-blur-sm touch-manipulation cursor-pointer"
+            className="flex items-center justify-center gap-2 px-8 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/60 transition-all active:scale-95 backdrop-blur-md border border-gray-400/20 shadow-xl"
           >
             <Info className="w-6 h-6" />
-            <span className="text-base font-bold">{t.moreInfo}</span>
+            <span className="text-lg uppercase tracking-tight">{t.moreInfo}</span>
           </button>
         </div>
       </div>

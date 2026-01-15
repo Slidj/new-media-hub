@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -31,14 +32,9 @@ function App() {
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
-      
-      // Notify Telegram that the app is ready
       tg.ready();
-      
-      // Expand to full height immediately
       tg.expand();
 
-      // Theme synchronization for Telegram environment
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
         tg.setHeaderColor('#000000');
         tg.setBackgroundColor('#000000');
@@ -52,7 +48,6 @@ function App() {
            setLang(detectedLang);
         }
       } else {
-        // Mock user for local development / desktop browser
         setUser({
             id: 123456,
             first_name: "Guest",
@@ -64,7 +59,6 @@ function App() {
     }
   }, []);
 
-  // Handle Splash Screen Logic
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -72,7 +66,6 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch Movies function
   const loadMovies = useCallback(async (pageNum: number, language: string) => {
     setLoading(true);
     const locale = language === 'uk' ? 'uk-UA' : language === 'ru' ? 'ru-RU' : 'en-US';
@@ -99,14 +92,12 @@ function App() {
     setLoading(false);
   }, []);
 
-  // Initial Load & Language Change
   useEffect(() => {
     if (activeTab === 'home' && movies.length === 0) {
         loadMovies(1, lang);
     }
   }, [lang, loadMovies, activeTab, movies.length]);
 
-  // Infinite Scroll Handler
   useEffect(() => {
     if (activeTab !== 'home') return;
 
@@ -153,9 +144,8 @@ function App() {
               />
           )}
           
-          <section className="relative z-20 mt-0 lg:-mt-32 px-4 md:px-12 pb-10 bg-black lg:bg-gradient-to-t lg:from-black lg:via-black lg:to-transparent pt-6 lg:pt-10">
-            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">{translations[lang].trending}</h2>
-            
+          {/* Movie Grid Section with negative margin for deep overlap */}
+          <section className="relative z-50 -mt-24 md:-mt-40 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
@@ -165,7 +155,7 @@ function App() {
                     className="
                         relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
                         transition-all duration-300 ease-out
-                        hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
+                        hover:scale-110 hover:z-50 hover:shadow-2xl hover:shadow-black
                         active:scale-95 active:brightness-75
                     "
                     onClick={() => setSelectedMovie(movie)}
