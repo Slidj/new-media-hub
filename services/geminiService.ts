@@ -2,14 +2,17 @@ import { GoogleGenAI } from "@google/genai";
 import { Movie } from "../types";
 import { Language } from "../utils/translations";
 
-// Safer way to access environment variables in a browser context
-const getApiKey = () => {
+// Extreme safety check for environment variables in browsers
+const getApiKey = (): string => {
   try {
-    return process.env.API_KEY || '';
+    // Check if process exists and has env property
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
   } catch (e) {
-    // If process is not defined (standard browser environment), return empty string
-    return '';
+    // Silently fail
   }
+  return '';
 };
 
 const apiKey = getApiKey();
