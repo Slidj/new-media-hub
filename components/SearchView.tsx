@@ -36,16 +36,16 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    <div className="min-h-screen bg-black pt-36 md:pt-28 pb-24 px-4 md:px-12 pt-safe">
+    <div className="min-h-screen bg-black pt-44 md:pt-32 pb-24 px-4 md:px-12 pt-safe">
       {/* Search Input Bar */}
-      <div className="sticky top-32 md:top-24 z-30 mb-8 pt-2">
-        <div className="relative max-w-2xl mx-auto">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div className="sticky top-40 md:top-28 z-30 mb-10 pt-2">
+        <div className="relative max-w-2xl mx-auto shadow-2xl">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
                 type="text"
-                className="block w-full pl-10 pr-10 py-3 border border-transparent rounded-sm leading-5 bg-[#333] text-gray-100 placeholder-gray-400 focus:outline-none focus:bg-[#444] focus:border-gray-500 sm:text-sm transition-colors"
+                className="block w-full pl-12 pr-12 py-4 border border-gray-700/50 rounded-lg leading-5 bg-[#1a1a1a] text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-[#222] focus:border-gray-500 sm:text-sm transition-all shadow-inner"
                 placeholder={t.search}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -53,10 +53,10 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
             />
             {query && (
                 <div 
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer"
                     onClick={() => setQuery('')}
                 >
-                    <X className="h-5 w-5 text-gray-400 hover:text-white" />
+                    <X className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
                 </div>
             )}
         </div>
@@ -124,9 +124,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
       {/* Empty State / Initial State */}
       {!loading && results.length === 0 && query.length === 0 && (
          <div className="flex flex-col items-center justify-center pt-20 text-gray-500">
-            <Search className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg font-medium">{t.search}</p>
-            <p className="text-sm opacity-60">Find your next favorite story</p>
+            <Search className="w-16 h-16 mb-4 opacity-10" />
+            <p className="text-lg font-medium tracking-tight">{t.search}</p>
+            <p className="text-sm opacity-40">Find your next favorite story</p>
          </div>
       )}
 

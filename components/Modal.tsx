@@ -90,13 +90,13 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
     setIsLoading(false);
   };
 
-  const isMobile = platform === 'ios' || platform === 'android';
+  const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
       <div 
         className={`
-          absolute inset-0 bg-black/80 md:bg-black/70 backdrop-blur-sm 
+          absolute inset-0 bg-black/90 md:bg-black/80 backdrop-blur-sm 
           transition-opacity duration-500 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
@@ -105,9 +105,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
 
       <div 
         className={`
-          relative w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#141414] rounded-t-2xl md:rounded-lg overflow-hidden shadow-2xl 
-          transform transition-all duration-500 ease-expo-out
+          relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
+          bg-[#141414] rounded-t-3xl md:rounded-lg overflow-hidden shadow-2xl 
+          transform transition-all duration-500 cubic-bezier(0.33, 1, 0.68, 1)
           flex flex-col
           ${isVisible 
             ? 'translate-y-0 scale-100 opacity-100' 
@@ -118,28 +118,29 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
         <button 
           onClick={handleClose}
           className={`
-            absolute z-50 h-10 w-10 rounded-full bg-[#181818]/90 md:bg-black/60 
-            grid place-items-center hover:bg-[#2a2a2a] backdrop-blur-md shadow-xl
-            transition-all duration-500 delay-200
-            ${isMobile ? 'top-14 right-4' : 'top-4 right-4'}
-            ${isVisible ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'}
+            absolute z-50 h-12 w-12 rounded-full bg-black/50 md:bg-black/60 
+            grid place-items-center hover:bg-[#2a2a2a] backdrop-blur-md shadow-2xl
+            transition-all duration-500 delay-200 border border-white/10
+            ${isMobile ? 'top-20 right-5' : 'top-5 right-5'}
+            ${isVisible ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-50'}
           `}
         >
-          <X className="w-6 h-6 text-white" />
+          <X className="w-7 h-7 text-white" />
         </button>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar">
-            <div className="relative pt-[75%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
+            <div className="relative pt-[80%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
               <div className="absolute top-0 left-0 w-full h-full">
                 <img 
                   src={movie.bannerUrl} 
                   alt={movie.title} 
                   className={`
                     w-full h-full object-cover transition-transform duration-1000 ease-out
-                    ${isVisible ? 'scale-100' : 'scale-110'}
+                    ${isVisible ? 'scale-100' : 'scale-115'}
                   `} 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/40 to-transparent"></div>
               </div>
               
               <div 
@@ -149,83 +150,81 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}
               >
-                <h2 className="text-4xl md:text-5xl font-bold text-shadow-lg">{movie.title}</h2>
+                <h2 className="text-3xl md:text-5xl font-black text-white drop-shadow-2xl italic uppercase tracking-tighter">
+                    {movie.title}
+                </h2>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-                  <button className="flex-shrink-0 flex items-center justify-center gap-2 px-6 md:px-8 py-2 md:py-2.5 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95">
+                  <button className="flex-shrink-0 flex items-center justify-center gap-2 px-8 py-2.5 bg-white text-black font-extrabold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-lg">
                     <Play className="w-6 h-6 fill-black" />
                     {t.play}
                   </button>
-                  <button className="flex-shrink-0 flex items-center justify-center w-10 h-10 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40">
-                    <Plus className="w-5 h-5" />
-                  </button>
-                  <button className="flex-shrink-0 flex items-center justify-center w-10 h-10 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40">
-                    <ThumbsUp className="w-5 h-5" />
+                  <button className="flex-shrink-0 flex items-center justify-center w-11 h-11 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40 backdrop-blur-sm">
+                    <Plus className="w-6 h-6" />
                   </button>
                   <button 
                     onClick={() => setShowChat(!showChat)}
-                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border-2 transition ml-auto md:ml-0 ${showChat ? 'bg-purple-600 border-purple-600 text-white' : 'border-purple-500 text-purple-400 bg-black/40'}`}
+                    className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition ml-auto md:ml-0 shadow-lg font-bold ${showChat ? 'bg-purple-600 border-purple-600 text-white' : 'border-purple-500/50 text-purple-400 bg-black/40 backdrop-blur-sm'}`}
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="md:inline">{t.aiChat}</span>
+                    <MessageSquare className="w-5 h-5" />
+                    <span className="md:inline">AI</span>
                   </button>
                 </div>
               </div>
             </div>
 
             <div className={`
-                px-6 md:px-10 py-6 md:py-8 grid md:grid-cols-[2fr_1fr] gap-6 md:gap-8 pb-24 md:pb-8 bg-[#141414]
+                px-6 md:px-10 py-8 md:py-10 grid md:grid-cols-[2fr_1fr] gap-8 md:gap-10 pb-32 md:pb-12 bg-[#141414]
                 transition-all duration-700 delay-200 ease-out
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
             `}>
                 {!showChat ? (
                     <>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3 text-sm md:text-lg flex-wrap">
-                            <span className="text-green-500 font-bold">{movie.match}% {t.match}</span>
-                            <span>{movie.year}</span>
-                            <span className="bg-gray-700 px-1.5 rounded text-xs border border-gray-500/50">{movie.rating}</span>
-                            <span>{movie.duration}</span>
-                            <span className="border border-white/40 px-1.5 rounded text-xs text-white/80">HD</span>
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4 text-sm md:text-lg flex-wrap font-medium">
+                            <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
+                            <span className="text-gray-400">{movie.year}</span>
+                            <span className="bg-[#333] px-2 rounded text-xs border border-gray-600/50 uppercase">{movie.rating}</span>
+                            <span className="text-gray-400">{movie.duration}</span>
+                            <span className="border border-gray-600 px-1.5 rounded text-[10px] text-gray-400">4K HDR</span>
                         </div>
-                        <p className="text-base md:text-lg leading-relaxed text-gray-300">
+                        <p className="text-base md:text-xl leading-relaxed text-gray-200">
                             {movie.description}
                         </p>
                     </div>
-                    <div className="text-sm space-y-3 text-gray-400">
+                    <div className="text-sm space-y-4 text-gray-400 border-t border-gray-800 pt-6 md:border-t-0 md:pt-0">
                         <div>
-                            <span className="text-gray-500">{t.genres}:</span> <span className="text-white block md:inline">{movie.genre.join(', ')}</span>
+                            <span className="text-gray-500 font-bold uppercase tracking-wider block mb-1">{t.genres}:</span> 
+                            <span className="text-gray-200">{movie.genre.join(', ')}</span>
                         </div>
                         <div>
-                            <span className="text-gray-500">{t.originalLanguage}:</span> <span className="text-white">English</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500">{t.totalVotes}:</span> <span className="text-white">1.2M</span>
+                            <span className="text-gray-500 font-bold uppercase tracking-wider block mb-1">{t.originalLanguage}:</span> 
+                            <span className="text-gray-200">English</span>
                         </div>
                     </div>
                     </>
                 ) : (
-                    <div className="col-span-2 h-[400px] md:h-[300px] flex flex-col bg-[#222] rounded-lg border border-gray-800">
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    <div className="col-span-2 h-[450px] md:h-[350px] flex flex-col bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-inner">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>
+                                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-lg ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-[#2a2a2a] text-gray-200 rounded-bl-none border border-gray-700'}`}>
                                         {msg.text}
                                     </div>
                                 </div>
                             ))}
                             {isLoading && (
                                 <div className="flex justify-start">
-                                    <div className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg text-sm animate-pulse">
+                                    <div className="bg-[#2a2a2a] text-gray-400 px-5 py-3 rounded-2xl text-sm animate-pulse border border-gray-700">
                                         {t.thinking}
                                     </div>
                                 </div>
                             )}
                             <div ref={chatEndRef} />
                         </div>
-                        <div className="p-3 border-t border-gray-700 bg-[#222] flex gap-2">
+                        <div className="p-4 border-t border-gray-800 bg-[#1a1a1a] flex gap-3">
                             <input 
                                 type="text" 
-                                className="flex-1 bg-[#111] text-white px-4 py-3 rounded-full border border-gray-600 focus:outline-none focus:border-purple-500 text-sm"
+                                className="flex-1 bg-[#0a0a0a] text-white px-5 py-3.5 rounded-full border border-gray-700 focus:outline-none focus:border-purple-500 transition-colors text-[15px]"
                                 placeholder={t.askGemini}
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
@@ -233,10 +232,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                             />
                             <button 
                                 onClick={handleSendMessage}
-                                className="bg-purple-600 p-3 rounded-full hover:bg-purple-700 transition disabled:opacity-50 flex-shrink-0"
+                                className="bg-purple-600 p-3.5 rounded-full hover:bg-purple-700 transition active:scale-90 disabled:opacity-50 flex-shrink-0 shadow-lg"
                                 disabled={isLoading}
                             >
-                                <Send className="w-5 h-5" />
+                                <Send className="w-6 h-6 text-white" />
                             </button>
                         </div>
                     </div>

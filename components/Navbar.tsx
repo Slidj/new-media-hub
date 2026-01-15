@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, User, Gift } from 'lucide-react';
+import { Search, Bell, User } from 'lucide-react';
 import { WebAppUser } from '../types';
 import { Language, translations } from '../utils/translations';
 
@@ -24,45 +24,43 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     }
 
     const handleScroll = () => {
-      if (window.scrollY > 15) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      // Використовуємо window.pageYOffset для кращої сумісності
+      const offset = window.pageYOffset || document.documentElement.scrollTop;
+      setIsScrolled(offset > 20);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Визначаємо, чи це мобільний додаток Telegram
   const isMobileApp = platform === 'ios' || platform === 'android' || platform === 'weba';
 
   return (
     <nav 
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
-        pt-safe
         ${isScrolled || activeTab === 'search'
-          ? 'bg-[#141414] shadow-2xl' 
+          ? 'bg-[#141414] shadow-2xl backdrop-blur-md' 
           : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
         }
+        /* Додаємо постійний високий відступ для безпечної зони Telegram */
+        ${isMobileApp ? 'pt-[env(safe-area-inset-top,0px)] pb-2' : 'pt-0'}
       `}
     >
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          ${isScrolled ? 'py-3 md:py-4' : 'py-5 md:py-7'}
-          ${isMobileApp && !isScrolled ? 'mt-10 md:mt-0' : 'mt-0'} 
+          /* Внутрішній відступ для контенту шапки */
+          ${isMobileApp ? 'mt-12 mb-2' : 'py-5 md:py-7'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
           {/* Logo */}
           <div 
-            className={`cursor-pointer transition-transform duration-300 ${isScrolled ? 'scale-90 md:scale-95' : 'scale-100'}`}
+            className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}
           >
-            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase">
+            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase italic">
               MEDIA HUB
             </h1>
           </div>
@@ -82,13 +80,12 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
           </ul>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-6 text-white">
+        <div className="flex items-center gap-5 text-white">
           <Search 
-            className={`w-5 h-5 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
+            className={`w-6 h-6 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
             onClick={onSearchClick}
           />
-          <span className="hidden md:block text-sm cursor-pointer hover:text-gray-300">{t.kids}</span>
-          <Bell className="w-5 h-5 cursor-pointer hover:text-gray-300" />
+          <Bell className="hidden md:block w-6 h-6 cursor-pointer hover:text-gray-300" />
           
           <div className="flex items-center gap-2 cursor-pointer group">
             <div className="relative w-8 h-8 rounded overflow-hidden shadow-md group-hover:ring-2 ring-white/20 transition bg-[#333]">
@@ -111,8 +108,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         </div>
       </div>
       
-      {/* Bottom border line when scrolled */}
-      <div className={`h-[1px] w-full bg-white/5 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
+      {/* Лінія знизу, яка з'являється при скролі */}
+      <div className={`h-[1px] w-full bg-white/10 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
     </nav>
   );
 };
