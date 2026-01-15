@@ -1,29 +1,22 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Movie } from "../types";
 import { Language } from "../utils/translations";
 
-// Extreme safety check for environment variables in browsers
-const getApiKey = (): string => {
-  try {
-    // Check if process exists and has env property
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
-    }
-  } catch (e) {
-    // Silently fail
-  }
-  return '';
-};
-
-const apiKey = getApiKey();
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
+/**
+ * Generates an AI response for a movie using Gemini API.
+ * Adheres to @google/genai guidelines:
+ * - Uses process.env.API_KEY directly.
+ * - Instantiates GoogleGenAI within the request context.
+ * - Uses correct model 'gemini-3-flash-preview' for basic text tasks.
+ * - Accesses response.text property directly.
+ */
 export const getMovieChatResponse = async (movie: Movie, userMessage: string, lang: Language): Promise<string> => {
-  if (!ai) {
-    return "Please configure the Gemini API Key to use the AI features.";
-  }
-
   try {
+    // Fix: Instantiate GoogleGenAI right before the call to ensure up-to-date config
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    // Fix: Use correct model string for basic text tasks
     const modelId = "gemini-3-flash-preview";
     
     const langInstruction = lang === 'uk' ? "Respond in Ukrainian." : lang === 'ru' ? "Respond in Russian." : "Respond in English.";
@@ -40,6 +33,7 @@ export const getMovieChatResponse = async (movie: Movie, userMessage: string, la
     Answer the user's questions about this specific movie. If they ask for recommendations, suggest similar movies based on this one.
     Keep answers concise (under 50 words) and engaging.`;
 
+    // Fix: Use ai.models.generateContent directly with parameters
     const response = await ai.models.generateContent({
       model: modelId,
       contents: userMessage,
@@ -48,6 +42,7 @@ export const getMovieChatResponse = async (movie: Movie, userMessage: string, la
       },
     });
 
+    // Fix: Access .text property directly (not a method call)
     return response.text || "I couldn't generate a response regarding that.";
   } catch (error) {
     console.error("Gemini API Error:", error);

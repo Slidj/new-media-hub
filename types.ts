@@ -1,3 +1,4 @@
+
 export interface Movie {
   id: string;
   title: string;
@@ -48,6 +49,8 @@ declare global {
           hash?: string;
         };
         version: string;
+        // Fix: Added platform property to Telegram WebApp interface to resolve TS errors in Navbar
+        platform: string;
         isVersionAtLeast: (version: string) => boolean;
         ready: () => void;
         expand: () => void;
