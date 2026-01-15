@@ -140,7 +140,9 @@ function App() {
               />
           )}
           
-          <section className="relative z-10 -mt-12 md:-mt-32 px-4 md:px-12 pb-10">
+          {/* Section: z-30 ensures it's above Hero background but still below Navbar. 
+              -mt-6 on mobile provides a slight overlap without hiding buttons. */}
+          <section className="relative z-30 -mt-6 md:-mt-32 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
