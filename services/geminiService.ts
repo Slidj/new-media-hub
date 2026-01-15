@@ -2,7 +2,17 @@ import { GoogleGenAI } from "@google/genai";
 import { Movie } from "../types";
 import { Language } from "../utils/translations";
 
-const apiKey = process.env.API_KEY || '';
+// Safer way to access environment variables in a browser context
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || '';
+  } catch (e) {
+    // If process is not defined (standard browser environment), return empty string
+    return '';
+  }
+};
+
+const apiKey = getApiKey();
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const getMovieChatResponse = async (movie: Movie, userMessage: string, lang: Language): Promise<string> => {
