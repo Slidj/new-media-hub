@@ -25,7 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
 
     const handleScroll = () => {
       const offset = window.pageYOffset || document.documentElement.scrollTop;
-      setIsScrolled(offset > 20);
+      setIsScrolled(offset > 10);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -39,21 +39,21 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search'
-          ? 'bg-[#141414]/85 backdrop-blur-lg shadow-xl' 
-          : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'
+          ? 'bg-black/40 backdrop-blur-xl shadow-lg border-b border-white/5' 
+          : 'bg-gradient-to-b from-black/50 via-black/10 to-transparent'
         }
-        ${isMobileApp ? 'pt-[env(safe-area-inset-top,0px)] pb-1' : 'pt-0'}
+        ${isMobileApp ? 'pt-safe pb-2' : 'pt-0'}
       `}
     >
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* Збільшений відступ для мобільних Telegram Apps */
-          ${isMobileApp ? 'mt-16 mb-3' : 'py-5 md:py-7'}
+          /* Значно збільшений відступ, щоб логотип опустився нижче кнопок Telegram */
+          ${isMobileApp ? 'mt-20 mb-2' : 'py-5 md:py-7'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Returned to original bold/flat style */}
+          {/* Logo - Bold, non-italic, original Red */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}
@@ -105,9 +105,6 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
           </div>
         </div>
       </div>
-      
-      {/* М'якша лінія знизу */}
-      <div className={`h-[1px] w-full bg-white/5 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
     </nav>
   );
 };

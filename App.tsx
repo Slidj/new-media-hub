@@ -142,12 +142,7 @@ function App() {
               />
           )}
           
-          {/* Movie Grid - Removed negative margin to prevent jumping into nav */}
-          <section className="relative z-30 pt-8 px-4 md:px-12 pb-10">
-            <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-200 tracking-tight">
-                {translations[lang].trending}
-            </h2>
-            
+          <section className="relative z-30 pt-4 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;

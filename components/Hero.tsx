@@ -29,12 +29,12 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <div className="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black via-black/30 to-transparent"></div>
       </div>
 
-      {/* Content Area - Increased padding to push everything even lower */}
-      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-20 md:pb-[20vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-52 md:pt-60">
+      {/* Content Area - Adjusted pt to stay balanced with lower header */}
+      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-20 md:pb-[20vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-60">
         
         {/* Wrapper for centered content */}
         <div className="pointer-events-auto flex flex-col items-center text-center max-w-xl">
-            {/* Title / Logo - Returned to non-italic bold style */}
+            {/* Title / Logo - Fixed Bold Style */}
             <div className="mb-6 md:mb-10 flex justify-center transform transition-transform duration-700 hover:scale-105">
                 {movie.logoUrl ? (
                     <img 
