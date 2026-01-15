@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"] # Або "master", залежно від вашої головної гілки
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          # Видалено cache: 'npm', щоб не виникало помилок при відсутності package-lock.json
 
       - name: Install dependencies
         run: npm install
