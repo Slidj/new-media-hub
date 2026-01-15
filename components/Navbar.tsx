@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser } from '../types';
@@ -32,9 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   return (
     <nav 
       className={`
-        fixed top-0 w-full z-50 transition-all duration-700 ease-in-out
+        fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out
         ${isScrolled || activeTab === 'search'
-          ? 'bg-black/90 backdrop-blur-md shadow-lg py-3' 
+          ? 'bg-black/95 backdrop-blur-md shadow-lg py-3' 
           : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent py-5'
         }
       `}
@@ -43,16 +44,16 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         <div className="flex items-center gap-8">
           {/* Logo - Media Hub (Netflix Style) */}
           <div 
-            className={`cursor-pointer transition-transform duration-500 ${isScrolled ? 'scale-95' : 'scale-100'}`}
+            className={`cursor-pointer transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}
             onClick={onHomeClick}
           >
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-[#E50914] drop-shadow-sm uppercase font-sans">
+            <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-[#E50914] drop-shadow-sm uppercase font-sans">
               MEDIA HUB
             </h1>
           </div>
           
           {/* Desktop Menu */}
-          <ul className="hidden md:flex gap-6 text-sm text-gray-200 font-medium">
+          <ul className="hidden lg:flex gap-6 text-sm text-gray-200 font-medium">
             <li 
                 className={`cursor-pointer transition hover:scale-105 duration-200 ${activeTab === 'home' ? 'text-white font-bold' : 'hover:text-white'}`}
                 onClick={onHomeClick}
@@ -72,11 +73,10 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             onClick={onSearchClick}
           />
           <span className="hidden md:block text-sm cursor-pointer hover:text-gray-300 font-medium">{t.kids}</span>
-          <Gift className="w-5 h-5 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
+          <Gift className="w-5 h-5 hidden sm:block cursor-pointer hover:text-gray-300 transition hover:scale-110" />
           <Bell className="w-5 h-5 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
           
           <div className="flex items-center gap-2 cursor-pointer group">
-            {/* User Avatar from Telegram */}
             <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-md group-hover:ring-2 ring-[#E50914] transition bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center shrink-0">
                 {user?.photo_url && !imgError ? (
                   <img 
@@ -91,14 +91,11 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
                   </span>
                 )}
             </div>
-            
-            {/* Username */}
             {user && (
-               <span className="text-sm font-medium hidden sm:block max-w-[100px] truncate text-gray-200 group-hover:text-white transition">
+               <span className="text-sm font-medium hidden sm:block max-w-[80px] truncate text-gray-200 group-hover:text-white transition">
                  {user.first_name}
                </span>
             )}
-
             <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-white group-hover:rotate-180 transition-transform duration-300 ml-1"></div>
           </div>
         </div>

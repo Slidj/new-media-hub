@@ -18,17 +18,13 @@ function App() {
   const [user, setUser] = useState<WebAppUser | null>(null);
   const [lang, setLang] = useState<Language>('en');
   
-  // Navigation State
   const [activeTab, setActiveTab] = useState<'home' | 'search'>('home');
-  
-  // Home Feed Data State
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  // Initialize Telegram User & Language
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
@@ -144,8 +140,7 @@ function App() {
               />
           )}
           
-          {/* Adjusted negative margin to prevent buttons overlap */}
-          <section className="relative z-50 -mt-12 md:-mt-32 px-4 md:px-12 pb-10">
+          <section className="relative z-10 -mt-12 md:-mt-32 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;

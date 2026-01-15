@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Plus, ThumbsUp, Volume2, MessageSquare, Send } from 'lucide-react';
 import { Movie, ChatMessage } from '../types';
@@ -19,18 +20,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
-  // Handle entry animation and Telegram Back Button
   useEffect(() => {
     if (movie) {
-      // Slight delay to allow mounting before triggering animation state
       const timer = setTimeout(() => setIsVisible(true), 50);
 
-      // Telegram WebApp Integration
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
-
-        // BackButton and HapticFeedback were introduced in version 6.1
-        // We must check version before using them to avoid warnings/errors on v6.0
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
             tg.BackButton.show();
             tg.BackButton.onClick(handleClose);
@@ -40,7 +35,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
 
       return () => {
         clearTimeout(timer);
-        // Clean up Telegram Back Button
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -64,17 +58,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
 
   if (!movie) return null;
 
-  // Handle exit animation
   const handleClose = () => {
     setIsVisible(false);
-    // Wait for animation to finish (500ms to match duration) before actually unmounting
     setTimeout(onClose, 500);
   };
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    // Haptic feedback for sending message (v6.1+)
     if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
@@ -86,7 +77,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
 
     const aiResponse = await getMovieChatResponse(movie, userMsg, lang);
     
-    // Haptic feedback for receiving message (v6.1+)
     if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
     }
@@ -96,9 +86,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center pointer-events-auto">
-      
-      {/* Backdrop (Dark Overlay) */}
+    <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
       <div 
         className={`
           absolute inset-0 bg-black/80 md:bg-black/70 backdrop-blur-sm 
@@ -108,7 +96,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
         onClick={handleClose}
       />
 
-      {/* Modal Content - Slides up on mobile, fades/scales on desktop */}
       <div 
         className={`
           relative w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
@@ -121,8 +108,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
           }
         `}
       >
-        
-        {/* Close Button */}
         <button 
           onClick={handleClose}
           className={`
@@ -135,12 +120,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
           <X className="w-5 h-5 text-white" />
         </button>
 
-        {/* Scrollable Container */}
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar">
-            {/* Video Banner Area */}
             <div className="relative pt-[70%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
               <div className="absolute top-0 left-0 w-full h-full">
-                {/* Image Scale Effect */}
                 <img 
                   src={movie.bannerUrl} 
                   alt={movie.title} 
@@ -152,7 +134,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
               </div>
               
-              {/* Floating Content over Banner */}
               <div 
                 className={`
                     absolute bottom-0 left-0 w-full p-6 md:p-10 space-y-4 md:space-y-6
@@ -172,7 +153,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                   <button className="flex-shrink-0 flex items-center justify-center w-10 h-10 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40">
                     <ThumbsUp className="w-5 h-5" />
                   </button>
-                  {/* AI Toggle */}
                   <button 
                     onClick={() => setShowChat(!showChat)}
                     className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border-2 transition ml-auto md:ml-0 ${showChat ? 'bg-purple-600 border-purple-600 text-white' : 'border-purple-500 text-purple-400 bg-black/40'}`}
@@ -184,13 +164,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
               </div>
             </div>
 
-            {/* Info Content or Chat Interface */}
             <div className={`
                 px-6 md:px-10 py-6 md:py-8 grid md:grid-cols-[2fr_1fr] gap-6 md:gap-8 pb-24 md:pb-8 bg-[#141414]
                 transition-all duration-700 delay-200 ease-out
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
             `}>
-                
                 {!showChat ? (
                     <>
                     <div className="space-y-4">
@@ -218,7 +196,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                     </div>
                     </>
                 ) : (
-                    // AI Chat Interface
                     <div className="col-span-2 h-[400px] md:h-[300px] flex flex-col bg-[#222] rounded-lg border border-gray-800">
                         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                             {messages.map((msg, idx) => (

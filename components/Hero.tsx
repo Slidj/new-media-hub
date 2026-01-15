@@ -21,21 +21,18 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <img
           src={movie.bannerUrl}
           alt={movie.title}
-          className="w-full h-full object-cover object-top scale-105" // scale-105 prevents sub-pixel gaps/borders
+          className="w-full h-full object-cover object-top scale-105"
         />
         
         {/* Dynamic Gradients (Netflix Style) */}
-        {/* Left Side Shadow for Text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent opacity-80"></div>
-        
-        {/* Bottom Fade to main content - Stronger for better blending */}
         <div className="absolute bottom-0 left-0 w-full h-[70%] bg-gradient-to-t from-black via-black/60 to-transparent"></div>
       </div>
 
-      {/* Content Area - Increased padding-bottom to avoid overlap with cards */}
-      <div className="relative z-[60] h-full flex flex-col justify-end pb-[20vh] md:pb-[28vh] px-4 md:px-12 w-full max-w-full">
+      {/* Content Area - Lowered z-index to be below Navbar */}
+      <div className="relative z-20 h-full flex flex-col justify-end pb-[20vh] md:pb-[28vh] px-4 md:px-12 w-full max-w-full">
         
-        {/* Title / Logo - Positioned higher to look better without description */}
+        {/* Title / Logo */}
         <div className="mb-6 md:mb-8">
             {movie.logoUrl ? (
                 <img 
