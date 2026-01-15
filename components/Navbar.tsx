@@ -14,10 +14,16 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHomeClick, activeTab }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isTelegram, setIsTelegram] = useState(false);
   const [imgError, setImgError] = useState(false);
   const t = translations[lang];
 
   useEffect(() => {
+    // Перевіряємо, чи ми дійсно в Telegram
+    if (window.Telegram?.WebApp?.initData) {
+      setIsTelegram(true);
+    }
+
     const handleScroll = () => {
       const offset = window.pageYOffset || document.documentElement.scrollTop;
       setIsScrolled(offset > 10);
@@ -30,16 +36,23 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   return (
     <nav 
       className={`
-        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out pt-safe
+        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search'
           ? 'bg-black/80 backdrop-blur-xl shadow-xl' 
           : 'bg-gradient-to-b from-black/70 via-black/20 to-transparent'
         }
+        ${isTelegram ? 'pt-safe' : ''}
       `}
     >
-      <div className="flex items-center justify-between px-4 md:px-12 py-4 md:py-6">
+      <div 
+        className={`
+          flex items-center justify-between px-4 md:px-12 transition-all duration-300
+          /* mt-20 застосовується тільки в Telegram, в браузері залишається стандартний py-4 */
+          ${isTelegram ? 'mt-20 mb-2' : 'py-4 md:py-6'}
+        `}
+      >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Classic Bold Red */}
+          {/* Logo */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}
