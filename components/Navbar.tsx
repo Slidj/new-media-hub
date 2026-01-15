@@ -19,51 +19,50 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   const t = translations[lang];
 
   useEffect(() => {
-    // Визначаємо платформу для специфічних відступів
     if (window.Telegram?.WebApp) {
       setPlatform(window.Telegram.WebApp.platform);
     }
 
     const handleScroll = () => {
-      if (window.scrollY > 50) {
+      // Використовуємо менший поріг (10px) для швидшої реакції шапки
+      if (window.scrollY > 10) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Додатковий відступ для iOS, де кнопки Telegram особливо низько
   const isMobileApp = platform === 'ios' || platform === 'android';
 
   return (
     <nav 
       className={`
-        fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out
+        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         pt-safe
         ${isScrolled || activeTab === 'search'
-          ? 'bg-black/95 backdrop-blur-md shadow-lg' 
-          : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
+          ? 'bg-[#141414] shadow-2xl' 
+          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent'
         }
       `}
     >
       <div 
         className={`
-          flex items-center justify-between px-4 md:px-12 transition-all duration-500
-          ${isScrolled ? 'py-2 md:py-3' : 'py-4 md:py-5'}
+          flex items-center justify-between px-4 md:px-12 transition-all duration-300
+          ${isScrolled ? 'py-3 md:py-4' : 'py-5 md:py-7'}
           ${isMobileApp && !isScrolled ? 'mt-2' : ''}
         `}
       >
-        <div className="flex items-center gap-8">
-          {/* Logo - Media Hub (Netflix Style) */}
+        <div className="flex items-center gap-6 md:gap-12">
+          {/* Logo */}
           <div 
-            className={`cursor-pointer transition-transform duration-500 ${isScrolled ? 'scale-90' : 'scale-100'}`}
+            className={`cursor-pointer transition-transform duration-300 ${isScrolled ? 'scale-90 md:scale-95' : 'scale-100'}`}
             onClick={onHomeClick}
           >
-            <h1 className="text-xl md:text-4xl font-black tracking-tighter text-[#E50914] drop-shadow-sm uppercase font-sans">
+            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase">
               MEDIA HUB
             </h1>
           </div>
@@ -71,15 +70,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
           {/* Desktop Menu */}
           <ul className="hidden lg:flex gap-6 text-sm text-gray-200 font-medium">
             <li 
-                className={`cursor-pointer transition hover:scale-105 duration-200 ${activeTab === 'home' ? 'text-white font-bold' : 'hover:text-white'}`}
+                className={`cursor-pointer transition hover:text-white ${activeTab === 'home' ? 'text-white font-bold' : ''}`}
                 onClick={onHomeClick}
             >
                 {t.home}
             </li>
-            <li className="cursor-pointer hover:text-white transition hover:scale-105 duration-200">{t.tvShows}</li>
-            <li className="cursor-pointer hover:text-white transition hover:scale-105 duration-200">{t.movies}</li>
-            <li className="cursor-pointer hover:text-white transition hover:scale-105 duration-200">{t.newPopular}</li>
-            <li className="cursor-pointer hover:text-white transition hover:scale-105 duration-200">{t.myList}</li>
+            <li className="cursor-pointer hover:text-white transition">{t.tvShows}</li>
+            <li className="cursor-pointer hover:text-white transition">{t.movies}</li>
+            <li className="cursor-pointer hover:text-white transition">{t.newPopular}</li>
+            <li className="cursor-pointer hover:text-white transition">{t.myList}</li>
           </ul>
         </div>
 
@@ -88,12 +87,11 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             className={`w-5 h-5 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
             onClick={onSearchClick}
           />
-          <span className="hidden md:block text-sm cursor-pointer hover:text-gray-300 font-medium">{t.kids}</span>
-          <Gift className="w-5 h-5 hidden sm:block cursor-pointer hover:text-gray-300 transition hover:scale-110" />
-          <Bell className="w-5 h-5 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
+          <span className="hidden md:block text-sm cursor-pointer hover:text-gray-300">{t.kids}</span>
+          <Bell className="w-5 h-5 cursor-pointer hover:text-gray-300" />
           
           <div className="flex items-center gap-2 cursor-pointer group">
-            <div className="relative w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden shadow-md group-hover:ring-2 ring-[#E50914] transition bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center shrink-0">
+            <div className="relative w-8 h-8 rounded overflow-hidden shadow-md group-hover:ring-2 ring-white/20 transition bg-[#333]">
                 {user?.photo_url && !imgError ? (
                   <img 
                     src={user.photo_url} 
@@ -102,19 +100,19 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
                     onError={() => setImgError(true)}
                   />
                 ) : (
-                  <span className="text-[10px] md:text-sm font-bold text-white">
-                    {user?.first_name ? user.first_name[0].toUpperCase() : <User className="w-4 h-4" />}
-                  </span>
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900">
+                    <span className="text-xs font-bold text-white uppercase">
+                      {user?.first_name ? user.first_name[0] : <User className="w-4 h-4" />}
+                    </span>
+                  </div>
                 )}
             </div>
-            {user && (
-               <span className="text-xs md:text-sm font-medium hidden sm:block max-w-[80px] truncate text-gray-200 group-hover:text-white transition">
-                 {user.first_name}
-               </span>
-            )}
           </div>
         </div>
       </div>
+      
+      {/* Bottom border line when scrolled */}
+      <div className={`h-[1px] w-full bg-white/5 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
     </nav>
   );
 };
