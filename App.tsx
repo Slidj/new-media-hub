@@ -124,7 +124,7 @@ function App() {
   }
 
   return (
-    <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white selection:bg-[#E50914] selection:text-white pb-20">
+    <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white pb-20">
       <Navbar 
         user={user} 
         lang={lang} 
@@ -134,7 +134,7 @@ function App() {
       />
       
       {activeTab === 'home' ? (
-        <main className="relative">
+        <main className="relative w-full">
           {featuredMovie && (
               <Hero 
                   movie={featuredMovie} 
@@ -144,8 +144,7 @@ function App() {
               />
           )}
           
-          {/* Movie Grid Section with negative margin for deep overlap */}
-          <section className="relative z-50 -mt-24 md:-mt-40 px-4 md:px-12 pb-10">
+          <section className="relative z-50 -mt-24 md:-mt-48 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
