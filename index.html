@@ -8,7 +8,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      window.process = { env: { API_KEY: '' } };
+      // Забезпечуємо наявність об'єкта process.env, але не перезаписуємо його, якщо він вже існує з ключами
+      window.process = window.process || { env: {} };
       
       tailwind.config = {
         theme: {
@@ -35,7 +36,6 @@
         width: 100%;
       }
 
-      /* Допоміжний клас для безпечної зони зверху (iOS/Telegram) */
       .pt-safe {
         padding-top: env(safe-area-inset-top, 0px);
       }

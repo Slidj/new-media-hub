@@ -25,7 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
 
     const handleScroll = () => {
       const offset = window.pageYOffset || document.documentElement.scrollTop;
-      setIsScrolled(offset > 10);
+      setIsScrolled(offset > 15);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search'
-          ? 'bg-black/40 backdrop-blur-xl shadow-lg border-b border-white/5' 
+          ? 'bg-black/30 backdrop-blur-2xl shadow-xl' 
           : 'bg-gradient-to-b from-black/50 via-black/10 to-transparent'
         }
         ${isMobileApp ? 'pt-safe pb-2' : 'pt-0'}
@@ -48,12 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* Значно збільшений відступ, щоб логотип опустився нижче кнопок Telegram */
-          ${isMobileApp ? 'mt-20 mb-2' : 'py-5 md:py-7'}
+          /* Збільшений відступ до mt-24, щоб логотип опустився ще нижче */
+          ${isMobileApp ? 'mt-24 mb-2' : 'py-5 md:py-7'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Bold, non-italic, original Red */}
+          {/* Logo - Bold Red Style */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}
