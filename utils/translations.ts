@@ -1,0 +1,98 @@
+export type Language = 'en' | 'uk' | 'ru';
+
+export const translations = {
+  en: {
+    home: "Home",
+    tvShows: "TV Shows",
+    movies: "Movies",
+    newPopular: "New & Popular",
+    myList: "My List",
+    kids: "Kids",
+    search: "Search",
+    comingSoon: "Coming Soon",
+    downloads: "Downloads",
+    more: "More",
+    play: "Play",
+    moreInfo: "More Info",
+    match: "Match",
+    genres: "Genres",
+    originalLanguage: "Original Language",
+    totalVotes: "Total Votes",
+    aiChat: "AI Chat",
+    thinking: "Thinking...",
+    askGemini: "Ask Gemini about the movie...",
+    aiIntro: "Hi! Ask me anything about",
+    endOfList: "You've reached the end of the list.",
+    trending: "Trending Now",
+    global: "Global",
+    errorGemini: "Sorry, I'm having trouble connecting to the movie database right now.",
+    configureKey: "Please configure the Gemini API Key.",
+    noResponse: "I couldn't generate a response regarding that.",
+    series: "SERIES"
+  },
+  uk: {
+    home: "Головна",
+    tvShows: "Серіали",
+    movies: "Фільми",
+    newPopular: "Нові та популярні",
+    myList: "Мій список",
+    kids: "Діти",
+    search: "Пошук",
+    comingSoon: "Скоро",
+    downloads: "Завантаження",
+    more: "Ще",
+    play: "Дивитися",
+    moreInfo: "Детальніше",
+    match: "Співпадіння",
+    genres: "Жанри",
+    originalLanguage: "Оригінальна мова",
+    totalVotes: "Голосів",
+    aiChat: "AI Чат",
+    thinking: "Думаю...",
+    askGemini: "Запитайте Gemini про фільм...",
+    aiIntro: "Привіт! Запитуйте будь-що про",
+    endOfList: "Ви дійшли до кінця списку.",
+    trending: "В тренді",
+    global: "Глобально",
+    errorGemini: "Вибачте, зараз я не можу з'єднатися з базою даних фільмів.",
+    configureKey: "Будь ласка, налаштуйте ключ Gemini API.",
+    noResponse: "Я не зміг згенерувати відповідь щодо цього.",
+    series: "СЕРІАЛ"
+  },
+  ru: {
+    home: "Главная",
+    tvShows: "Сериалы",
+    movies: "Фильмы",
+    newPopular: "Новое и популярное",
+    myList: "Мой список",
+    kids: "Дети",
+    search: "Поиск",
+    comingSoon: "Скоро",
+    downloads: "Загрузки",
+    more: "Ещё",
+    play: "Смотреть",
+    moreInfo: "Подробнее",
+    match: "Совпадение",
+    genres: "Жанры",
+    originalLanguage: "Оригинальный язык",
+    totalVotes: "Голосов",
+    aiChat: "AI Чат",
+    thinking: "Думаю...",
+    askGemini: "Спросите Gemini о фильме...",
+    aiIntro: "Привет! Спрашивайте что угодно о",
+    endOfList: "Вы дошли до конца списка.",
+    trending: "В тренде",
+    global: "Глобально",
+    errorGemini: "Извините, сейчас я не могу соединиться с базой данных фильмов.",
+    configureKey: "Пожалуйста, настройте ключ Gemini API.",
+    noResponse: "Я не смог сгенерировать ответ по этому поводу.",
+    series: "СЕРИАЛ"
+  }
+};
+
+export const getLanguage = (code?: string): Language => {
+  if (!code) return 'en';
+  if (code.startsWith('uk') || code.startsWith('ua')) return 'uk';
+  if (code.startsWith('ru') || code.startsWith('be')) return 'ru';
+  return 'en';
+};
