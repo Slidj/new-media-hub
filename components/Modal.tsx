@@ -150,7 +150,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}
               >
-                <h2 className="text-3xl md:text-5xl font-black text-white drop-shadow-2xl italic uppercase tracking-tighter">
+                <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl uppercase tracking-tighter">
                     {movie.title}
                 </h2>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">

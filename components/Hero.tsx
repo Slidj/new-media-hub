@@ -25,25 +25,25 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         />
         
         {/* Dynamic Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/10 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black via-black/30 to-transparent"></div>
       </div>
 
-      {/* Content Area - Adjusted padding for mobile */}
-      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-20 md:pb-[25vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-40">
+      {/* Content Area - Increased padding to push everything even lower */}
+      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-20 md:pb-[20vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-52 md:pt-60">
         
         {/* Wrapper for centered content */}
         <div className="pointer-events-auto flex flex-col items-center text-center max-w-xl">
-            {/* Title / Logo */}
+            {/* Title / Logo - Returned to non-italic bold style */}
             <div className="mb-6 md:mb-10 flex justify-center transform transition-transform duration-700 hover:scale-105">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
                         alt={movie.title} 
-                        className="w-full max-w-[260px] md:max-w-[500px] max-h-[140px] md:max-h-[260px] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.8)]"
+                        className="w-full max-w-[260px] md:max-w-[500px] max-h-[140px] md:max-h-[260px] object-contain drop-shadow-[0_15px_15px_rgba(0,0,0,0.6)]"
                     />
                 ) : (
-                    <h1 className="text-4xl md:text-8xl font-black drop-shadow-2xl tracking-tighter uppercase leading-none italic">
+                    <h1 className="text-4xl md:text-8xl font-black drop-shadow-2xl tracking-tighter uppercase leading-none">
                       {movie.title}
                     </h1>
                 )}

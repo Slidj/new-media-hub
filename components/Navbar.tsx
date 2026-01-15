@@ -24,7 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     }
 
     const handleScroll = () => {
-      // Використовуємо window.pageYOffset для кращої сумісності
       const offset = window.pageYOffset || document.documentElement.scrollTop;
       setIsScrolled(offset > 20);
     };
@@ -40,27 +39,26 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search'
-          ? 'bg-[#141414] shadow-2xl backdrop-blur-md' 
-          : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
+          ? 'bg-[#141414]/85 backdrop-blur-lg shadow-xl' 
+          : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent'
         }
-        /* Додаємо постійний високий відступ для безпечної зони Telegram */
-        ${isMobileApp ? 'pt-[env(safe-area-inset-top,0px)] pb-2' : 'pt-0'}
+        ${isMobileApp ? 'pt-[env(safe-area-inset-top,0px)] pb-1' : 'pt-0'}
       `}
     >
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* Внутрішній відступ для контенту шапки */
-          ${isMobileApp ? 'mt-12 mb-2' : 'py-5 md:py-7'}
+          /* Збільшений відступ для мобільних Telegram Apps */
+          ${isMobileApp ? 'mt-16 mb-3' : 'py-5 md:py-7'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo */}
+          {/* Logo - Returned to original bold/flat style */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95"
             onClick={onHomeClick}
           >
-            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase italic">
+            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase">
               MEDIA HUB
             </h1>
           </div>
@@ -108,8 +106,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         </div>
       </div>
       
-      {/* Лінія знизу, яка з'являється при скролі */}
-      <div className={`h-[1px] w-full bg-white/10 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
+      {/* М'якша лінія знизу */}
+      <div className={`h-[1px] w-full bg-white/5 transition-opacity duration-500 ${isScrolled ? 'opacity-100' : 'opacity-0'}`} />
     </nav>
   );
 };
