@@ -144,7 +144,8 @@ function App() {
               />
           )}
           
-          <section className="relative z-50 -mt-24 md:-mt-48 px-4 md:px-12 pb-10">
+          {/* Adjusted negative margin to prevent buttons overlap */}
+          <section className="relative z-50 -mt-12 md:-mt-32 px-4 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
