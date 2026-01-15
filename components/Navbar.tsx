@@ -24,8 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     }
 
     const handleScroll = () => {
-      // Використовуємо менший поріг (10px) для швидшої реакції шапки
-      if (window.scrollY > 10) {
+      if (window.scrollY > 15) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
@@ -36,7 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isMobileApp = platform === 'ios' || platform === 'android';
+  // Визначаємо, чи це мобільний додаток Telegram
+  const isMobileApp = platform === 'ios' || platform === 'android' || platform === 'weba';
 
   return (
     <nav 
@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         pt-safe
         ${isScrolled || activeTab === 'search'
           ? 'bg-[#141414] shadow-2xl' 
-          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent'
+          : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
         }
       `}
     >
@@ -53,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
           ${isScrolled ? 'py-3 md:py-4' : 'py-5 md:py-7'}
-          ${isMobileApp && !isScrolled ? 'mt-2' : ''}
+          ${isMobileApp && !isScrolled ? 'mt-10 md:mt-0' : 'mt-0'} 
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">

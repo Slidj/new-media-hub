@@ -36,9 +36,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    <div className="min-h-screen bg-black pt-24 md:pt-28 pb-24 px-4 md:px-12 pt-safe">
+    <div className="min-h-screen bg-black pt-36 md:pt-28 pb-24 px-4 md:px-12 pt-safe">
       {/* Search Input Bar */}
-      <div className="sticky top-20 md:top-24 z-30 mb-8 pt-2">
+      <div className="sticky top-32 md:top-24 z-30 mb-8 pt-2">
         <div className="relative max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />

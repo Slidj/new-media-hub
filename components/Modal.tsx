@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Plus, ThumbsUp, Volume2, MessageSquare, Send } from 'lucide-react';
+import { X, Play, Plus, ThumbsUp, MessageSquare, Send } from 'lucide-react';
 import { Movie, ChatMessage } from '../types';
 import { getMovieChatResponse } from '../services/geminiService';
 import { Language, translations } from '../utils/translations';
@@ -18,10 +18,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [platform, setPlatform] = useState('');
   const t = translations[lang];
 
   useEffect(() => {
     if (movie) {
+      if (window.Telegram?.WebApp) {
+        setPlatform(window.Telegram.WebApp.platform);
+      }
+      
       const timer = setTimeout(() => setIsVisible(true), 50);
 
       if (window.Telegram?.WebApp) {
@@ -85,6 +90,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
     setIsLoading(false);
   };
 
+  const isMobile = platform === 'ios' || platform === 'android';
+
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
       <div 
@@ -111,17 +118,18 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
         <button 
           onClick={handleClose}
           className={`
-            absolute top-4 right-4 z-50 h-9 w-9 rounded-full bg-[#181818]/80 md:bg-black/60 
-            grid place-items-center hover:bg-[#2a2a2a] backdrop-blur-md
+            absolute z-50 h-10 w-10 rounded-full bg-[#181818]/90 md:bg-black/60 
+            grid place-items-center hover:bg-[#2a2a2a] backdrop-blur-md shadow-xl
             transition-all duration-500 delay-200
+            ${isMobile ? 'top-14 right-4' : 'top-4 right-4'}
             ${isVisible ? 'opacity-100 rotate-0' : 'opacity-0 rotate-90'}
           `}
         >
-          <X className="w-5 h-5 text-white" />
+          <X className="w-6 h-6 text-white" />
         </button>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar">
-            <div className="relative pt-[70%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
+            <div className="relative pt-[75%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
               <div className="absolute top-0 left-0 w-full h-full">
                 <img 
                   src={movie.bannerUrl} 
