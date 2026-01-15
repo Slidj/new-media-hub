@@ -15,7 +15,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   const t = translations[lang];
 
   return (
-    <div className="relative h-[85vh] md:h-screen w-full text-white overflow-hidden bg-black">
+    <div className="relative h-[80vh] md:h-screen w-full text-white overflow-hidden bg-black">
       {/* Background Image Container */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-10">
         <img
@@ -25,16 +25,16 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         />
         
         {/* Dynamic Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/10 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-[60%] bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-[70%] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
       </div>
 
-      {/* Content Area - Adjusted pt to stay balanced with lower header */}
-      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-20 md:pb-[20vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-60">
+      {/* Content Area - Adjusted pt for standard header */}
+      <div className="relative z-40 h-full flex flex-col justify-end items-center pb-24 md:pb-[20vh] px-4 md:px-12 w-full max-w-full pointer-events-none pt-32">
         
         {/* Wrapper for centered content */}
         <div className="pointer-events-auto flex flex-col items-center text-center max-w-xl">
-            {/* Title / Logo - Fixed Bold Style */}
+            {/* Title / Logo */}
             <div className="mb-6 md:mb-10 flex justify-center transform transition-transform duration-700 hover:scale-105">
                 {movie.logoUrl ? (
                     <img 

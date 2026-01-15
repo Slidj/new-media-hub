@@ -15,43 +15,29 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHomeClick, activeTab }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [platform, setPlatform] = useState<string>('');
   const t = translations[lang];
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      setPlatform(window.Telegram.WebApp.platform);
-    }
-
     const handleScroll = () => {
       const offset = window.pageYOffset || document.documentElement.scrollTop;
-      setIsScrolled(offset > 15);
+      setIsScrolled(offset > 10);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isMobileApp = platform === 'ios' || platform === 'android' || platform === 'weba';
-
   return (
     <nav 
       className={`
-        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
+        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out pt-safe
         ${isScrolled || activeTab === 'search'
-          ? 'bg-black/30 backdrop-blur-2xl shadow-xl' 
-          : 'bg-gradient-to-b from-black/50 via-black/10 to-transparent'
+          ? 'bg-black/80 backdrop-blur-xl shadow-xl' 
+          : 'bg-gradient-to-b from-black/70 via-black/20 to-transparent'
         }
-        ${isMobileApp ? 'pt-safe pb-2' : 'pt-0'}
       `}
     >
-      <div 
-        className={`
-          flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* mt-24 забезпечує ідеальний відступ від системних кнопок Telegram */
-          ${isMobileApp ? 'mt-24 mb-2' : 'py-5 md:py-7'}
-        `}
-      >
+      <div className="flex items-center justify-between px-4 md:px-12 py-4 md:py-6">
         <div className="flex items-center gap-6 md:gap-12">
           {/* Logo - Classic Bold Red */}
           <div 
