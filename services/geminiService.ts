@@ -7,38 +7,48 @@ export const getMovieChatResponse = async (movie: Movie, userMessage: string, la
   const t = translations[lang];
   
   try {
-    // Використовуємо process.env.API_KEY напряму, як зазначено в інструкціях
+    // Створюємо екземпляр AI з ключем безпосередньо з оточення
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const modelName = "gemini-3-flash-preview";
+    const model = 'gemini-3-flash-preview';
     
     const langInstruction = lang === 'uk' ? "Відповідай українською мовою." : lang === 'ru' ? "Отвечай на русском языке." : "Respond in English.";
 
-    const systemInstruction = `You are a movie expert AI for "Media Hub".
-    Movie: "${movie.title}".
-    Details: ${movie.genre.join(', ')}, ${movie.year}, Rating: ${movie.rating}.
-    Description: ${movie.description}.
-    
-    Rules:
-    - ${langInstruction}
-    - Keep response under 40 words.
-    - Be conversational and helpful.
-    - Focus only on movies.`;
+    const systemInstruction = `You are a movie expert for Media Hub. 
+User is looking at: ${movie.title} (${movie.year}).
+Genre: ${movie.genre.join(', ')}. Rating: ${movie.rating}.
+Description: ${movie.description}.
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: [{ parts: [{ text: userMessage }] }],
+Rules:
+- ${langInstruction}
+- Be helpful and concise (max 30 words).
+- If the user asks about other movies, you can help too.`;
+
+    // Використовуємо максимально простий формат запиту для стабільності
+    const result = await ai.models.generateContent({
+      model: model,
+      contents: userMessage, // Передаємо повідомлення як рядок
       config: {
-        systemInstruction,
+        systemInstruction: systemInstruction,
         temperature: 0.7,
       },
     });
 
-    return response.text || t.noResponse;
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    if (result && result.text) {
+      return result.text;
+    }
     
-    // Перевірка на помилки аутентифікації або відсутність ключа в SDK
-    if (error?.message?.includes("API_KEY") || error?.status === 403 || error?.status === 401) {
+    return t.noResponse;
+  } catch (error: any) {
+    console.error("Gemini API Request Error:", error);
+    
+    // Більш широка перевірка на проблеми з ключем
+    const errorStr = error?.toString() || "";
+    if (
+      errorStr.includes("API_KEY") || 
+      errorStr.includes("403") || 
+      errorStr.includes("401") || 
+      errorStr.includes("not found")
+    ) {
       return t.configureKey;
     }
     

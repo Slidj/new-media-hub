@@ -19,13 +19,9 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   const t = translations[lang];
 
   useEffect(() => {
-    // Перевіряємо платформу Telegram WebApp для коректного позиціонування
-    if (window.Telegram?.WebApp?.platform) {
-      const p = window.Telegram.WebApp.platform;
-      // Вважаємо TMA активним, якщо платформа не "unknown" або це мобільний клієнт
-      if (p !== 'unknown' && p !== 'tdesktop') {
-        setIsTelegram(true);
-      }
+    // Перевіряємо наявність об'єкта Telegram WebApp
+    if (window.Telegram?.WebApp?.initData) {
+      setIsTelegram(true);
     }
 
     const handleScroll = () => {
@@ -42,7 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search'
-          ? 'bg-black/90 backdrop-blur-2xl shadow-xl' 
+          ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
           : 'bg-gradient-to-b from-black/80 via-black/20 to-transparent'
         }
         ${isTelegram ? 'pt-safe' : ''}
@@ -51,8 +47,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* mt-24 забезпечує ідеальний відступ від системних кнопок Telegram Mini App */
-          ${isTelegram ? 'mt-24 mb-3' : 'py-4 md:py-6'}
+          /* mt-24 — перевірений відступ для Telegram Mini App */
+          ${isTelegram ? 'mt-24 mb-4' : 'py-4 md:py-6'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
