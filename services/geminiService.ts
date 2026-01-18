@@ -6,16 +6,9 @@ import { Language, translations } from "../utils/translations";
 export const getMovieChatResponse = async (movie: Movie, userMessage: string, lang: Language): Promise<string> => {
   const t = translations[lang];
   
-  // Намагаємося отримати ключ безпосередньо з process.env
-  const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-  
-  if (!apiKey) {
-    console.error("Gemini API Key is missing. Check environment variables.");
-    return t.configureKey || "AI Key is missing.";
-  }
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Використовуємо process.env.API_KEY напряму, як зазначено в інструкціях
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const modelName = "gemini-3-flash-preview";
     
     const langInstruction = lang === 'uk' ? "Відповідай українською мовою." : lang === 'ru' ? "Отвечай на русском языке." : "Respond in English.";
@@ -42,10 +35,13 @@ export const getMovieChatResponse = async (movie: Movie, userMessage: string, la
 
     return response.text || t.noResponse;
   } catch (error: any) {
-    console.error("Gemini Request Failed:", error);
-    if (error?.status === 403 || error?.message?.includes("key")) {
+    console.error("Gemini API Error:", error);
+    
+    // Перевірка на помилки аутентифікації або відсутність ключа в SDK
+    if (error?.message?.includes("API_KEY") || error?.status === 403 || error?.status === 401) {
       return t.configureKey;
     }
+    
     return t.errorGemini;
   }
 };
