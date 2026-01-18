@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Plus, ThumbsUp, MessageSquare, Send } from 'lucide-react';
+import { X, Play, Plus, MessageSquare, Send, Key } from 'lucide-react';
 import { Movie, ChatMessage } from '../types';
 import { getMovieChatResponse } from '../services/geminiService';
 import { Language, translations } from '../utils/translations';
@@ -20,6 +20,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState('');
   const t = translations[lang];
+
+  // Динамічна перевірка наявності ключа
+  const apiKey = (window as any).process?.env?.API_KEY || (process?.env?.API_KEY);
+  const hasApiKey = !!apiKey;
 
   useEffect(() => {
     if (movie) {
@@ -68,8 +72,23 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
     setTimeout(onClose, 500);
   };
 
+  const handleConnectKey = async () => {
+    // Спроба викликати системний діалог вибору ключа, якщо він доступний у вікні
+    if ((window as any).aistudio?.openSelectKey) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        // Після вибору ключа перезавантажуємо, щоб зміни вступили в силу
+        window.location.reload();
+      } catch (e) {
+        console.error("Failed to open key selector", e);
+      }
+    } else {
+      alert("Please set your API_KEY in the environment settings.");
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || !hasApiKey) return;
 
     if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -191,49 +210,55 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                             {movie.description}
                         </p>
                     </div>
-                    <div className="text-sm space-y-4 text-gray-400 border-t border-gray-800 pt-6 md:border-t-0 md:pt-0">
-                        <div>
-                            <span className="text-gray-500 font-bold uppercase tracking-wider block mb-1">{t.genres}:</span> 
-                            <span className="text-gray-200">{movie.genre.join(', ')}</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500 font-bold uppercase tracking-wider block mb-1">{t.originalLanguage}:</span> 
-                            <span className="text-gray-200">English</span>
-                        </div>
-                    </div>
                     </>
                 ) : (
-                    <div className="col-span-2 h-[450px] md:h-[350px] flex flex-col bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-inner">
+                    <div className="col-span-2 h-[450px] md:h-[400px] flex flex-col bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-inner">
                         <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-lg ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-br-none' : 'bg-[#2a2a2a] text-gray-200 rounded-bl-none border border-gray-700'}`}>
+                                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-[15px] shadow-lg ${msg.role === 'user' ? 'bg-purple-600 text-white' : 'bg-[#2a2a2a] text-gray-200 border border-gray-700'}`}>
                                         {msg.text}
                                     </div>
                                 </div>
                             ))}
                             {isLoading && (
-                                <div className="flex justify-start">
-                                    <div className="bg-[#2a2a2a] text-gray-400 px-5 py-3 rounded-2xl text-sm animate-pulse border border-gray-700">
+                                <div className="flex justify-start animate-pulse">
+                                    <div className="bg-[#2a2a2a] text-gray-400 px-5 py-3 rounded-2xl text-sm border border-gray-700 italic">
                                         {t.thinking}
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Кнопка підключення ключа, якщо його немає */}
+                            {!hasApiKey && (
+                              <div className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-700 rounded-xl bg-black/20 gap-4 mt-4">
+                                <Key className="w-12 h-12 text-yellow-500 opacity-80" />
+                                <p className="text-sm text-gray-400 text-center">{t.configureKey}</p>
+                                <button 
+                                  onClick={handleConnectKey}
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-2.5 rounded-full font-black text-sm transition transform active:scale-95 shadow-xl"
+                                >
+                                  CONNECT AI KEY
+                                </button>
+                                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[10px] text-blue-400 underline opacity-60">Billing info</a>
+                              </div>
                             )}
                             <div ref={chatEndRef} />
                         </div>
                         <div className="p-4 border-t border-gray-800 bg-[#1a1a1a] flex gap-3">
                             <input 
                                 type="text" 
-                                className="flex-1 bg-[#0a0a0a] text-white px-5 py-3.5 rounded-full border border-gray-700 focus:outline-none focus:border-purple-500 transition-colors text-[15px]"
+                                className="flex-1 bg-[#0a0a0a] text-white px-5 py-3.5 rounded-full border border-gray-700 focus:outline-none focus:border-purple-500 transition-colors text-[15px] disabled:opacity-30"
                                 placeholder={t.askGemini}
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                disabled={!hasApiKey}
                             />
                             <button 
                                 onClick={handleSendMessage}
                                 className="bg-purple-600 p-3.5 rounded-full hover:bg-purple-700 transition active:scale-90 disabled:opacity-50 flex-shrink-0 shadow-lg"
-                                disabled={isLoading}
+                                disabled={isLoading || !hasApiKey}
                             >
                                 <Send className="w-6 h-6 text-white" />
                             </button>
