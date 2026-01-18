@@ -1,9 +1,11 @@
+
 import { Movie } from '../types';
 
 const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/original';
-const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+// Змінено з w500 на w780 для кращої якості на Retina/OLED дисплеях мобільних телефонів
+const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w780';
 
 // Keep requests object for legacy or specific calls if needed, 
 // but we will primarily use the function below for the main feed.
