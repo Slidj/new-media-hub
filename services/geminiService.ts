@@ -7,28 +7,36 @@ export const getMovieChatResponse = async (movie: Movie, userMessage: string, la
   const t = translations[lang];
 
   try {
-    // Використовуємо API_KEY безпосередньо з оточення
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    // Безпечне отримання ключа з window.process
+    const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) 
+      ? process.env.API_KEY 
+      : (window as any).process?.env?.API_KEY;
+
+    if (!apiKey) {
+      console.warn("API Key is missing");
+      return t.configureKey;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     
     const langInstruction = lang === 'uk' ? "Відповідай українською мовою." : lang === 'ru' ? "Отвечай на русском языке." : "Respond in English.";
 
+    // Використовуємо простий формат запиту (string) для максимальної сумісності
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ parts: [{ text: userMessage }] }],
+      contents: userMessage, 
       config: {
         systemInstruction: `You are a movie expert for "Media Hub". Discussing: ${movie.title} (${movie.year}). Rules: ${langInstruction} Be very brief (max 20 words).`,
-        temperature: 0.8,
+        temperature: 0.7,
       },
     });
 
-    // response.text — це getter в @google/genai
-    const text = response.text;
-    return text || t.noResponse;
+    return response.text || t.noResponse;
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     
-    // Якщо помилка пов'язана з авторизацією/ключем
-    if (error?.message?.includes('API_KEY') || error?.status === 403 || error?.status === 401) {
+    const errorMessage = error?.message || '';
+    if (errorMessage.includes('API_KEY') || error?.status === 403 || error?.status === 401) {
       return t.configureKey;
     }
     
