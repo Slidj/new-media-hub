@@ -38,8 +38,8 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent hidden md:block"></div>
       </div>
 
-      {/* Content Area */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-20 md:pb-32 px-4 md:px-12 w-full">
+      {/* Content Area - Reduced padding-bottom to lower the content */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-24 px-4 md:px-12 w-full">
             
             {/* Title / Logo Logic */}
             <div className="mb-4 md:mb-6 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
