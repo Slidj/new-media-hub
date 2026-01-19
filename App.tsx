@@ -142,63 +142,66 @@ function App() {
               />
           )}
           
-          {/* Changed px-4 to px-2 and gap-3 to gap-2 to make cards bigger */}
           <section className="relative z-30 mt-4 md:-mt-12 px-2 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
-                // Використовуємо модуль, щоб затримка не ставала занадто великою для нижніх елементів
                 const delay = (index % 15) * 50; 
                 
                 return (
+                  // Wrapper for Fade In Animation
                   <div 
-                    key={`${movie.id}-${index}`} 
-                    className="
-                        relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
-                        transition-transform duration-300 ease-out
-                        hover:scale-110 hover:z-50 hover:shadow-2xl hover:shadow-black
-                        active:scale-95 active:brightness-75
-                        opacity-0 animate-fade-in-up
-                    "
+                    key={`${movie.id}-${index}`}
+                    className="opacity-0 animate-fade-in-up"
                     style={{ animationDelay: `${delay}ms` }}
-                    onClick={() => setSelectedMovie(movie)}
                   >
-                    <img
-                      src={movie.posterUrl}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      alt={movie.title}
-                      loading="lazy"
-                    />
-                    
-                    {isTop10 && (
-                      <div className="absolute top-0 left-0 z-20">
-                          <div className="relative">
-                              <div className="absolute top-0 left-0 w-8 h-9 bg-gradient-to-br from-[#E50914] to-[#B81D24] shadow-lg flex items-center justify-center rounded-br-lg z-10 border-b border-r border-white/20">
-                                  <span className="text-white font-black text-lg italic drop-shadow-md font-sans">#{index + 1}</span>
-                              </div>
-                          </div>
-                      </div>
-                    )}
+                    {/* Interactive Card with Scale/Click Animations */}
+                    <div 
+                        className="
+                            relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
+                            transition-transform duration-200 ease-out
+                            hover:scale-110 hover:z-50 hover:shadow-2xl hover:shadow-black
+                            active:scale-95 active:brightness-75
+                        "
+                        onClick={() => setSelectedMovie(movie)}
+                    >
+                        <img
+                        src={movie.posterUrl}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        alt={movie.title}
+                        loading="lazy"
+                        />
+                        
+                        {isTop10 && (
+                        <div className="absolute top-0 left-0 z-20">
+                            <div className="relative">
+                                <div className="absolute top-0 left-0 w-8 h-9 bg-gradient-to-br from-[#E50914] to-[#B81D24] shadow-lg flex items-center justify-center rounded-br-lg z-10 border-b border-r border-white/20">
+                                    <span className="text-white font-black text-lg italic drop-shadow-md font-sans">#{index + 1}</span>
+                                </div>
+                            </div>
+                        </div>
+                        )}
 
-                    {movie.mediaType === 'tv' && (
-                      <div className="absolute top-2 right-2 z-20">
-                          <div className="bg-[#E50914] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-md flex items-center gap-1 border border-white/10">
-                            <Tv className="w-2.5 h-2.5" />
-                            <span>{translations[lang].series}</span>
-                          </div>
-                      </div>
-                    )}
+                        {movie.mediaType === 'tv' && (
+                        <div className="absolute top-2 right-2 z-20">
+                            <div className="bg-[#E50914] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-md flex items-center gap-1 border border-white/10">
+                                <Tv className="w-2.5 h-2.5" />
+                                <span>{translations[lang].series}</span>
+                            </div>
+                        </div>
+                        )}
 
-                    <div className="absolute bottom-2 right-2 z-20">
-                      <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
-                          <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                          <span className="text-[10px] font-bold text-white">{movie.rating}</span>
-                      </div>
-                    </div>
+                        <div className="absolute bottom-2 right-2 z-20">
+                        <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
+                            <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-bold text-white">{movie.rating}</span>
+                        </div>
+                        </div>
 
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
-                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-t-[10px] border-t-white border-r-[6px] border-r-transparent transform rotate-[-90deg] ml-1"></div>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
+                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-t-[10px] border-t-white border-r-[6px] border-r-transparent transform rotate-[-90deg] ml-1"></div>
+                            </div>
                         </div>
                     </div>
                   </div>

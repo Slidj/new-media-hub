@@ -35,12 +35,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    // Fixed container: займає весь екран, не рухається разом зі сторінкою
-    // z-40: під Navbar (z-100), але над контентом
-    // pt-[140px]: відступ зверху, щоб компенсувати mt-24 та висоту логотипу в шапці
     <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[140px] md:pt-[160px] pb-[80px]">
       
-      {/* Static Search Bar Area - Цей блок не скролиться */}
+      {/* Static Search Bar Area */}
       <div className="w-full px-4 md:px-12 py-2 shrink-0 bg-black z-50">
         <div className="relative max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -65,7 +62,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
         </div>
       </div>
 
-      {/* Scrollable Results Area - Скролиться ТІЛЬКИ цей блок */}
+      {/* Scrollable Results Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-12 pt-4 pb-24 overscroll-contain no-scrollbar">
           {loading ? (
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
@@ -80,36 +77,39 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                 {results.map((movie, index) => (
                   <div 
                     key={movie.id} 
-                    className="
-                        relative cursor-pointer aspect-[2/3] rounded overflow-hidden bg-[#181818] group
-                        transition-transform duration-300 ease-out
-                        hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
-                        active:scale-95 active:brightness-75
-                        opacity-0 animate-fade-in-up
-                    "
+                    className="opacity-0 animate-fade-in-up"
                     style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => onMovieSelect(movie)}
                   >
-                    <img
-                      src={movie.posterUrl || movie.bannerUrl}
-                      className="w-full h-full object-cover"
-                      alt={movie.title}
-                      loading="lazy"
-                    />
-                    
-                    {movie.mediaType === 'tv' && (
-                        <div className="absolute top-2 right-2 z-20">
-                            <div className="bg-[#E50914] text-white text-[9px] md:text-[10px] font-bold px-2 py-1 rounded shadow-md flex items-center gap-1 border border-white/10 backdrop-blur-sm">
-                                <Tv className="w-3 h-3" />
-                                <span>{translations[lang].series}</span>
+                    <div 
+                        className="
+                            relative cursor-pointer aspect-[2/3] rounded overflow-hidden bg-[#181818] group
+                            transition-transform duration-200 ease-out
+                            hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
+                            active:scale-95 active:brightness-75
+                        "
+                        onClick={() => onMovieSelect(movie)}
+                    >
+                        <img
+                        src={movie.posterUrl || movie.bannerUrl}
+                        className="w-full h-full object-cover"
+                        alt={movie.title}
+                        loading="lazy"
+                        />
+                        
+                        {movie.mediaType === 'tv' && (
+                            <div className="absolute top-2 right-2 z-20">
+                                <div className="bg-[#E50914] text-white text-[9px] md:text-[10px] font-bold px-2 py-1 rounded shadow-md flex items-center gap-1 border border-white/10 backdrop-blur-sm">
+                                    <Tv className="w-3 h-3" />
+                                    <span>{translations[lang].series}</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div className="absolute bottom-2 right-2 z-20">
-                        <div className="bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 shadow-lg">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-[10px] font-bold text-white">{movie.rating}</span>
+                        <div className="absolute bottom-2 right-2 z-20">
+                            <div className="bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 shadow-lg">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] font-bold text-white">{movie.rating}</span>
+                            </div>
                         </div>
                     </div>
                   </div>

@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Plus, MessageSquare, Send } from 'lucide-react';
-import { Movie, ChatMessage } from '../types';
-import { getMovieChatResponse } from '../services/geminiService';
+import React, { useState, useEffect } from 'react';
+import { X, Play, Plus } from 'lucide-react';
+import { Movie } from '../types';
 import { Language, translations } from '../utils/translations';
 
 interface ModalProps {
@@ -13,11 +12,6 @@ interface ModalProps {
 
 export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [platform, setPlatform] = useState('');
   const t = translations[lang];
 
@@ -51,48 +45,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
     }
   }, [movie]);
 
-  useEffect(() => {
-    if (showChat && messages.length === 0) {
-        setMessages([{ role: 'model', text: `${t.aiIntro} ${movie?.title}.` }]);
-    }
-  }, [showChat, movie, messages.length, t.aiIntro]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   if (!movie) return null;
 
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(onClose, 500);
-  };
-
-  const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
-
-    if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
-       window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-
-    const userMsg = chatInput;
-    const newMessage: ChatMessage = { role: 'user', text: userMsg };
-    
-    // Створюємо нову історію миттєво, щоб передати її в API
-    const newHistory = [...messages, newMessage];
-    
-    setChatInput("");
-    setMessages(newHistory);
-    setIsLoading(true);
-
-    const aiResponse = await getMovieChatResponse(movie, newHistory, lang);
-    
-    if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
-       window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-    }
-
-    setMessages(prev => [...prev, { role: 'model', text: aiResponse }]);
-    setIsLoading(false);
   };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
@@ -166,73 +123,27 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                   <button className="flex-shrink-0 flex items-center justify-center w-11 h-11 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40 backdrop-blur-sm">
                     <Plus className="w-6 h-6" />
                   </button>
-                  <button 
-                    onClick={() => setShowChat(!showChat)}
-                    className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition ml-auto md:ml-0 shadow-lg font-bold ${showChat ? 'bg-purple-600 border-purple-600 text-white' : 'border-purple-500/50 text-purple-400 bg-black/40 backdrop-blur-sm'}`}
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="md:inline">AI</span>
-                  </button>
                 </div>
               </div>
             </div>
 
             <div className={`
-                px-6 md:px-10 py-8 md:py-10 grid md:grid-cols-[2fr_1fr] gap-8 md:gap-10 pb-32 md:pb-12 bg-[#141414]
+                px-6 md:px-10 py-8 md:py-10 pb-32 md:pb-12 bg-[#141414]
                 transition-all duration-700 delay-200 ease-out
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
             `}>
-                {!showChat ? (
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-4 text-sm md:text-lg flex-wrap font-medium">
-                            <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
-                            <span className="text-gray-400">{movie.year}</span>
-                            <span className="bg-[#333] px-2 rounded text-xs border border-gray-600/50 uppercase">{movie.rating}</span>
-                            <span className="text-gray-400">{movie.duration}</span>
-                            <span className="border border-gray-600 px-1.5 rounded text-[10px] text-gray-400">4K HDR</span>
-                        </div>
-                        <p className="text-base md:text-xl leading-relaxed text-gray-200">
-                            {movie.description}
-                        </p>
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4 text-sm md:text-lg flex-wrap font-medium">
+                        <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
+                        <span className="text-gray-400">{movie.year}</span>
+                        <span className="bg-[#333] px-2 rounded text-xs border border-gray-600/50 uppercase">{movie.rating}</span>
+                        <span className="text-gray-400">{movie.duration}</span>
+                        <span className="border border-gray-600 px-1.5 rounded text-[10px] text-gray-400">4K HDR</span>
                     </div>
-                ) : (
-                    <div className="col-span-2 h-[450px] md:h-[400px] flex flex-col bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-inner">
-                        <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
-                            {messages.map((msg, idx) => (
-                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-[15px] shadow-lg ${msg.role === 'user' ? 'bg-purple-600 text-white' : 'bg-[#2a2a2a] text-gray-200 border border-gray-700'}`}>
-                                        {msg.text}
-                                    </div>
-                                </div>
-                            ))}
-                            {isLoading && (
-                                <div className="flex justify-start animate-pulse">
-                                    <div className="bg-[#2a2a2a] text-gray-400 px-5 py-3 rounded-2xl text-sm border border-gray-700 italic">
-                                        {t.thinking}
-                                    </div>
-                                </div>
-                            )}
-                            <div ref={chatEndRef} />
-                        </div>
-                        <div className="p-4 border-t border-gray-800 bg-[#1a1a1a] flex gap-3">
-                            <input 
-                                type="text" 
-                                className="flex-1 bg-[#0a0a0a] text-white px-5 py-3.5 rounded-full border border-gray-700 focus:outline-none focus:border-purple-500 transition-colors text-[15px]"
-                                placeholder={t.askGemini}
-                                value={chatInput}
-                                onChange={(e) => setChatInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            />
-                            <button 
-                                onClick={handleSendMessage}
-                                className="bg-purple-600 p-3.5 rounded-full hover:bg-purple-700 transition active:scale-90 disabled:opacity-50 flex-shrink-0 shadow-lg"
-                                disabled={isLoading || !chatInput.trim()}
-                            >
-                                <Send className="w-6 h-6 text-white" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    <p className="text-base md:text-xl leading-relaxed text-gray-200">
+                        {movie.description}
+                    </p>
+                </div>
             </div>
         </div>
       </div>
