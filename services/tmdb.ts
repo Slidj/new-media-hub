@@ -3,9 +3,14 @@ import { Movie } from '../types';
 
 const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
 const BASE_URL = 'https://api.themoviedb.org/3';
-const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/original';
-// Змінено з w500 на w780 для кращої якості на Retina/OLED дисплеях мобільних телефонів
+
+// OPTIMIZATION:
+// w1280 is much lighter than 'original' but looks great on phones for banners
+const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280'; 
+// w780 is good for high-res details view
 const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w780';
+// w342 is perfect for the 3-column grid (much faster scroll)
+const SMALL_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w342';
 
 // Keep requests object for legacy or specific calls if needed
 const requests = {
@@ -50,6 +55,7 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
     description: result.overview,
     bannerUrl: result.backdrop_path ? `${IMAGE_BASE_URL}${result.backdrop_path}` : '',
     posterUrl: result.poster_path ? `${POSTER_BASE_URL}${result.poster_path}` : '',
+    smallPosterUrl: result.poster_path ? `${SMALL_POSTER_BASE_URL}${result.poster_path}` : '',
     genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
     duration: 'N/A',
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
@@ -148,14 +154,11 @@ export const searchContent = async (query: string, language: string = 'en-US'): 
 export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<string | undefined> => {
   try {
     const endpoint = isTv ? 'tv' : 'movie';
-    // Logo usually doesn't need localization, but sometimes specific languages have specific localized logos.
-    // TMDB handles language fallback automatically for images usually, but we keep 'en' priority for logos as they are often cleaner.
     const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}`);
     
     if (!request.ok) return undefined;
 
     const data = await request.json();
-    // Try to find a logo in English or no-language, or fallback to the first one
     const logo = data.logos?.find((l: any) => l.iso_639_1 === 'en' || l.iso_639_1 === null) || data.logos?.[0];
     
     if (logo) {

@@ -5,6 +5,7 @@ export interface Movie {
   description: string;
   bannerUrl: string;
   posterUrl: string;
+  smallPosterUrl: string; // New optimized field for grid view
   logoUrl?: string; // New field for clear logo (PNG)
   genre: string[];
   duration: string;

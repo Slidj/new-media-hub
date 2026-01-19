@@ -22,7 +22,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         setPlatform(window.Telegram.WebApp.platform);
       }
       
-      const timer = setTimeout(() => setIsVisible(true), 50);
+      // Невелика затримка перед анімацією, щоб браузер встиг відрендерити DOM
+      // requestAnimationFrame забезпечить старт анімації в наступному кадрі
+      const animId = requestAnimationFrame(() => {
+          setIsVisible(true);
+      });
 
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
@@ -34,7 +38,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       }
 
       return () => {
-        clearTimeout(timer);
+        cancelAnimationFrame(animId);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -50,63 +54,72 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(onClose, 500);
+    setTimeout(onClose, 400); // Таймінг має відповідати duration-300 + запас
   };
 
   const handlePlayClick = () => {
     onPlay(movie);
-    // Ми не закриваємо модалку автоматично, плеєр відкриється поверх неї.
-    // Або можна закрити: handleClose();
   };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
+      {/* 
+         PERFORMANCE FIX: 
+         - Видалено backdrop-blur-sm, який вбиває FPS на мобільних на весь екран.
+         - Замінено на звичайний напівпрозорий bg-black/90.
+      */}
       <div 
         className={`
-          absolute inset-0 bg-black/90 md:bg-black/80 backdrop-blur-sm 
-          transition-opacity duration-500 ease-in-out
+          absolute inset-0 bg-black/90
+          transition-opacity duration-300 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
       />
 
+      {/* 
+          PERFORMANCE FIX:
+          - will-change-transform: підказує браузеру виділити окремий шар.
+          - duration-300: швидша анімація відчувається плавнішою.
+          - translateZ(0): форсує hardware acceleration.
+      */}
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#141414] rounded-t-3xl md:rounded-lg overflow-hidden shadow-2xl 
-          transform transition-all duration-500 cubic-bezier(0.33, 1, 0.68, 1)
-          flex flex-col
+          transform-gpu transition-transform duration-300 cubic-bezier(0.2, 0, 0.2, 1)
+          flex flex-col will-change-transform
           ${isVisible 
-            ? 'translate-y-0 scale-100 opacity-100' 
-            : 'translate-y-full md:translate-y-12 md:scale-95 opacity-0'
+            ? 'translate-y-0 scale-100' 
+            : 'translate-y-full md:translate-y-12 md:scale-95'
           }
         `}
+        style={{ transform: isVisible ? 'translateY(0)' : 'translateY(100%)' }}
       >
         <button 
           onClick={handleClose}
           className={`
-            absolute z-50 h-12 w-12 rounded-full bg-black/50 md:bg-black/60 
-            grid place-items-center hover:bg-[#2a2a2a] backdrop-blur-md shadow-2xl
-            transition-all duration-500 delay-200 border border-white/10
-            ${isMobile ? 'top-20 right-5' : 'top-5 right-5'}
-            ${isVisible ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-50'}
+            absolute z-50 h-10 w-10 md:h-12 md:w-12 rounded-full bg-black/40 
+            grid place-items-center hover:bg-[#2a2a2a]
+            transition-all duration-300 border border-white/10
+            ${isMobile ? 'top-4 right-4' : 'top-5 right-5'}
+            ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
-          <X className="w-7 h-7 text-white" />
+          <X className="w-6 h-6 md:w-7 md:h-7 text-white" />
         </button>
 
-        <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar">
+        <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain">
             <div className="relative pt-[80%] md:pt-[56.25%] shrink-0 overflow-hidden bg-[#0a0a0a]">
               <div className="absolute top-0 left-0 w-full h-full">
+                {/* Використовуємо bannerUrl, який тепер w1280 (оптимізований), а не original */}
                 <img 
                   src={movie.bannerUrl} 
                   alt={movie.title} 
-                  className={`
-                    w-full h-full object-cover transition-transform duration-1000 ease-out
-                    ${isVisible ? 'scale-100' : 'scale-115'}
-                  `} 
+                  className="w-full h-full object-cover"
+                  loading="eager"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-[#141414]/40 to-transparent"></div>
@@ -115,11 +128,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
               <div 
                 className={`
                     absolute bottom-0 left-0 w-full p-6 md:p-10 space-y-4 md:space-y-6
-                    transition-all duration-700 delay-100 ease-out
-                    ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                    transition-opacity duration-500 delay-100 ease-out
+                    ${isVisible ? 'opacity-100' : 'opacity-0'}
                 `}
               >
-                <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-2xl uppercase tracking-tighter">
+                <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg uppercase tracking-tighter">
                     {movie.title}
                 </h2>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
@@ -130,7 +143,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     <Play className="w-6 h-6 fill-black" />
                     {t.play}
                   </button>
-                  <button className="flex-shrink-0 flex items-center justify-center w-11 h-11 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/40 backdrop-blur-sm">
+                  <button className="flex-shrink-0 flex items-center justify-center w-11 h-11 border-2 border-gray-500 rounded-full hover:border-white text-gray-300 hover:text-white transition bg-black/20">
                     <Plus className="w-6 h-6" />
                   </button>
                 </div>
@@ -138,9 +151,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             </div>
 
             <div className={`
-                px-6 md:px-10 py-8 md:py-10 pb-32 md:pb-12 bg-[#141414]
-                transition-all duration-700 delay-200 ease-out
-                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                px-6 md:px-10 py-6 md:py-10 pb-32 md:pb-12 bg-[#141414]
+                transition-opacity duration-500 delay-200
+                ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 text-sm md:text-lg flex-wrap font-medium">
@@ -148,7 +161,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                         <span className="text-gray-400">{movie.year}</span>
                         <span className="bg-[#333] px-2 rounded text-xs border border-gray-600/50 uppercase">{movie.rating}</span>
                         <span className="text-gray-400">{movie.duration}</span>
-                        <span className="border border-gray-600 px-1.5 rounded text-[10px] text-gray-400">4K HDR</span>
+                        <span className="border border-gray-600 px-1.5 rounded text-[10px] text-gray-400">HD</span>
                     </div>
                     <p className="text-base md:text-xl leading-relaxed text-gray-200">
                         {movie.description}

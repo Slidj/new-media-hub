@@ -241,7 +241,7 @@ function App() {
                         onClick={() => setSelectedMovie(movie)}
                     >
                         <img
-                        src={movie.posterUrl}
+                        src={movie.smallPosterUrl || movie.posterUrl}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         alt={movie.title}
                         loading="lazy"
