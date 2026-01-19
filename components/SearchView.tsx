@@ -35,10 +35,17 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    <div className="min-h-screen bg-black pt-32 md:pt-40 pb-24 px-4 md:px-12 pt-safe">
+    // Збільшено pt-32 -> pt-48, щоб компенсувати опущену шапку
+    <div className="min-h-screen bg-black pt-48 md:pt-52 pb-24 px-4 md:px-12 pt-safe">
       {/* Search Input Bar */}
-      <div className="sticky top-24 md:top-32 z-30 mb-10 pt-2">
-        <div className="relative max-w-2xl mx-auto shadow-2xl">
+      {/* 
+          1. top-24 -> top-32: щоб прилипало нижче, під логотипом.
+          2. Додано bg-black/95 backdrop-blur-xl: щоб контент не просвічувався при скролі.
+          3. Додано py-4: для кращого візуального відокремлення.
+          4. Додано z-40: щоб перекривати картки, але бути під Navbar (який z-100).
+      */}
+      <div className="sticky top-28 md:top-32 z-40 mb-6 py-4 bg-black/95 backdrop-blur-xl border-b border-white/10 -mx-4 px-4 md:-mx-12 md:px-12 shadow-lg">
+        <div className="relative max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
             </div>
