@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'uk' | 'ru';
 
 export const translations = {
@@ -5,6 +6,7 @@ export const translations = {
     home: "Home",
     tvShows: "TV Shows",
     movies: "Movies",
+    cartoons: "Cartoons",
     newPopular: "New & Popular",
     myList: "My List",
     kids: "Kids",
@@ -23,7 +25,7 @@ export const translations = {
     askGemini: "Ask Gemini about the movie...",
     aiIntro: "Hi! Ask me anything about",
     endOfList: "You've reached the end of the list.",
-    trending: "Trending Now",
+    trending: "Trending",
     global: "Global",
     errorGemini: "Sorry, I'm having trouble connecting to the movie database right now.",
     configureKey: "Please configure the Gemini API Key.",
@@ -34,6 +36,7 @@ export const translations = {
     home: "Головна",
     tvShows: "Серіали",
     movies: "Фільми",
+    cartoons: "Мультики",
     newPopular: "Нові та популярні",
     myList: "Мій список",
     kids: "Діти",
@@ -63,6 +66,7 @@ export const translations = {
     home: "Главная",
     tvShows: "Сериалы",
     movies: "Фильмы",
+    cartoons: "Мультики",
     newPopular: "Новое и популярное",
     myList: "Мой список",
     kids: "Дети",

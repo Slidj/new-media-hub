@@ -7,8 +7,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/original';
 // Змінено з w500 на w780 для кращої якості на Retina/OLED дисплеях мобільних телефонів
 const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w780';
 
-// Keep requests object for legacy or specific calls if needed, 
-// but we will primarily use the function below for the main feed.
+// Keep requests object for legacy or specific calls if needed
 const requests = {
   fetchTopRated: `/movie/top_rated?api_key=${API_KEY}&language=en-US`,
 };
@@ -58,14 +57,49 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
     const url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=${language}&page=${page}`;
     const request = await fetch(url);
     const data = await request.json();
-    // Filter to ensure we have images
     return data.results
-      .filter((m: any) => m.poster_path) // Ensure poster exists for the grid
+      .filter((m: any) => m.poster_path)
       .map(mapResultToMovie);
   } catch (error) {
     console.error("Error fetching trending:", error);
     return [];
   }
+};
+
+// Fetch Movies only
+export const fetchDiscoverMovies = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
+    try {
+      const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
+      const request = await fetch(url);
+      const data = await request.json();
+      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'movie'}));
+    } catch (error) {
+      return [];
+    }
+};
+
+// Fetch TV Shows only
+export const fetchDiscoverTV = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
+    try {
+      const url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
+      const request = await fetch(url);
+      const data = await request.json();
+      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'tv'}));
+    } catch (error) {
+      return [];
+    }
+};
+
+// Fetch Cartoons (Animation Genre ID = 16)
+export const fetchDiscoverCartoons = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
+    try {
+      const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`;
+      const request = await fetch(url);
+      const data = await request.json();
+      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'movie'}));
+    } catch (error) {
+      return [];
+    }
 };
 
 export const searchContent = async (query: string, language: string = 'en-US'): Promise<Movie[]> => {
@@ -106,6 +140,9 @@ export const API = {
   requests,
   fetchMovies,
   fetchTrending,
+  fetchDiscoverMovies,
+  fetchDiscoverTV,
+  fetchDiscoverCartoons,
   searchContent,
   fetchMovieLogo
 };

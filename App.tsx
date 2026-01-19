@@ -7,6 +7,7 @@ import { BottomNav } from './components/BottomNav';
 import { SkeletonCard } from './components/SkeletonCard';
 import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
+import { CategoryNav, Category } from './components/CategoryNav';
 import { Movie, WebAppUser } from './types';
 import { API } from './services/tmdb';
 import { Language, getLanguage, translations } from './utils/translations';
@@ -19,6 +20,8 @@ function App() {
   const [lang, setLang] = useState<Language>('en');
   
   const [activeTab, setActiveTab] = useState<'home' | 'search'>('home');
+  const [activeCategory, setActiveCategory] = useState<Category>('trending');
+  
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [page, setPage] = useState(1);
@@ -65,7 +68,17 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const loadMovies = useCallback(async (pageNum: number, language: string) => {
+  // Handler for changing categories
+  const handleCategoryChange = (newCategory: Category) => {
+    if (activeCategory === newCategory) return;
+    setActiveCategory(newCategory);
+    setMovies([]); // Clear current list immediately
+    setPage(1); // Reset page
+    setHasMore(true);
+    // Note: The main useEffect listening to [activeCategory, page] will trigger the load
+  };
+
+  const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
     if (isLoadingRef.current) return;
     
     isLoadingRef.current = true;
@@ -74,14 +87,28 @@ function App() {
     const locale = language === 'uk' ? 'uk-UA' : language === 'ru' ? 'ru-RU' : 'en-US';
     
     try {
-        const newMovies = await API.fetchTrending(pageNum, locale);
+        let newMovies: Movie[] = [];
+        
+        switch (category) {
+            case 'movies':
+                newMovies = await API.fetchDiscoverMovies(pageNum, locale);
+                break;
+            case 'tv':
+                newMovies = await API.fetchDiscoverTV(pageNum, locale);
+                break;
+            case 'cartoons':
+                newMovies = await API.fetchDiscoverCartoons(pageNum, locale);
+                break;
+            case 'trending':
+            default:
+                newMovies = await API.fetchTrending(pageNum, locale);
+                break;
+        }
         
         if (newMovies.length === 0) {
           setHasMore(false);
         } else {
           setMovies(prev => {
-            // FIX: If it's the first page, replace content entirely to avoid 
-            // deduplication issues against stale state during race conditions.
             if (pageNum === 1) return newMovies;
 
             const existingIds = new Set(prev.map(m => m.id));
@@ -89,8 +116,10 @@ function App() {
             return [...prev, ...uniqueNew];
           });
 
+          // Only set hero if it's the first page and we don't have one (or refreshing full list)
+          // For sub-categories, we might want to keep the main hero or update it. 
+          // Let's update it to match the category context.
           if (pageNum === 1 && newMovies.length > 0) {
-            // Pick a random hero only if we haven't locked one in yet, or simply refresh it on reload
             const randomIndex = Math.floor(Math.random() * Math.min(newMovies.length, 10));
             const randomHero = newMovies[randomIndex]; 
             const isTv = randomHero.mediaType === 'tv';
@@ -106,12 +135,18 @@ function App() {
     }
   }, []);
 
-  // Initial Load Effect
+  // Main Load Effect (Handles Initial Load + Page Changes + Category Changes)
   useEffect(() => {
-    if (activeTab === 'home' && movies.length === 0 && !isLoadingRef.current) {
-        loadMovies(1, lang);
+    if (activeTab === 'home' && !isLoadingRef.current) {
+        // If movies are empty or we are on page > 1, or it's just a raw trigger
+        // The isLoadingRef check prevents double-firing in strict mode, 
+        // but we need to ensure we fetch when category changes
+        
+        // We add a small logic check: if we have movies but the page is 1, and category changed, we need to fetch.
+        // The simplest way is to rely on the dependency array.
+        loadMovies(page, lang, activeCategory);
     }
-  }, [lang, activeTab, loadMovies, movies.length]);
+  }, [page, lang, activeTab, activeCategory, loadMovies]);
 
   // Infinite Scroll Logic
   useEffect(() => {
@@ -122,7 +157,6 @@ function App() {
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
 
-      // Trigger next page load when user is 800px from bottom
       if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
@@ -131,13 +165,6 @@ function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, activeTab]);
-
-  // Page Change Effect
-  useEffect(() => {
-    if (page > 1) {
-      loadMovies(page, lang);
-    }
-  }, [page, lang, loadMovies]);
 
   if (showSplash) {
     return <Preloader />;
@@ -149,12 +176,22 @@ function App() {
         user={user} 
         lang={lang} 
         onSearchClick={() => setActiveTab('search')}
-        onHomeClick={() => setActiveTab('home')}
+        onHomeClick={() => {
+            setActiveTab('home');
+            handleCategoryChange('trending');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         activeTab={activeTab}
       />
       
       {activeTab === 'home' ? (
         <main className="relative w-full">
+          <CategoryNav 
+             lang={lang} 
+             activeCategory={activeCategory} 
+             onSelectCategory={handleCategoryChange} 
+          />
+
           {featuredMovie && (
               <Hero 
                   movie={featuredMovie} 
@@ -167,18 +204,16 @@ function App() {
           <section className="relative z-30 mt-4 md:-mt-12 px-2 md:px-12 pb-10">
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
               {movies.map((movie, index) => {
-                const isTop10 = index < 10;
-                // Cap delay to ensure elements don't take forever to appear
+                // Determine Top 10 badge only if trending category
+                const isTop10 = activeCategory === 'trending' && index < 10;
                 const delay = Math.min((index % 15) * 50, 500); 
                 
                 return (
-                  // Wrapper for Fade In Animation
                   <div 
                     key={`${movie.id}-${index}`}
                     className="opacity-0 animate-fade-in-up fill-mode-forwards"
                     style={{ animationDelay: `${delay}ms` }}
                   >
-                    {/* Interactive Card with Scale/Click Animations */}
                     <div 
                         className="
                             relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
@@ -238,7 +273,7 @@ function App() {
               ))}
             </div>
             
-            {!hasMore && (
+            {!hasMore && movies.length > 0 && (
               <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                 <p>{translations[lang].endOfList}</p>
               </div>
