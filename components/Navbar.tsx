@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, User } from 'lucide-react';
+import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser } from '../types';
 import { Language, translations } from '../utils/translations';
 
@@ -64,12 +64,18 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
           </div>
         </div>
 
-        <div className="flex items-center gap-5 text-white">
+        <div className="flex items-center gap-4 md:gap-6 text-white">
+          {/* Search: Приховано на мобільних (є в нижньому меню), показано на десктопі */}
           <Search 
-            className={`w-6 h-6 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
+            className={`hidden md:block w-6 h-6 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
             onClick={onSearchClick}
           />
-          <Bell className="hidden md:block w-6 h-6 cursor-pointer hover:text-gray-300" />
+
+          {/* Gift: Нова іконка (заділ на майбутнє) - видима всюди */}
+          <Gift className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
+
+          {/* Bell: Тепер видима і на мобільних пристроях */}
+          <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
           
           <div className="flex items-center gap-2 cursor-pointer group">
             <div className="relative w-8 h-8 rounded overflow-hidden shadow-md group-hover:ring-2 ring-white/20 transition bg-[#333]">
