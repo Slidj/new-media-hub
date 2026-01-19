@@ -51,16 +51,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Cinematic Premium Style (Reduced Size) */}
+          {/* Logo - Cinematic Premium Style (Bebas Neue) */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95 origin-left"
             onClick={onHomeClick}
           >
             <h1 
-                className="text-2xl md:text-3xl font-black tracking-tighter text-[#E50914] uppercase transform scale-y-110 origin-left"
-                style={{ 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8), 0 0 15px rgba(229, 9, 20, 0.3)' 
-                }}
+                className="text-3xl md:text-5xl font-bebas tracking-normal text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
             >
               MEDIA HUB
             </h1>

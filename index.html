@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       // Ініціалізація глобального об'єкта для ключів
-      // Це гарантує, що сервіс знайде ключ незалежно від бандлера
       window.process = window.process || {};
       window.process.env = window.process.env || {};
       // Вставте сюди ваш робочий ключ API
@@ -21,10 +20,16 @@
             colors: {
               netflix: { red: '#E50914', dark: '#141414', gray: '#e5e5e5' }
             },
-            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            fontFamily: { 
+              sans: ['Inter', 'sans-serif'],
+              bebas: ['"Bebas Neue"', 'sans-serif']
+            },
             animation: { 
               'splash-zoom': 'splash-zoom 2.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards',
               'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            },
+            dropShadow: {
+              'logo': '2px 2px 4px rgba(0, 0, 0, 0.5)'
             }
           }
         }
@@ -69,7 +74,7 @@
         opacity: 0;
       }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
