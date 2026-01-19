@@ -142,9 +142,9 @@ function App() {
               />
           )}
           
-          {/* Changed -mt-6 to mt-4 for mobile to create space between buttons and cards */}
-          <section className="relative z-30 mt-4 md:-mt-12 px-4 md:px-12 pb-10">
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+          {/* Changed px-4 to px-2 and gap-3 to gap-2 to make cards bigger */}
+          <section className="relative z-30 mt-4 md:-mt-12 px-2 md:px-12 pb-10">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
                 return (

@@ -47,17 +47,18 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* mt-24 — перевірений відступ для Telegram Mini App */
-          ${isTelegram ? 'mt-24 mb-4' : 'py-4 md:py-6'}
+          /* mt-16 — трохи підняли логотип вище (було mt-24) */
+          ${isTelegram ? 'mt-16 mb-4' : 'py-4 md:py-6'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
           {/* Logo */}
           <div 
-            className="cursor-pointer transition-transform duration-300 active:scale-95"
+            className="cursor-pointer transition-transform duration-300 active:scale-95 origin-left"
             onClick={onHomeClick}
           >
-            <h1 className="text-xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase">
+            {/* Збільшили шрифт та розтягнули літери по висоті (scale-y-110) */}
+            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase transform scale-y-110">
               MEDIA HUB
             </h1>
           </div>
