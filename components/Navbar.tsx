@@ -62,20 +62,6 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
               MEDIA HUB
             </h1>
           </div>
-          
-          {/* Desktop Menu */}
-          <ul className="hidden lg:flex gap-6 text-sm text-gray-200 font-medium">
-            <li 
-                className={`cursor-pointer transition hover:text-white ${activeTab === 'home' ? 'text-white font-bold' : ''}`}
-                onClick={onHomeClick}
-            >
-                {t.home}
-            </li>
-            <li className="cursor-pointer hover:text-white transition">{t.tvShows}</li>
-            <li className="cursor-pointer hover:text-white transition">{t.movies}</li>
-            <li className="cursor-pointer hover:text-white transition">{t.newPopular}</li>
-            <li className="cursor-pointer hover:text-white transition">{t.myList}</li>
-          </ul>
         </div>
 
         <div className="flex items-center gap-5 text-white">
