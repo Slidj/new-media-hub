@@ -136,6 +136,18 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
   }
 };
 
+export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promise<string | null> => {
+    try {
+        const url = `${BASE_URL}/${type}/${id}/external_ids?api_key=${API_KEY}`;
+        const request = await fetch(url);
+        const data = await request.json();
+        return data.imdb_id || null;
+    } catch (error) {
+        console.error("Error fetching external IDs:", error);
+        return null;
+    }
+};
+
 export const API = {
   requests,
   fetchMovies,
@@ -144,5 +156,6 @@ export const API = {
   fetchDiscoverTV,
   fetchDiscoverCartoons,
   searchContent,
-  fetchMovieLogo
+  fetchMovieLogo,
+  fetchExternalIds
 };
