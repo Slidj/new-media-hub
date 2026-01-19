@@ -47,18 +47,21 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          /* mt-16 — трохи підняли логотип вище (було mt-24) */
-          ${isTelegram ? 'mt-16 mb-4' : 'py-4 md:py-6'}
+          ${isTelegram ? 'mt-24 mb-4' : 'py-4 md:py-6'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo */}
+          {/* Logo - Cinematic Premium Style (Reduced Size) */}
           <div 
             className="cursor-pointer transition-transform duration-300 active:scale-95 origin-left"
             onClick={onHomeClick}
           >
-            {/* Збільшили шрифт та розтягнули літери по висоті (scale-y-110) */}
-            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-[#E50914] drop-shadow-md uppercase transform scale-y-110">
+            <h1 
+                className="text-2xl md:text-3xl font-black tracking-tighter text-[#E50914] uppercase transform scale-y-110 origin-left"
+                style={{ 
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8), 0 0 15px rgba(229, 9, 20, 0.3)' 
+                }}
+            >
               MEDIA HUB
             </h1>
           </div>
