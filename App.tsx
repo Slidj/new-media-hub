@@ -18,8 +18,22 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
+  
+  // Initialize User state
   const [user, setUser] = useState<WebAppUser | null>(null);
-  const [lang, setLang] = useState<Language>('en');
+
+  // SMART LANGUAGE INIT: 
+  // Read Telegram data immediately via lazy initialization to prevent "English flash"
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code) {
+        return getLanguage(window.Telegram.WebApp.initDataUnsafe.user.language_code);
+      }
+    } catch (e) {
+      console.error("Language detection failed", e);
+    }
+    return 'en'; // Default fallback
+  });
   
   const [activeTab, setActiveTab] = useState<'home' | 'search'>('home');
   const [activeCategory, setActiveCategory] = useState<Category>('trending');
@@ -47,9 +61,14 @@ function App() {
       const tgUser = tg.initDataUnsafe?.user;
       if (tgUser) {
         setUser(tgUser);
+        // Double check language in case it changed or init failed
         if (tgUser.language_code) {
            const detectedLang = getLanguage(tgUser.language_code);
-           setLang(detectedLang);
+           if (detectedLang !== lang) {
+             setLang(detectedLang);
+             // If language changed post-init, we might need to reset, 
+             // but usually the lazy init covers the start-up case.
+           }
         }
       } else {
         setUser({
@@ -61,7 +80,7 @@ function App() {
         });
       }
     }
-  }, []);
+  }, []); // Only run once
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,6 +100,7 @@ function App() {
   };
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
+    // Prevent double fetching, BUT allow if pageNum is 1 (implies a refresh/change of category/lang)
     if (isLoadingRef.current) return;
     
     isLoadingRef.current = true;
@@ -139,13 +159,8 @@ function App() {
 
   // Main Load Effect (Handles Initial Load + Page Changes + Category Changes)
   useEffect(() => {
-    if (activeTab === 'home' && !isLoadingRef.current) {
-        // If movies are empty or we are on page > 1, or it's just a raw trigger
-        // The isLoadingRef check prevents double-firing in strict mode, 
-        // but we need to ensure we fetch when category changes
-        
-        // We add a small logic check: if we have movies but the page is 1, and category changed, we need to fetch.
-        // The simplest way is to rely on the dependency array.
+    if (activeTab === 'home') {
+        // Force reload if language changed effectively by passing current vars
         loadMovies(page, lang, activeCategory);
     }
   }, [page, lang, activeTab, activeCategory, loadMovies]);

@@ -12,17 +12,37 @@ const requests = {
   fetchTopRated: `/movie/top_rated?api_key=${API_KEY}&language=en-US`,
 };
 
-const genreMap: { [key: number]: string } = {
-  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
-  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
-  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
-  10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
-  10759: 'Action & Adventure', 10765: 'Sci-Fi & Fantasy'
+// Multilingual Genre Map
+const genreMap: Record<string, Record<number, string>> = {
+  'en-US': {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+    99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+    27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+    10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
+    10759: 'Action & Adventure', 10765: 'Sci-Fi & Fantasy'
+  },
+  'uk-UA': {
+    28: 'Бойовик', 12: 'Пригоди', 16: 'Мультфільм', 35: 'Комедія', 80: 'Кримінал',
+    99: 'Документальний', 18: 'Драма', 10751: 'Сімейний', 14: 'Фентезі', 36: 'Історичний',
+    27: 'Жахи', 10402: 'Музика', 9648: 'Містика', 10749: 'Мелодрама', 878: 'Фантастика',
+    10770: 'ТБ Фільм', 53: 'Трилер', 10752: 'Військовий', 37: 'Вестерн',
+    10759: 'Екшн і Пригоди', 10765: 'Фантастика і Фентезі'
+  },
+  'ru-RU': {
+    28: 'Боевик', 12: 'Приключения', 16: 'Мультфильм', 35: 'Комедия', 80: 'Криминал',
+    99: 'Документальный', 18: 'Драма', 10751: 'Семейный', 14: 'Фэнтези', 36: 'История',
+    27: 'Ужасы', 10402: 'Музыка', 9648: 'Мистика', 10749: 'Мелодрама', 878: 'Фантастика',
+    10770: 'ТВ Фильм', 53: 'Триллер', 10752: 'Военный', 37: 'Вестерн',
+    10759: 'Экшн и Приключения', 10765: 'Фантастика и Фэнтези'
+  }
 };
 
-const mapResultToMovie = (result: any): Movie => {
+const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
   // Determine if it is TV or Movie based on media_type field or presence of 'name' vs 'title'
   const isTv = result.media_type === 'tv' || !!result.name;
+  
+  // Use correct genre map based on locale, fallback to English if not found
+  const currentGenreMap = genreMap[language] || genreMap['en-US'];
 
   return {
     id: result.id.toString(),
@@ -30,7 +50,7 @@ const mapResultToMovie = (result: any): Movie => {
     description: result.overview,
     bannerUrl: result.backdrop_path ? `${IMAGE_BASE_URL}${result.backdrop_path}` : '',
     posterUrl: result.poster_path ? `${POSTER_BASE_URL}${result.poster_path}` : '',
-    genre: result.genre_ids ? result.genre_ids.map((id: number) => genreMap[id] || 'General') : ['General'],
+    genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
     duration: 'N/A',
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
     year: parseInt((result.release_date || result.first_air_date || '2024').substring(0, 4)),
@@ -40,11 +60,13 @@ const mapResultToMovie = (result: any): Movie => {
 };
 
 // Generic fetch
-export const fetchMovies = async (url: string): Promise<Movie[]> => {
+export const fetchMovies = async (url: string, language: string = 'en-US'): Promise<Movie[]> => {
   try {
     const request = await fetch(`${BASE_URL}${url}`);
     const data = await request.json();
-    return data.results.filter((m: any) => m.backdrop_path || m.poster_path).map(mapResultToMovie);
+    return data.results
+        .filter((m: any) => m.backdrop_path || m.poster_path)
+        .map((m: any) => mapResultToMovie(m, language));
   } catch (error) {
     console.error("Error fetching movies:", error);
     return [];
@@ -59,7 +81,7 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
     const data = await request.json();
     return data.results
       .filter((m: any) => m.poster_path)
-      .map(mapResultToMovie);
+      .map((m: any) => mapResultToMovie(m, language));
   } catch (error) {
     console.error("Error fetching trending:", error);
     return [];
@@ -72,7 +94,9 @@ export const fetchDiscoverMovies = async (page: number = 1, language: string = '
       const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
       const data = await request.json();
-      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'movie'}));
+      return data.results
+        .filter((m: any) => m.poster_path)
+        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
     } catch (error) {
       return [];
     }
@@ -84,7 +108,9 @@ export const fetchDiscoverTV = async (page: number = 1, language: string = 'en-U
       const url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
       const data = await request.json();
-      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'tv'}));
+      return data.results
+        .filter((m: any) => m.poster_path)
+        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'tv'}));
     } catch (error) {
       return [];
     }
@@ -96,7 +122,9 @@ export const fetchDiscoverCartoons = async (page: number = 1, language: string =
       const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
       const data = await request.json();
-      return data.results.filter((m: any) => m.poster_path).map((m: any) => ({...mapResultToMovie(m), mediaType: 'movie'}));
+      return data.results
+        .filter((m: any) => m.poster_path)
+        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
     } catch (error) {
       return [];
     }
@@ -110,7 +138,7 @@ export const searchContent = async (query: string, language: string = 'en-US'): 
         const data = await request.json();
         return data.results
             .filter((m: any) => m.media_type !== 'person' && (m.poster_path || m.backdrop_path))
-            .map(mapResultToMovie);
+            .map((m: any) => mapResultToMovie(m, language));
     } catch (error) {
         console.error("Error searching content:", error);
         return [];
@@ -120,12 +148,15 @@ export const searchContent = async (query: string, language: string = 'en-US'): 
 export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<string | undefined> => {
   try {
     const endpoint = isTv ? 'tv' : 'movie';
+    // Logo usually doesn't need localization, but sometimes specific languages have specific localized logos.
+    // TMDB handles language fallback automatically for images usually, but we keep 'en' priority for logos as they are often cleaner.
     const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}`);
     
     if (!request.ok) return undefined;
 
     const data = await request.json();
-    const logo = data.logos?.find((l: any) => l.iso_639_1 === 'en' || l.iso_639_1 === null);
+    // Try to find a logo in English or no-language, or fallback to the first one
+    const logo = data.logos?.find((l: any) => l.iso_639_1 === 'en' || l.iso_639_1 === null) || data.logos?.[0];
     
     if (logo) {
       return `${IMAGE_BASE_URL}${logo.file_path}`;
