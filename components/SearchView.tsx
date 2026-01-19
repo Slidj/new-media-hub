@@ -35,23 +35,20 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    // Збільшено pt-32 -> pt-48, щоб компенсувати опущену шапку
-    <div className="min-h-screen bg-black pt-48 md:pt-52 pb-24 px-4 md:px-12 pt-safe">
-      {/* Search Input Bar */}
-      {/* 
-          1. top-24 -> top-32: щоб прилипало нижче, під логотипом.
-          2. Додано bg-black/95 backdrop-blur-xl: щоб контент не просвічувався при скролі.
-          3. Додано py-4: для кращого візуального відокремлення.
-          4. Додано z-40: щоб перекривати картки, але бути під Navbar (який z-100).
-      */}
-      <div className="sticky top-28 md:top-32 z-40 mb-6 py-4 bg-black/95 backdrop-blur-xl border-b border-white/10 -mx-4 px-4 md:-mx-12 md:px-12 shadow-lg">
+    // Fixed container: займає весь екран, не рухається разом зі сторінкою
+    // z-40: під Navbar (z-100), але над контентом
+    // pt-[140px]: відступ зверху, щоб компенсувати mt-24 та висоту логотипу в шапці
+    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[140px] md:pt-[160px] pb-[80px]">
+      
+      {/* Static Search Bar Area - Цей блок не скролиться */}
+      <div className="w-full px-4 md:px-12 py-2 shrink-0 bg-black z-50">
         <div className="relative max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
                 type="text"
-                className="block w-full pl-12 pr-12 py-4 border border-gray-700/50 rounded-lg leading-5 bg-[#1a1a1a] text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-[#222] focus:border-gray-500 sm:text-sm transition-all shadow-inner"
+                className="block w-full pl-12 pr-12 py-3.5 border border-gray-800 rounded bg-[#1a1a1a] text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-[#222] focus:border-gray-600 sm:text-sm transition-all"
                 placeholder={t.search}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -68,8 +65,8 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
         </div>
       </div>
 
-      {/* Results Container */}
-      <div className="relative z-10">
+      {/* Scrollable Results Area - Скролиться ТІЛЬКИ цей блок */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-12 pt-4 pb-24 overscroll-contain no-scrollbar">
           {loading ? (
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
@@ -77,21 +74,21 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                 ))}
             </div>
           ) : results.length > 0 ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 animate-fade-in">
                 {results.map((movie) => (
                   <div 
                     key={movie.id} 
                     className="
-                        relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
+                        relative cursor-pointer aspect-[2/3] rounded overflow-hidden bg-[#181818] group
                         transition-all duration-300 ease-out
                         hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
-                        active:scale-90 active:brightness-75
+                        active:scale-95 active:brightness-75
                     "
                     onClick={() => onMovieSelect(movie)}
                   >
                     <img
                       src={movie.posterUrl || movie.bannerUrl}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                       alt={movie.title}
                       loading="lazy"
                     />
@@ -115,11 +112,11 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                 ))}
               </div>
           ) : query.length > 1 ? (
-             <div className="flex flex-col items-center justify-center pt-20 text-gray-500">
+             <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                 <p className="text-lg font-medium">No results found for "{query}"</p>
              </div>
           ) : (
-             <div className="flex flex-col items-center justify-center pt-20 text-gray-500">
+             <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-500">
                 <Search className="w-16 h-16 mb-4 opacity-10" />
                 <p className="text-lg font-medium tracking-tight">{t.search}</p>
                 <p className="text-sm opacity-40">Find your next favorite story</p>
