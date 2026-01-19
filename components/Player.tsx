@@ -11,18 +11,20 @@ interface PlayerProps {
 export const Player: React.FC<PlayerProps> = ({ movie, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ваше посилання з токеном
+  // Базовий URL CDN
   const BASE_PLAYER_URL = 'https://68865.svetacdn.in/lQRlkhufNdas';
   
-  // Формування URL: база + тип (movie/tv) + ID з TMDB
-  // Приклад: https://68865.svetacdn.in/lQRlkhufNdas/movie/58804
-  const embedUrl = `${BASE_PLAYER_URL}/${movie.mediaType}/${movie.id}`;
+  // Використовуємо універсальний параметр tmdb_id.
+  // Це дозволяє плеєру автоматично знайти контент (фільм або серіал) у своїй базі,
+  // ігноруючи можливі помилки в шляхах типу /movie/ vs /tv-series/
+  const embedUrl = `${BASE_PLAYER_URL}?tmdb_id=${movie.id}`;
 
   useEffect(() => {
-    // Блокуємо скрол на сторінці
+    // Блокуємо скрол на сторінці під час перегляду
     document.body.style.overflow = 'hidden';
 
-    // Fail-safe: прибираємо лоадер через 3 секунди, навіть якщо iframe не відповів (щоб користувач бачив плеєр)
+    // Fail-safe: прибираємо лоадер через 3 секунди, щоб користувач побачив плеєр
+    // навіть якщо подія onLoad не спрацювала коректно
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 3000);
