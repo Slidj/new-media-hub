@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Modal } from './components/Modal';
@@ -24,6 +24,9 @@ function App() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  
+  // Ref to track if a request is currently in flight to prevent race conditions
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -63,37 +66,54 @@ function App() {
   }, []);
 
   const loadMovies = useCallback(async (pageNum: number, language: string) => {
+    if (isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
     setLoading(true);
+    
     const locale = language === 'uk' ? 'uk-UA' : language === 'ru' ? 'ru-RU' : 'en-US';
     
-    const newMovies = await API.fetchTrending(pageNum, locale);
-    
-    if (newMovies.length === 0) {
-      setHasMore(false);
-    } else {
-      setMovies(prev => {
-        const existingIds = new Set(prev.map(m => m.id));
-        const uniqueNew = newMovies.filter(m => !existingIds.has(m.id));
-        return pageNum === 1 ? uniqueNew : [...prev, ...uniqueNew];
-      });
+    try {
+        const newMovies = await API.fetchTrending(pageNum, locale);
+        
+        if (newMovies.length === 0) {
+          setHasMore(false);
+        } else {
+          setMovies(prev => {
+            // FIX: If it's the first page, replace content entirely to avoid 
+            // deduplication issues against stale state during race conditions.
+            if (pageNum === 1) return newMovies;
 
-      if (pageNum === 1 && newMovies.length > 0) {
-        const randomIndex = Math.floor(Math.random() * Math.min(newMovies.length, 10));
-        const randomHero = newMovies[randomIndex]; 
-        const isTv = randomHero.mediaType === 'tv';
-        const logoUrl = await API.fetchMovieLogo(randomHero.id, isTv);
-        setFeaturedMovie({ ...randomHero, logoUrl });
-      }
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNew = newMovies.filter(m => !existingIds.has(m.id));
+            return [...prev, ...uniqueNew];
+          });
+
+          if (pageNum === 1 && newMovies.length > 0) {
+            // Pick a random hero only if we haven't locked one in yet, or simply refresh it on reload
+            const randomIndex = Math.floor(Math.random() * Math.min(newMovies.length, 10));
+            const randomHero = newMovies[randomIndex]; 
+            const isTv = randomHero.mediaType === 'tv';
+            const logoUrl = await API.fetchMovieLogo(randomHero.id, isTv);
+            setFeaturedMovie({ ...randomHero, logoUrl });
+          }
+        }
+    } catch (error) {
+        console.error("Failed to load movies", error);
+    } finally {
+        setLoading(false);
+        isLoadingRef.current = false;
     }
-    setLoading(false);
   }, []);
 
+  // Initial Load Effect
   useEffect(() => {
-    if (activeTab === 'home' && movies.length === 0) {
-        loadMovies(page, lang);
+    if (activeTab === 'home' && movies.length === 0 && !isLoadingRef.current) {
+        loadMovies(1, lang);
     }
-  }, [lang, loadMovies, activeTab, movies.length, page]);
+  }, [lang, activeTab, loadMovies, movies.length]);
 
+  // Infinite Scroll Logic
   useEffect(() => {
     if (activeTab !== 'home') return;
 
@@ -102,7 +122,8 @@ function App() {
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
 
-      if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore) {
+      // Trigger next page load when user is 800px from bottom
+      if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
@@ -111,6 +132,7 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, activeTab]);
 
+  // Page Change Effect
   useEffect(() => {
     if (page > 1) {
       loadMovies(page, lang);
@@ -146,13 +168,14 @@ function App() {
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
-                const delay = (index % 15) * 50; 
+                // Cap delay to ensure elements don't take forever to appear
+                const delay = Math.min((index % 15) * 50, 500); 
                 
                 return (
                   // Wrapper for Fade In Animation
                   <div 
                     key={`${movie.id}-${index}`}
-                    className="opacity-0 animate-fade-in-up"
+                    className="opacity-0 animate-fade-in-up fill-mode-forwards"
                     style={{ animationDelay: `${delay}ms` }}
                   >
                     {/* Interactive Card with Scale/Click Animations */}
