@@ -70,20 +70,24 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
           {loading ? (
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
-                    <SkeletonCard key={`skeleton-search-${i}`} />
+                    <div key={`skeleton-search-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                        <SkeletonCard />
+                    </div>
                 ))}
             </div>
           ) : results.length > 0 ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 animate-fade-in">
-                {results.map((movie) => (
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                {results.map((movie, index) => (
                   <div 
                     key={movie.id} 
                     className="
                         relative cursor-pointer aspect-[2/3] rounded overflow-hidden bg-[#181818] group
-                        transition-all duration-300 ease-out
+                        transition-transform duration-300 ease-out
                         hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
                         active:scale-95 active:brightness-75
+                        opacity-0 animate-fade-in-up
                     "
+                    style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => onMovieSelect(movie)}
                   >
                     <img
@@ -112,11 +116,11 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                 ))}
               </div>
           ) : query.length > 1 ? (
-             <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+             <div className="flex flex-col items-center justify-center h-64 text-gray-500 animate-fade-in-up">
                 <p className="text-lg font-medium">No results found for "{query}"</p>
              </div>
           ) : (
-             <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-500">
+             <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-500 animate-fade-in-up">
                 <Search className="w-16 h-16 mb-4 opacity-10" />
                 <p className="text-lg font-medium tracking-tight">{t.search}</p>
                 <p className="text-sm opacity-40">Find your next favorite story</p>

@@ -20,7 +20,10 @@
               netflix: { red: '#E50914', dark: '#141414', gray: '#e5e5e5' }
             },
             fontFamily: { sans: ['Inter', 'sans-serif'] },
-            animation: { 'splash-zoom': 'splash-zoom 2.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards' }
+            animation: { 
+              'splash-zoom': 'splash-zoom 2.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards',
+              'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+            }
           }
         }
       }
@@ -47,6 +50,22 @@
         20% { opacity: 1; }
         85% { opacity: 1; transform: scale(1.5); }
         100% { transform: scale(4); opacity: 0; }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Клас для приховування елемента до початку анімації */
+      .opacity-0-start {
+        opacity: 0;
       }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">

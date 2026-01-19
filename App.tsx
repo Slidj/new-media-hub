@@ -147,15 +147,20 @@ function App() {
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
               {movies.map((movie, index) => {
                 const isTop10 = index < 10;
+                // Використовуємо модуль, щоб затримка не ставала занадто великою для нижніх елементів
+                const delay = (index % 15) * 50; 
+                
                 return (
                   <div 
                     key={`${movie.id}-${index}`} 
                     className="
                         relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
-                        transition-all duration-300 ease-out
+                        transition-transform duration-300 ease-out
                         hover:scale-110 hover:z-50 hover:shadow-2xl hover:shadow-black
                         active:scale-95 active:brightness-75
+                        opacity-0 animate-fade-in-up
                     "
+                    style={{ animationDelay: `${delay}ms` }}
                     onClick={() => setSelectedMovie(movie)}
                   >
                     <img
@@ -200,11 +205,15 @@ function App() {
                 );
               })}
 
-              {loading && Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={`skeleton-${i}`} />)}
+              {loading && Array.from({ length: 12 }).map((_, i) => (
+                  <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                    <SkeletonCard />
+                  </div>
+              ))}
             </div>
             
             {!hasMore && (
-              <div className="text-center text-gray-500 py-10">
+              <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                 <p>{translations[lang].endOfList}</p>
               </div>
             )}
