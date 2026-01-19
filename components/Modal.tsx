@@ -76,11 +76,16 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
     }
 
     const userMsg = chatInput;
+    const newMessage: ChatMessage = { role: 'user', text: userMsg };
+    
+    // Створюємо нову історію миттєво, щоб передати її в API
+    const newHistory = [...messages, newMessage];
+    
     setChatInput("");
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setMessages(newHistory);
     setIsLoading(true);
 
-    const aiResponse = await getMovieChatResponse(movie, userMsg, lang);
+    const aiResponse = await getMovieChatResponse(movie, newHistory, lang);
     
     if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('6.1')) {
        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
