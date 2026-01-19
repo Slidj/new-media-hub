@@ -7,10 +7,11 @@ import { Language, translations } from '../utils/translations';
 interface ModalProps {
   movie: Movie | null;
   onClose: () => void;
+  onPlay: (movie: Movie) => void;
   lang: Language;
 }
 
-export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
+export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   const t = translations[lang];
@@ -50,6 +51,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(onClose, 500);
+  };
+
+  const handlePlayClick = () => {
+    onPlay(movie);
+    // Ми не закриваємо модалку автоматично, плеєр відкриється поверх неї.
+    // Або можна закрити: handleClose();
   };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
@@ -116,7 +123,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, lang }) => {
                     {movie.title}
                 </h2>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-                  <button className="flex-shrink-0 flex items-center justify-center gap-2 px-8 py-2.5 bg-white text-black font-extrabold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-lg">
+                  <button 
+                    onClick={handlePlayClick}
+                    className="flex-shrink-0 flex items-center justify-center gap-2 px-8 py-2.5 bg-white text-black font-extrabold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-lg"
+                  >
                     <Play className="w-6 h-6 fill-black" />
                     {t.play}
                   </button>

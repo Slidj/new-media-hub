@@ -8,6 +8,7 @@ import { SkeletonCard } from './components/SkeletonCard';
 import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
 import { CategoryNav, Category } from './components/CategoryNav';
+import { Player } from './components/Player';
 import { Movie, WebAppUser } from './types';
 import { API } from './services/tmdb';
 import { Language, getLanguage, translations } from './utils/translations';
@@ -16,6 +17,7 @@ import { Star, Tv } from 'lucide-react';
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
   const [user, setUser] = useState<WebAppUser | null>(null);
   const [lang, setLang] = useState<Language>('en');
   
@@ -196,7 +198,7 @@ function App() {
               <Hero 
                   movie={featuredMovie} 
                   onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                  onPlay={() => setSelectedMovie(featuredMovie)}
+                  onPlay={() => setPlayingMovie(featuredMovie)}
                   lang={lang}
               />
           )}
@@ -293,11 +295,24 @@ function App() {
         onTabChange={setActiveTab}
       />
 
+      {/* Details Modal */}
       {selectedMovie && (
         <Modal 
           movie={selectedMovie} 
           onClose={() => setSelectedMovie(null)} 
+          onPlay={(m) => {
+             setPlayingMovie(m);
+             setSelectedMovie(null); // Optional: close detail modal when starting playback
+          }}
           lang={lang}
+        />
+      )}
+
+      {/* Video Player */}
+      {playingMovie && (
+        <Player 
+          movie={playingMovie} 
+          onClose={() => setPlayingMovie(null)} 
         />
       )}
     </div>
