@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       {/* Overlay */}
       <div 
         className={`
-          absolute inset-0 bg-black/80 backdrop-blur-sm
+          absolute inset-0 bg-black/90 backdrop-blur-md
           transition-opacity duration-300 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
@@ -108,7 +108,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       <div 
         className={`
           relative w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#181818] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#0a0a0a] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           transform-gpu transition-transform duration-300 cubic-bezier(0.2, 0, 0.2, 1)
           flex flex-col will-change-transform ring-1 ring-white/10
           ${isVisible 
@@ -121,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         <button 
           onClick={handleClose}
           className={`
-            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/80 backdrop-blur-md
+            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
             transition-all duration-300
             ${isMobile ? 'top-3 right-3' : 'top-4 right-4'}
@@ -144,10 +144,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 
                 {/* 
                    Deep Gradient Overlay 
-                   Transitions from transparent at top to the background color (#181818) at bottom.
-                   Added a 'via' point to make the bottom area darker for text readability.
+                   Transitions from transparent at top to the very deep background color (#0a0a0a) at bottom.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent md:from-[#141414] md:via-[#141414]/40"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent md:from-[#141414] md:via-[#141414]/50"></div>
                 
                 {/* Logo & Tagline Container */}
                 <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex flex-col items-center md:items-start justify-end gap-3">
@@ -176,7 +175,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             <div className={`
                 px-4 md:px-10 py-2 space-y-6
                 transition-opacity duration-500 delay-100
-                bg-[#181818] md:bg-[#141414]
+                bg-[#0a0a0a] md:bg-[#141414]
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 
@@ -184,7 +183,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 <div className="flex items-center gap-3 text-sm font-medium text-gray-300">
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
-                    <span className="bg-[#333] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
+                    <span className="bg-[#262626] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
                     {duration && duration !== 'N/A' && (
                         <span>{duration}</span>
                     )}
@@ -203,15 +202,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
                     {/* Secondary Actions Grid - Icon Only Buttons */}
                     <div className="grid grid-cols-3 gap-3">
-                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
+                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
                             <Plus className="w-6 h-6" />
                         </button>
                         
-                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
+                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
                             <ThumbsUp className="w-6 h-6" />
                         </button>
 
-                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
+                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
                             <Share2 className="w-6 h-6" />
                         </button>
                     </div>
