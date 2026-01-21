@@ -143,44 +143,43 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 />
                 
                 {/* 
-                   Deep Gradient Overlay 
-                   Transitions from transparent at top to the very deep background color (#0a0a0a) at bottom.
-                   Increased 'via' opacity to make text at bottom more readable.
+                   Gradient Overlay 
+                   Lighter gradient (no 'via') to show more of the poster content while still fading to black at bottom.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/70 to-transparent md:from-[#141414] md:via-[#141414]/60 z-10"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-90"></div>
+            </div>
+
+            {/* 2. CONTENT AREA */}
+            <div className={`
+                relative z-30 px-4 md:px-10 pt-2 pb-8 space-y-4
+                transition-opacity duration-500 delay-100
+                bg-[#0a0a0a] md:bg-[#141414]
+                ${isVisible ? 'opacity-100' : 'opacity-0'}
+            `}>
                 
-                {/* Logo & Tagline Container - MOVED TO BOTTOM-0 and Reduced Size */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 md:px-10 pb-4 flex flex-col items-center md:items-start justify-end gap-2 z-20">
+                {/* Logo & Tagline Container - MOVED BELOW POSTER */}
+                <div className="flex flex-col items-start justify-end gap-2 mb-2">
                     {logoUrl ? (
                         <img 
                             src={logoUrl} 
                             alt={movie.title} 
-                            // Reduced width (w-1/2) and max-height (max-h-20) to prevent overlapping faces
-                            className="w-1/2 md:w-1/3 max-h-20 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up"
+                            // Slightly larger max-height since it's now below the image and won't block faces
+                            className="w-1/2 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up origin-left"
                         />
                     ) : (
-                        <h2 className="text-3xl md:text-5xl font-black text-white text-center md:text-left drop-shadow-lg uppercase tracking-tighter leading-none">
+                        <h2 className="text-3xl md:text-5xl font-black text-white text-left drop-shadow-lg uppercase tracking-tighter leading-none">
                             {movie.title}
                         </h2>
                     )}
 
                     {/* Tagline */}
                     {tagline && (
-                        <p className="text-white/80 text-xs md:text-lg italic font-medium drop-shadow-md text-center md:text-left animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                        <p className="text-white/60 text-xs md:text-lg italic font-medium animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                             {tagline}
                         </p>
                     )}
                 </div>
-            </div>
 
-            {/* 2. CONTENT AREA */}
-            <div className={`
-                relative z-30 px-4 md:px-10 pt-2 pb-8 space-y-6
-                transition-opacity duration-500 delay-100
-                bg-[#0a0a0a] md:bg-[#141414]
-                ${isVisible ? 'opacity-100' : 'opacity-0'}
-            `}>
-                
                 {/* Metadata Row */}
                 <div className="flex items-center gap-3 text-sm font-medium text-gray-300">
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
