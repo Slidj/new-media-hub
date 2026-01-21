@@ -145,16 +145,18 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 {/* 
                    Deep Gradient Overlay 
                    Transitions from transparent at top to the very deep background color (#0a0a0a) at bottom.
+                   Increased 'via' opacity to make text at bottom more readable.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent md:from-[#141414] md:via-[#141414]/50"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/70 to-transparent md:from-[#141414] md:via-[#141414]/60 z-10"></div>
                 
-                {/* Logo & Tagline Container */}
-                <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex flex-col items-center md:items-start justify-end gap-3">
+                {/* Logo & Tagline Container - MOVED TO BOTTOM-0 and Reduced Size */}
+                <div className="absolute bottom-0 left-0 right-0 px-4 md:px-10 pb-4 flex flex-col items-center md:items-start justify-end gap-2 z-20">
                     {logoUrl ? (
                         <img 
                             src={logoUrl} 
                             alt={movie.title} 
-                            className="w-2/3 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up"
+                            // Reduced width (w-1/2) and max-height (max-h-20) to prevent overlapping faces
+                            className="w-1/2 md:w-1/3 max-h-20 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up"
                         />
                     ) : (
                         <h2 className="text-3xl md:text-5xl font-black text-white text-center md:text-left drop-shadow-lg uppercase tracking-tighter leading-none">
@@ -164,7 +166,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
                     {/* Tagline */}
                     {tagline && (
-                        <p className="text-white/80 text-sm md:text-lg italic font-medium drop-shadow-md text-center md:text-left animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                        <p className="text-white/80 text-xs md:text-lg italic font-medium drop-shadow-md text-center md:text-left animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                             {tagline}
                         </p>
                     )}
@@ -173,7 +175,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
             {/* 2. CONTENT AREA */}
             <div className={`
-                px-4 md:px-10 py-2 space-y-6
+                relative z-30 px-4 md:px-10 pt-2 pb-8 space-y-6
                 transition-opacity duration-500 delay-100
                 bg-[#0a0a0a] md:bg-[#141414]
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
@@ -217,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-1 pb-8">
+                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-1">
                     {movie.description}
                 </p>
 
