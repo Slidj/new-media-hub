@@ -17,7 +17,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const [platform, setPlatform] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState<string | null>(null);
-  const [tagline, setTagline] = useState<string | null>(null); // State for slogan
+  const [tagline, setTagline] = useState<string | null>(null);
   const t = translations[lang];
 
   useEffect(() => {
@@ -26,7 +26,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         setPlatform(window.Telegram.WebApp.platform);
       }
       
-      // Load extra details (Logo, Duration, Tagline)
       const loadDetails = async () => {
         // 1. Logo
         if (movie.logoUrl) {
@@ -98,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       {/* Overlay */}
       <div 
         className={`
-          absolute inset-0 bg-black/80
+          absolute inset-0 bg-black/80 backdrop-blur-sm
           transition-opacity duration-300 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
@@ -109,9 +108,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       <div 
         className={`
           relative w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#181818] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           transform-gpu transition-transform duration-300 cubic-bezier(0.2, 0, 0.2, 1)
-          flex flex-col will-change-transform
+          flex flex-col will-change-transform ring-1 ring-white/10
           ${isVisible 
             ? 'translate-y-0 scale-100' 
             : 'translate-y-full md:translate-y-12 md:scale-95'
@@ -122,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         <button 
           onClick={handleClose}
           className={`
-            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818] 
+            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/80 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
             transition-all duration-300
             ${isMobile ? 'top-3 right-3' : 'top-4 right-4'}
@@ -134,7 +133,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
-            {/* 1. HERO IMAGE AREA - Image, Logo & Tagline */}
+            {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full aspect-video md:aspect-[2.4/1]">
                 <img 
                   src={movie.bannerUrl} 
@@ -142,11 +141,16 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                   className="w-full h-full object-cover"
                   loading="eager"
                 />
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent"></div>
+                
+                {/* 
+                   Deep Gradient Overlay 
+                   Transitions from transparent at top to the background color (#181818) at bottom.
+                   Added a 'via' point to make the bottom area darker for text readability.
+                */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent md:from-[#141414] md:via-[#141414]/40"></div>
                 
                 {/* Logo & Tagline Container */}
-                <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex flex-col items-center md:items-start justify-end gap-2">
+                <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex flex-col items-center md:items-start justify-end gap-3">
                     {logoUrl ? (
                         <img 
                             src={logoUrl} 
@@ -170,8 +174,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
             {/* 2. CONTENT AREA */}
             <div className={`
-                px-4 md:px-10 py-2 space-y-5
+                px-4 md:px-10 py-2 space-y-6
                 transition-opacity duration-500 delay-100
+                bg-[#181818] md:bg-[#141414]
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 
@@ -180,7 +185,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
                     <span className="bg-[#333] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
-                    {/* Render duration only if valid (not N/A) */}
                     {duration && duration !== 'N/A' && (
                         <span>{duration}</span>
                     )}
@@ -199,22 +203,22 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
                     {/* Secondary Actions Grid - Icon Only Buttons */}
                     <div className="grid grid-cols-3 gap-3">
-                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
                             <Plus className="w-6 h-6" />
                         </button>
                         
-                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
                             <ThumbsUp className="w-6 h-6" />
                         </button>
 
-                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                        <button className="flex items-center justify-center h-12 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/5">
                             <Share2 className="w-6 h-6" />
                         </button>
                     </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm md:text-base leading-relaxed text-white/90 pt-1 pb-6">
+                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-1 pb-8">
                     {movie.description}
                 </p>
 
