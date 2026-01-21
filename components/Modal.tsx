@@ -143,17 +143,22 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 />
                 
                 {/* 
-                   Gradient Overlay 
-                   Lighter gradient (no 'via') to show more of the poster content while still fading to black at bottom.
+                   Seamless Gradient Layering:
+                   1. Full cover gradient that gets darker towards bottom.
+                   2. Extra powerful bottom gradient to ensure solid black at the edge.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] to-transparent opacity-90"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
             </div>
 
-            {/* 2. CONTENT AREA */}
+            {/* 2. CONTENT AREA 
+                - Negative margin pulls content UP onto the darkened image.
+                - No background color on the div itself to avoid hard cut lines.
+                - The solid background comes from the parent container and the gradient finish.
+            */}
             <div className={`
-                relative z-30 px-4 md:px-10 pt-2 pb-8 space-y-4
+                relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32
                 transition-opacity duration-500 delay-100
-                bg-[#0a0a0a] md:bg-[#141414]
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 
