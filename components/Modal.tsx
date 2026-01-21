@@ -107,7 +107,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       {/* Modal Content */}
       <div 
         className={`
-          relative w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
+          relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#0a0a0a] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           transform-gpu transition-transform duration-300 cubic-bezier(0.2, 0, 0.2, 1)
           flex flex-col will-change-transform ring-1 ring-white/10
@@ -133,31 +133,37 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
-            {/* 1. HERO IMAGE AREA */}
-            <div className="relative w-full aspect-video md:aspect-[2.4/1]">
+            {/* 1. HERO IMAGE AREA - TALLER & CLEANER */}
+            {/* Changed from aspect-video to h-[65vh] for a deep vertical look */}
+            <div className="relative w-full h-[65vh] md:h-[60vh]">
                 <img 
                   src={movie.bannerUrl} 
                   alt={movie.title} 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                   loading="eager"
                 />
                 
                 {/* 
-                   Seamless Gradient Layering:
-                   1. Full cover gradient that gets darker towards bottom.
-                   2. Extra powerful bottom gradient to ensure solid black at the edge.
+                   Minimalist Gradient Strategy:
+                   1. Slight darkening at very top for close button visibility.
+                   2. NO middle gradient - keep image clear.
+                   3. Deep gradient ONLY in the bottom 40% to blend the "feet" of the image.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0a0a0a] to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent h-24"></div>
+                
+                {/* Main bottom blend - starts lower now */}
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent"></div>
+                
+                {/* Solid connector - ensures no gap at the very bottom line */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0a0a0a] to-[#0a0a0a]"></div>
             </div>
 
             {/* 2. CONTENT AREA 
-                - Negative margin pulls content UP onto the darkened image.
-                - No background color on the div itself to avoid hard cut lines.
-                - The solid background comes from the parent container and the gradient finish.
+                - Negative margin pulls content UP slightly onto the faded bottom part.
+                - This ensures the text sits "at the feet" of the visual.
             */}
             <div className={`
-                relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32
+                relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-20
                 transition-opacity duration-500 delay-100
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
@@ -169,7 +175,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                             src={logoUrl} 
                             alt={movie.title} 
                             // Centered image
-                            className="w-1/2 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up"
+                            className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl animate-fade-in-up"
                         />
                     ) : (
                         <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
@@ -179,14 +185,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
                     {/* Tagline - CENTERED */}
                     {tagline && (
-                        <p className="text-white/60 text-xs md:text-lg italic font-medium animate-fade-in-up text-center" style={{ animationDelay: '100ms' }}>
+                        <p className="text-white/70 text-sm md:text-lg italic font-medium animate-fade-in-up text-center drop-shadow-md" style={{ animationDelay: '100ms' }}>
                             {tagline}
                         </p>
                     )}
                 </div>
 
                 {/* Metadata Row - CENTERED */}
-                <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300">
+                <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
                     <span className="bg-[#262626] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
@@ -197,10 +203,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 </div>
 
                 {/* BIG ACTION BUTTONS */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 pt-2">
                     <button 
                         onClick={handlePlayClick}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
                     >
                         <Play className="w-7 h-7 fill-black" />
                         <span className="text-lg font-bold">{t.play}</span>
@@ -223,7 +229,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-1">
+                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-2">
                     {movie.description}
                 </p>
 
