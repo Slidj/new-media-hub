@@ -163,27 +163,24 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 <div className="flex flex-col gap-3">
                     <button 
                         onClick={handlePlayClick}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow"
                     >
-                        <Play className="w-6 h-6 fill-black" />
-                        <span className="text-lg">{t.play}</span>
+                        <Play className="w-7 h-7 fill-black" />
+                        <span className="text-lg font-bold">{t.play}</span>
                     </button>
 
-                    {/* Secondary Actions Grid - Replaces Download Button */}
+                    {/* Secondary Actions Grid - Icon Only Buttons */}
                     <div className="grid grid-cols-3 gap-3">
-                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
-                            <Plus className="w-5 h-5" />
-                            <span className="text-[10px] uppercase tracking-wider">{t.myList}</span>
+                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <Plus className="w-6 h-6" />
                         </button>
                         
-                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
-                            <ThumbsUp className="w-5 h-5" />
-                            <span className="text-[10px] uppercase tracking-wider">Rate</span>
+                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <ThumbsUp className="w-6 h-6" />
                         </button>
 
-                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
-                            <Share2 className="w-5 h-5" />
-                            <span className="text-[10px] uppercase tracking-wider">Share</span>
+                        <button className="flex items-center justify-center h-12 bg-[#262626] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <Share2 className="w-6 h-6" />
                         </button>
                     </div>
                 </div>
