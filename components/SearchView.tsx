@@ -96,9 +96,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                         loading="lazy"
                         />
                         
-                        {/* New Style Series Badge */}
+                        {/* New Style Series Badge, moved to left-0 */}
                         {movie.mediaType === 'tv' && (
-                            <div className="absolute top-0 left-1 z-20">
+                            <div className="absolute top-0 left-0 z-20">
                                 <div className="flex items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
                                     <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
                                 </div>

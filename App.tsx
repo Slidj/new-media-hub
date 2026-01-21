@@ -249,10 +249,10 @@ function App() {
                         
                         {/* 
                             NEW DESIGN: Top 10 Badge (Right Corner)
-                            "Red Ribbon" style with rounded bottom, placed in the very corner
+                            "Red Ribbon" style with rounded bottom, placed in the very corner (right-0)
                         */}
                         {isTop10 && (
-                        <div className="absolute top-0 right-1 z-20">
+                        <div className="absolute top-0 right-0 z-20">
                             <div className="flex flex-col items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
                                 <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
                                 <span className="text-sm font-black leading-none text-white">10</span>
@@ -262,10 +262,10 @@ function App() {
 
                         {/* 
                             NEW DESIGN: Series Badge (Left Corner)
-                            "Red Ribbon" style, Icon Only, placed in the very corner
+                            "Red Ribbon" style, Icon Only, placed in the very corner (left-0)
                         */}
                         {movie.mediaType === 'tv' && (
-                        <div className="absolute top-0 left-1 z-20">
+                        <div className="absolute top-0 left-0 z-20">
                             <div className="flex items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
                                 <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
                             </div>
