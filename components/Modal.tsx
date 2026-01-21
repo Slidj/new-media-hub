@@ -157,31 +157,31 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 
-                {/* Logo & Tagline Container - MOVED BELOW POSTER */}
-                <div className="flex flex-col items-start justify-end gap-2 mb-2">
+                {/* Logo & Tagline Container - CENTERED */}
+                <div className="flex flex-col items-center justify-end gap-2 mb-2">
                     {logoUrl ? (
                         <img 
                             src={logoUrl} 
                             alt={movie.title} 
-                            // Slightly larger max-height since it's now below the image and won't block faces
-                            className="w-1/2 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up origin-left"
+                            // Centered image
+                            className="w-1/2 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl animate-fade-in-up"
                         />
                     ) : (
-                        <h2 className="text-3xl md:text-5xl font-black text-white text-left drop-shadow-lg uppercase tracking-tighter leading-none">
+                        <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
                             {movie.title}
                         </h2>
                     )}
 
-                    {/* Tagline */}
+                    {/* Tagline - CENTERED */}
                     {tagline && (
-                        <p className="text-white/60 text-xs md:text-lg italic font-medium animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                        <p className="text-white/60 text-xs md:text-lg italic font-medium animate-fade-in-up text-center" style={{ animationDelay: '100ms' }}>
                             {tagline}
                         </p>
                     )}
                 </div>
 
-                {/* Metadata Row */}
-                <div className="flex items-center gap-3 text-sm font-medium text-gray-300">
+                {/* Metadata Row - CENTERED */}
+                <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300">
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
                     <span className="bg-[#262626] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
