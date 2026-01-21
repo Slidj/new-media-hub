@@ -16,6 +16,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [duration, setDuration] = useState<string | null>(null);
+  const [tagline, setTagline] = useState<string | null>(null); // State for slogan
   const t = translations[lang];
 
   useEffect(() => {
@@ -24,8 +26,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         setPlatform(window.Telegram.WebApp.platform);
       }
       
-      // Load logo specifically for the modal if not present
-      const loadLogo = async () => {
+      // Load extra details (Logo, Duration, Tagline)
+      const loadDetails = async () => {
+        // 1. Logo
         if (movie.logoUrl) {
             setLogoUrl(movie.logoUrl);
         } else {
@@ -33,8 +36,23 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             if (fetchedLogo) setLogoUrl(fetchedLogo);
             else setLogoUrl(null);
         }
+
+        // 2. Details (Duration & Tagline)
+        const details = await API.fetchMovieDetails(movie.id, movie.mediaType);
+        
+        if (movie.duration && movie.duration !== 'N/A') {
+            setDuration(movie.duration);
+        } else {
+            if (details.duration) setDuration(details.duration);
+        }
+
+        if (details.tagline) {
+            setTagline(details.tagline);
+        } else {
+            setTagline(null);
+        }
       };
-      loadLogo();
+      loadDetails();
 
       const animId = requestAnimationFrame(() => {
           setIsVisible(true);
@@ -116,7 +134,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
-            {/* 1. HERO IMAGE AREA - Only Image & Logo */}
+            {/* 1. HERO IMAGE AREA - Image, Logo & Tagline */}
             <div className="relative w-full aspect-video md:aspect-[2.4/1]">
                 <img 
                   src={movie.bannerUrl} 
@@ -124,11 +142,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                   className="w-full h-full object-cover"
                   loading="eager"
                 />
-                {/* Gradient overlay for smooth transition to black */}
+                {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent"></div>
                 
-                {/* LOGO Only - Centered bottom or slightly left */}
-                <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex justify-center md:justify-start">
+                {/* Logo & Tagline Container */}
+                <div className="absolute bottom-4 md:bottom-8 left-0 right-0 px-4 md:px-10 flex flex-col items-center md:items-start justify-end gap-2">
                     {logoUrl ? (
                         <img 
                             src={logoUrl} 
@@ -140,10 +158,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                             {movie.title}
                         </h2>
                     )}
+
+                    {/* Tagline */}
+                    {tagline && (
+                        <p className="text-white/80 text-sm md:text-lg italic font-medium drop-shadow-md text-center md:text-left animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                            {tagline}
+                        </p>
+                    )}
                 </div>
             </div>
 
-            {/* 2. CONTENT AREA - Buttons moved below */}
+            {/* 2. CONTENT AREA */}
             <div className={`
                 px-4 md:px-10 py-2 space-y-5
                 transition-opacity duration-500 delay-100
@@ -155,7 +180,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
                     <span className="bg-[#333] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
-                    <span>{movie.duration}</span>
+                    {/* Render duration only if valid (not N/A) */}
+                    {duration && duration !== 'N/A' && (
+                        <span>{duration}</span>
+                    )}
                     <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
                 </div>
 

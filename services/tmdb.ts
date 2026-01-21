@@ -58,7 +58,7 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
     posterUrl: result.poster_path ? `${POSTER_BASE_URL}${result.poster_path}` : '',
     smallPosterUrl: result.poster_path ? `${SMALL_POSTER_BASE_URL}${result.poster_path}` : '',
     genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
-    duration: 'N/A',
+    duration: 'N/A', // Placeholder, will be fetched in Modal
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
     year: parseInt((result.release_date || result.first_air_date || '2024').substring(0, 4)),
     match: result.vote_average ? Math.round(result.vote_average * 10) : 0,
@@ -183,6 +183,47 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
   }
 };
 
+export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ duration: string | null, tagline: string | null }> => {
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}`);
+    
+    if (!request.ok) return { duration: null, tagline: null };
+    const data = await request.json();
+
+    let durationStr = null;
+
+    if (mediaType === 'movie') {
+        const runtime = data.runtime;
+        if (runtime) {
+             const h = Math.floor(runtime / 60);
+             const m = runtime % 60;
+             durationStr = `${h}h ${m}m`;
+        }
+    } else {
+        const seasons = data.number_of_seasons;
+        if (seasons) {
+            durationStr = `${seasons} Season${seasons !== 1 ? 's' : ''}`;
+        }
+    }
+
+    return {
+        duration: durationStr,
+        tagline: data.tagline || null
+    };
+
+  } catch (error) {
+    console.error("Error fetching details", error);
+    return { duration: null, tagline: null };
+  }
+}
+
+// Keeping this for backward compatibility if other files import it, but mapping it to new function
+export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<string | null> => {
+    const details = await fetchMovieDetails(movieId, mediaType);
+    return details.duration;
+}
+
 export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promise<string | null> => {
     try {
         const url = `${BASE_URL}/${type}/${id}/external_ids?api_key=${API_KEY}`;
@@ -205,5 +246,7 @@ export const API = {
   fetchDiscoverCartoons,
   searchContent,
   fetchMovieLogo,
-  fetchExternalIds
+  fetchExternalIds,
+  fetchMovieDuration,
+  fetchMovieDetails
 };
