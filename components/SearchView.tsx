@@ -17,6 +17,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   const [loading, setLoading] = useState(false);
   const t = translations[lang];
 
+  // SVG Path for the ribbon with curved inward bottom
+  const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
+
   // Debounce search
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -98,8 +101,11 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                         
                         {/* New Style Series Badge, moved to left-0 */}
                         {movie.mediaType === 'tv' && (
-                            <div className="absolute top-0 left-0 z-20">
-                                <div className="flex items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
+                            <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
+                                <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
+                                    <path d={ribbonPath} />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center pb-1">
                                     <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
                                 </div>
                             </div>

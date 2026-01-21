@@ -187,6 +187,11 @@ function App() {
     return <Preloader />;
   }
 
+  // SVG Path for the ribbon with curved inward bottom
+  // M0 0 H28 V36 C28 36 14 28 0 36 V0 Z
+  // Draws top bar, right side down, curves up to center then down to left, left side up.
+  const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
+
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white pb-24">
       <Navbar 
@@ -249,26 +254,32 @@ function App() {
                         
                         {/* 
                             NEW DESIGN: Top 10 Badge (Right Corner)
-                            "Red Ribbon" style with rounded bottom, placed in the very corner (right-0)
+                            SVG Shape: "Oblique cut with rounded concavity inward"
                         */}
                         {isTop10 && (
-                        <div className="absolute top-0 right-0 z-20">
-                            <div className="flex flex-col items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
+                        <div className="absolute top-0 right-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
+                             <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
+                                <path d={ribbonPath} />
+                             </svg>
+                             <div className="absolute inset-0 flex flex-col items-center justify-center pb-1">
                                 <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
                                 <span className="text-sm font-black leading-none text-white">10</span>
-                            </div>
+                             </div>
                         </div>
                         )}
 
                         {/* 
                             NEW DESIGN: Series Badge (Left Corner)
-                            "Red Ribbon" style, Icon Only, placed in the very corner (left-0)
+                            SVG Shape: "Oblique cut with rounded concavity inward"
                         */}
                         {movie.mediaType === 'tv' && (
-                        <div className="absolute top-0 left-0 z-20">
-                            <div className="flex items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
+                        <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
+                             <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
+                                <path d={ribbonPath} />
+                             </svg>
+                             <div className="absolute inset-0 flex items-center justify-center pb-1">
                                 <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
-                            </div>
+                             </div>
                         </div>
                         )}
 
