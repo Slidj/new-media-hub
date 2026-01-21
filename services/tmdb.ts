@@ -1,5 +1,6 @@
 
 import { Movie } from '../types';
+import { MOVIES } from '../constants';
 
 const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
 const BASE_URL = 'https://api.themoviedb.org/3';
@@ -69,13 +70,14 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
 export const fetchMovies = async (url: string, language: string = 'en-US'): Promise<Movie[]> => {
   try {
     const request = await fetch(`${BASE_URL}${url}`);
+    if (!request.ok) throw new Error(request.statusText);
     const data = await request.json();
     return data.results
         .filter((m: any) => m.backdrop_path || m.poster_path)
         .map((m: any) => mapResultToMovie(m, language));
   } catch (error) {
     console.error("Error fetching movies:", error);
-    return [];
+    return MOVIES;
   }
 };
 
@@ -84,13 +86,15 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
   try {
     const url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=${language}&page=${page}`;
     const request = await fetch(url);
+    if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
     const data = await request.json();
     return data.results
       .filter((m: any) => m.poster_path)
       .map((m: any) => mapResultToMovie(m, language));
   } catch (error) {
     console.error("Error fetching trending:", error);
-    return [];
+    // Return static backup data if API fails so the app isn't empty
+    return page === 1 ? MOVIES : [];
   }
 };
 
@@ -99,12 +103,14 @@ export const fetchDiscoverMovies = async (page: number = 1, language: string = '
     try {
       const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
+      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
       const data = await request.json();
       return data.results
         .filter((m: any) => m.poster_path)
         .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
     } catch (error) {
-      return [];
+      console.error("Error fetching discover movies:", error);
+      return page === 1 ? MOVIES.filter(m => m.mediaType === 'movie') : [];
     }
 };
 
@@ -113,12 +119,14 @@ export const fetchDiscoverTV = async (page: number = 1, language: string = 'en-U
     try {
       const url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
+      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
       const data = await request.json();
       return data.results
         .filter((m: any) => m.poster_path)
         .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'tv'}));
     } catch (error) {
-      return [];
+      console.error("Error fetching discover TV:", error);
+      return page === 1 ? MOVIES.filter(m => m.mediaType === 'tv') : [];
     }
 };
 
@@ -127,12 +135,15 @@ export const fetchDiscoverCartoons = async (page: number = 1, language: string =
     try {
       const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`;
       const request = await fetch(url);
+      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
       const data = await request.json();
       return data.results
         .filter((m: any) => m.poster_path)
         .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
     } catch (error) {
-      return [];
+      console.error("Error fetching cartoons:", error);
+      // Fallback: just return movies, might not be cartoons but better than nothing
+      return page === 1 ? MOVIES : [];
     }
 };
 
@@ -141,13 +152,15 @@ export const searchContent = async (query: string, language: string = 'en-US'): 
     try {
         const url = `${BASE_URL}/search/multi?api_key=${API_KEY}&language=${language}&query=${encodeURIComponent(query)}&page=1&include_adult=false`;
         const request = await fetch(url);
+        if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
         const data = await request.json();
         return data.results
             .filter((m: any) => m.media_type !== 'person' && (m.poster_path || m.backdrop_path))
             .map((m: any) => mapResultToMovie(m, language));
     } catch (error) {
         console.error("Error searching content:", error);
-        return [];
+        // Basic local search on backup data
+        return MOVIES.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
     }
 }
 
@@ -174,6 +187,7 @@ export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promis
     try {
         const url = `${BASE_URL}/${type}/${id}/external_ids?api_key=${API_KEY}`;
         const request = await fetch(url);
+        if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
         const data = await request.json();
         return data.imdb_id || null;
     } catch (error) {

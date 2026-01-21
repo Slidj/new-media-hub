@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Play, Plus, Download, ThumbsUp, Share2 } from 'lucide-react';
+import { X, Play, Plus, ThumbsUp, Share2 } from 'lucide-react';
 import { Movie } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
@@ -169,40 +169,29 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                         <span className="text-lg">{t.play}</span>
                     </button>
 
-                    <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#262626] text-white font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
-                        <Download className="w-5 h-5" />
-                        <span>{t.downloads}</span>
-                    </button>
+                    {/* Secondary Actions Grid - Replaces Download Button */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <Plus className="w-5 h-5" />
+                            <span className="text-[10px] uppercase tracking-wider">{t.myList}</span>
+                        </button>
+                        
+                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <ThumbsUp className="w-5 h-5" />
+                            <span className="text-[10px] uppercase tracking-wider">Rate</span>
+                        </button>
+
+                        <button className="flex flex-col items-center justify-center gap-1 py-2 bg-[#262626] text-white/90 font-bold rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition">
+                            <Share2 className="w-5 h-5" />
+                            <span className="text-[10px] uppercase tracking-wider">Share</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm md:text-base leading-relaxed text-white/90">
+                <p className="text-sm md:text-base leading-relaxed text-white/90 pt-1 pb-6">
                     {movie.description}
                 </p>
-
-                {/* Secondary Actions Row (Plus, Rate, Share) */}
-                <div className="flex items-start gap-10 pt-2 text-gray-400">
-                     <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-white transition group">
-                        <div className="p-1 rounded-full group-active:bg-white/10">
-                            <Plus className="w-6 h-6" />
-                        </div>
-                        <span className="text-[10px] uppercase tracking-wide">{t.myList}</span>
-                     </div>
-
-                     <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-white transition group">
-                        <div className="p-1 rounded-full group-active:bg-white/10">
-                            <ThumbsUp className="w-6 h-6" />
-                        </div>
-                        <span className="text-[10px] uppercase tracking-wide">Rate</span>
-                     </div>
-
-                     <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-white transition group">
-                        <div className="p-1 rounded-full group-active:bg-white/10">
-                            <Share2 className="w-6 h-6" />
-                        </div>
-                        <span className="text-[10px] uppercase tracking-wide">Share</span>
-                     </div>
-                </div>
 
             </div>
         </div>
