@@ -247,21 +247,27 @@ function App() {
                         loading="lazy"
                         />
                         
+                        {/* 
+                            NEW DESIGN: Top 10 Badge (Right Corner)
+                            "Red Ribbon" style with rounded bottom
+                        */}
                         {isTop10 && (
-                        <div className="absolute top-0 left-0 z-20">
-                            <div className="relative">
-                                <div className="absolute top-0 left-0 w-8 h-9 bg-gradient-to-br from-[#E50914] to-[#B81D24] shadow-lg flex items-center justify-center rounded-br-lg z-10 border-b border-r border-white/20">
-                                    <span className="text-white font-black text-lg italic drop-shadow-md font-sans">#{index + 1}</span>
-                                </div>
+                        <div className="absolute top-0 right-3 z-20">
+                            <div className="flex flex-col items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
+                                <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
+                                <span className="text-sm font-black leading-none text-white">10</span>
                             </div>
                         </div>
                         )}
 
+                        {/* 
+                            NEW DESIGN: Series Badge (Left Corner)
+                            "Red Ribbon" style, Icon Only
+                        */}
                         {movie.mediaType === 'tv' && (
-                        <div className="absolute top-2 right-2 z-20">
-                            <div className="bg-[#E50914] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-md flex items-center gap-1 border border-white/10">
-                                <Tv className="w-2.5 h-2.5" />
-                                <span>{translations[lang].series}</span>
+                        <div className="absolute top-0 left-3 z-20">
+                            <div className="flex items-center justify-center w-7 h-9 bg-[#E50914] shadow-[0_2px_8px_rgba(229,9,20,0.5)] rounded-b-lg">
+                                <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
                             </div>
                         </div>
                         )}
