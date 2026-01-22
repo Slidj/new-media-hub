@@ -33,13 +33,13 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
           className="hidden md:block w-full h-full object-cover object-top"
         />
         
-        {/* Gradients for readability - Reduced intensity at the bottom to avoid double darkening */}
+        {/* Gradients for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block"></div>
       </div>
 
-      {/* Content Area - Low padding (pb-8) allows buttons to sit at the very bottom, clearly visible above the list */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-12 px-4 md:px-12 w-full">
+      {/* Content Area - Padding pb-16 (64px) ensures buttons sit JUST ABOVE the gradient from the list */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-16 md:pb-24 px-4 md:px-12 w-full">
             
             {/* Title / Logo Logic */}
             <div className="mb-4 md:mb-6 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
@@ -56,7 +56,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
                 )}
             </div>
             
-            {/* Buttons - Compact & Centered on Mobile */}
+            {/* Buttons */}
             <div className="flex items-center justify-center md:justify-start gap-3 md:gap-4 w-full md:w-auto px-4 md:px-0">
               <button 
                 onClick={onPlay}
