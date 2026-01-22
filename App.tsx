@@ -15,7 +15,6 @@ import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
-// Separated and Memoized to prevent re-rendering entire grid on infinite scroll
 interface MovieCardProps {
     movie: Movie;
     index: number;
@@ -24,10 +23,7 @@ interface MovieCardProps {
 }
 
 const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProps) => {
-    // Determine Top 10 badge only if trending category
     const isTop10 = activeCategory === 'trending' && index < 10;
-    
-    // SVG Path for the ribbon
     const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
     return (
@@ -35,7 +31,6 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
             className="animate-fade-in-up fill-mode-forwards"
             style={{ 
                 animationDelay: `${Math.min((index % 15) * 50, 500)}ms`,
-                // Use will-change to hint browser about upcoming transforms (smoother scroll)
                 willChange: 'transform, opacity'
             }}
         >
@@ -53,7 +48,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                     className="w-full h-full object-cover bg-[#222]"
                     alt={movie.title}
                     loading="lazy"
-                    decoding="async" // Helps with main thread jank
+                    decoding="async"
                 />
                 
                 {isTop10 && (
@@ -86,7 +81,6 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 </div>
                 </div>
 
-                {/* Removed complex hover overlay for better mobile performance, or simplified it */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
         </div>
@@ -100,10 +94,8 @@ function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
   
-  // Initialize User state
   const [user, setUser] = useState<WebAppUser | null>(null);
 
-  // SMART LANGUAGE INIT: 
   const [lang, setLang] = useState<Language>(() => {
     try {
       if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code) {
@@ -112,7 +104,7 @@ function App() {
     } catch (e) {
       console.error("Language detection failed", e);
     }
-    return 'en'; // Default fallback
+    return 'en';
   });
   
   const [activeTab, setActiveTab] = useState<'home' | 'search'>('home');
@@ -124,8 +116,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
-  // Ref to track if a request is currently in flight to prevent race conditions
   const isLoadingRef = useRef(false);
+  
+  // Ref for Parallax effect
+  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -166,12 +160,40 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // --- PARALLAX SCROLL EFFECT ---
+  useEffect(() => {
+    if (activeTab !== 'home') return;
+
+    const handleParallax = () => {
+        if (!heroRef.current) return;
+        
+        const scrolled = window.scrollY;
+        
+        // Stop calculating if the hero is completely off-screen (optimization)
+        if (scrolled > 1200) return;
+
+        // "Parallax Factor": 0.35
+        // It means the background moves UP at 35% of the scroll speed.
+        // It creates the effect that it's moving, but slower than the foreground.
+        // translate3d forces GPU acceleration for 60fps.
+        const rate = scrolled * 0.35;
+        heroRef.current.style.transform = `translate3d(0, -${rate}px, 0)`;
+    };
+
+    // Use passive listener for better scroll performance on mobile
+    window.addEventListener('scroll', handleParallax, { passive: true });
+    return () => window.removeEventListener('scroll', handleParallax);
+  }, [activeTab]);
+
+
   const handleCategoryChange = useCallback((newCategory: Category) => {
     if (activeCategory === newCategory) return;
     setActiveCategory(newCategory);
     setMovies([]); 
     setPage(1); 
     setHasMore(true);
+    // Reset parallax on category change
+    if (heroRef.current) heroRef.current.style.transform = `translate3d(0, 0, 0)`;
   }, [activeCategory]);
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
@@ -228,7 +250,6 @@ function App() {
     }
   }, []);
 
-  // Main Load Effect
   useEffect(() => {
     if (activeTab === 'home') {
         loadMovies(page, lang, activeCategory);
@@ -244,18 +265,15 @@ function App() {
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
       
-      // Load earlier (1000px from bottom) to make it feel seamless
       if (scrollTop + clientHeight >= scrollHeight - 1000 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
 
-    // Throttling scroll event listener could be better, but native passive listener is usually okay
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, activeTab]);
 
-  // Memoized handlers to pass to MovieCard
   const handleMovieClick = useCallback((movie: Movie) => {
     setSelectedMovie(movie);
   }, []);
@@ -279,52 +297,67 @@ function App() {
       />
       
       {activeTab === 'home' ? (
-        <main className="relative w-full">
-          <CategoryNav 
-             lang={lang} 
-             activeCategory={activeCategory} 
-             onSelectCategory={handleCategoryChange} 
-          />
-
-          {featuredMovie && (
-              <Hero 
-                  movie={featuredMovie} 
-                  onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                  onPlay={() => setPlayingMovie(featuredMovie)}
-                  lang={lang}
-              />
-          )}
-          
-          <section className="relative z-30 mt-4 md:-mt-12 px-2 md:px-12 pb-10">
-            {/* 
-               Using specific content-visibility to improve rendering performance for large lists 
-               But 'content-visibility: auto' can cause scrollbar jumping, so we rely on React.memo first.
-            */}
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-              {movies.map((movie, index) => (
-                  <MovieCard 
-                    key={`${movie.id}-${index}`}
-                    movie={movie}
-                    index={index}
-                    activeCategory={activeCategory}
-                    onClick={handleMovieClick}
-                  />
-              ))}
-
-              {loading && Array.from({ length: 6 }).map((_, i) => (
-                  <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
-                    <SkeletonCard />
-                  </div>
-              ))}
-            </div>
-            
-            {!hasMore && movies.length > 0 && (
-              <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                <p>{translations[lang].endOfList}</p>
+        <>
+            {/* FIXED PARALLAX LAYER (z-0) */}
+            {/* Added ref and will-change-transform for performance */}
+            {featuredMovie && (
+              <div 
+                ref={heroRef}
+                className="fixed top-0 left-0 w-full h-[75vh] md:h-[90vh] z-0 pointer-events-auto will-change-transform"
+              >
+                 <Hero 
+                    movie={featuredMovie} 
+                    onMoreInfo={() => setSelectedMovie(featuredMovie)}
+                    onPlay={() => setPlayingMovie(featuredMovie)}
+                    lang={lang}
+                 />
               </div>
             )}
-          </section>
-        </main>
+
+            {/* SCROLLABLE CONTENT LAYER (z-20) */}
+            <main className="relative z-20 w-full">
+                
+                {/* 1. Transparent Spacer to reveal fixed Hero below */}
+                <div className="w-full h-[75vh] md:h-[90vh] pointer-events-none" />
+                
+                {/* 2. The Main Content 'Sheet' */}
+                <section className="relative bg-black min-h-screen -mt-24 md:-mt-32 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
+                    
+                    {/* Gradient Overlay for smooth transition */}
+                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-48 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+
+                    <CategoryNav 
+                        lang={lang} 
+                        activeCategory={activeCategory} 
+                        onSelectCategory={handleCategoryChange} 
+                    />
+
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 pt-4">
+                        {movies.map((movie, index) => (
+                            <MovieCard 
+                                key={`${movie.id}-${index}`}
+                                movie={movie}
+                                index={index}
+                                activeCategory={activeCategory}
+                                onClick={handleMovieClick}
+                            />
+                        ))}
+
+                        {loading && Array.from({ length: 6 }).map((_, i) => (
+                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                                <SkeletonCard />
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {!hasMore && movies.length > 0 && (
+                        <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                            <p>{translations[lang].endOfList}</p>
+                        </div>
+                    )}
+                </section>
+            </main>
+        </>
       ) : (
         <SearchView 
           lang={lang} 
