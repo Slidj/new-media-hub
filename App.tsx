@@ -321,8 +321,8 @@ function App() {
                 {/* No negative margin (mt-0) ensures clear separation */}
                 <section className="relative bg-black min-h-screen mt-0 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
                     
-                    {/* Gradient Overlay reduced to match padding-bottom of Hero (h-16 = 64px) */}
-                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-16 bg-gradient-to-t from-black to-transparent pointer-events-none" />
+                    {/* Gradient Overlay VERY small (h-10) to just blur the edge, not cover buttons */}
+                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-10 bg-gradient-to-t from-black to-transparent pointer-events-none" />
 
                     <CategoryNav 
                         lang={lang} 
