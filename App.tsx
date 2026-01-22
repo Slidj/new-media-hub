@@ -173,9 +173,6 @@ function App() {
         if (scrolled > 1200) return;
 
         // "Parallax Factor": 0.35
-        // It means the background moves UP at 35% of the scroll speed.
-        // It creates the effect that it's moving, but slower than the foreground.
-        // translate3d forces GPU acceleration for 60fps.
         const rate = scrolled * 0.35;
         heroRef.current.style.transform = `translate3d(0, -${rate}px, 0)`;
     };
@@ -323,8 +320,8 @@ function App() {
                 {/* 2. The Main Content 'Sheet' */}
                 <section className="relative bg-black min-h-screen -mt-24 md:-mt-32 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
                     
-                    {/* Gradient Overlay for smooth transition */}
-                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-48 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+                    {/* Gradient Overlay for smooth transition - MADE SOFTER */}
+                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-48 bg-gradient-to-t from-black to-transparent pointer-events-none" />
 
                     <CategoryNav 
                         lang={lang} 
