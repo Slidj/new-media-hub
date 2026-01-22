@@ -44,33 +44,27 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       let isMounted = true;
 
       // --- 1. VISUALS PRIORITY STREAM ---
-      // We do not wait for details/logos to show the main image.
       const loadVisuals = async () => {
-          // Defaults (standard images usually cached from grid)
           let finalPoster = movie.posterUrl;
           let finalBanner = movie.bannerUrl;
 
           try {
-              // Race: Try to get clean image in 500ms. If network is slow, fallback to standard immediately.
               const cleanImagesPromise = API.fetchCleanImages(movie.id, movie.mediaType);
               const timeoutPromise = new Promise<{poster?: string, banner?: string}>((_, reject) => 
                   setTimeout(() => reject('timeout'), 500)
               );
 
-              // Wait for fastest
               const cleanImages = await Promise.race([cleanImagesPromise, timeoutPromise]);
 
               if (cleanImages.poster) finalPoster = cleanImages.poster;
               if (cleanImages.banner) finalBanner = cleanImages.banner;
 
           } catch (e) {
-              // If timeout or error, just ignore and use standard (fastest path)
-              // console.log("Using standard image due to timeout/error");
+              // ignore
           }
 
           if (!isMounted) return;
 
-          // Preload the chosen image
           const imgToLoad = window.innerWidth < 768 ? finalPoster : finalBanner;
           const img = new Image();
           img.src = imgToLoad;
@@ -82,7 +76,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                   setIsImageLoaded(true);
               }
           };
-          // Even if error, show something
           img.onerror = () => {
              if (isMounted) {
                  setActivePosterSrc(movie.posterUrl);
@@ -93,7 +86,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       };
 
       // --- 2. DATA/METADATA STREAM ---
-      // Runs in parallel, does not block visual loading
       const loadMetadata = async () => {
           try {
               const [logoData, detailsData] = await Promise.all([
@@ -123,14 +115,18 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           }
       };
 
-      // FIRE BOTH STREAMS
       loadVisuals();
       loadMetadata();
 
-      // OPTIMIZATION: Use setTimeout instead of requestAnimationFrame for smoother entry
-      const timer = setTimeout(() => {
-          setIsVisible(true);
-      }, 50);
+      // OPTIMIZATION FOR SMOOTHNESS:
+      // Використовуємо requestAnimationFrame, щоб гарантувати, що браузер
+      // відмалював початковий "схований" стан перед запуском анімації.
+      // setTimeout(..., 50) іноді пропускав кадр, роблячи появу різкою.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            setIsVisible(true);
+        });
+      });
 
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
@@ -143,7 +139,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
       return () => {
         isMounted = false;
-        clearTimeout(timer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -159,7 +154,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(onClose, 350); // Match CSS duration
+    // Чекаємо завершення анімації (500ms) перед повним демонтажем
+    setTimeout(onClose, 500); 
   };
 
   const handlePlayClick = () => {
@@ -170,11 +166,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
-      {/* Overlay */}
+      {/* Overlay: Збільшена тривалість до 700ms для м'якості */}
       <div 
         className={`
           absolute inset-0 bg-black/80 backdrop-blur-sm
-          transition-opacity duration-300 ease-in-out
+          transition-opacity duration-700 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
@@ -185,11 +181,18 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#0a0a0a] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
-          transform-gpu transition-transform duration-300 cubic-bezier(0.2, 0, 0.2, 1)
+          
+          /* CRITICAL ANIMATION FIXES */
+          transform-gpu 
+          transition-transform duration-500 
+          /* cubic-bezier(0.32, 0.72, 0, 1) - це дуже плавна крива "Soft Ease Out" */
+          ease-[cubic-bezier(0.32,0.72,0,1)]
+          
           flex flex-col will-change-transform ring-1 ring-white/10
+          
           ${isVisible 
-            ? 'translate-y-0 scale-100' 
-            : 'translate-y-full md:translate-y-12 md:scale-95'
+            ? 'translate-y-0 opacity-100 scale-100' 
+            : 'translate-y-[110%] opacity-100 md:translate-y-12 md:opacity-0 md:scale-95'
           }
         `}
       >
@@ -199,7 +202,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
-            transition-all duration-300
+            transition-all duration-500 delay-100
             ${isMobile ? 'top-3 right-3' : 'top-4 right-4'}
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
@@ -216,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 <div 
                     className={`
                         absolute inset-0 z-0 bg-[#121212] 
-                        transition-opacity duration-500 ease-out
+                        transition-opacity duration-700 ease-out
                         ${isImageLoaded ? 'opacity-0' : 'opacity-100'}
                     `}
                 >
@@ -230,7 +233,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                       alt={movie.title} 
                       className={`
                         block md:hidden w-full h-full object-cover object-center
-                        transition-opacity duration-700 ease-in-out
+                        transition-opacity duration-1000 ease-in-out
                         ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
                       `}
                     />
@@ -241,7 +244,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                       alt={movie.title} 
                       className={`
                         hidden md:block w-full h-full object-cover object-top
-                        transition-opacity duration-700 ease-in-out
+                        transition-opacity duration-1000 ease-in-out
                         ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
                       `}
                     />
@@ -259,18 +262,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             {/* 2. CONTENT AREA */}
             <div className={`
                 relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32
-                transition-opacity duration-500 delay-100
-                ${isVisible ? 'opacity-100' : 'opacity-0'}
+                transition-all duration-700 delay-100 ease-out
+                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
             `}>
                 
-                {/* Logo & Tagline Container - FIXED HEIGHT TO PREVENT JUMP */}
+                {/* Logo & Tagline Container */}
                 <div className="flex flex-col items-center justify-end gap-3 mb-2">
-                    {/* 
-                       Reserving explicit height (h-28 / h-36) ensures that whether it's text or logo,
-                       or loading, the container size is constant. No layout shift.
-                    */}
                     <div className="w-full h-28 md:h-36 flex items-end justify-center">
-                        <div className={`transition-all duration-500 w-full flex justify-center ${isImageLoaded ? 'opacity-100 transform-none' : 'opacity-0 translate-y-4'}`}>
+                        <div className={`transition-all duration-700 w-full flex justify-center ${isImageLoaded ? 'opacity-100 transform-none' : 'opacity-0 translate-y-4'}`}>
                             {logoUrl ? (
                                 <img 
                                     src={logoUrl} 
