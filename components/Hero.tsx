@@ -48,10 +48,18 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
       </div>
 
       {/* Content Layer - Z-20 (Above Gradient) */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-12 w-full">
+      {/* 
+          UPDATED: pb-8 (було pb-12). Зменшено відступ знизу, щоб кнопки були ближче до карток.
+          Для Desktop залишаємо pb-12, там місця достатньо.
+      */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-12 w-full">
             
             {/* Title / Logo */}
-            <div className="mb-6 px-6 flex justify-center md:justify-start w-full">
+            {/* 
+                UPDATED: mb-8 (було mb-6). Трохи відсунули заголовок від кнопок, 
+                щоб при опусканні кнопок заголовок візуально залишився вище.
+            */}
+            <div className="mb-8 px-6 flex justify-center md:justify-start w-full">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
