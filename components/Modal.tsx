@@ -44,7 +44,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       let isMounted = true;
       let animationTriggered = false;
 
-      // Функція, яка запускає анімацію появи ТІЛЬКИ коли ми готові
+      // Функція, яка запускає анімацію появи.
+      // Вона гарантує, що анімація запуститься лише один раз.
       const triggerShowAnimation = () => {
           if (animationTriggered || !isMounted) return;
           animationTriggered = true;
@@ -56,65 +57,87 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           });
       };
 
-      // Safety Timeout
+      // --- ЛОГІКА ЗАВАНТАЖЕННЯ ЗОБРАЖЕНЬ ---
+      
+      // 1. Safety Timer (Запобіжник)
+      // Якщо за 400мс ми не встигли отримати "чисте" зображення, 
+      // ми примусово показуємо стандартне, щоб користувач не чекав.
       const safetyTimer = setTimeout(() => {
           if (!animationTriggered && isMounted) {
+              // Якщо ми тут - значить чисті картинки ще не прийшли.
+              // Ставимо стандартні і БЛОКУЄМО подальші зміни через animationTriggered check в loadVisuals
               if (!activePosterSrc) setActivePosterSrc(movie.posterUrl);
               if (!activeBannerSrc) setActiveBannerSrc(movie.bannerUrl);
+              
               setIsImageLoaded(true);
               triggerShowAnimation();
           }
       }, 400);
 
-      // --- 1. VISUALS PRIORITY STREAM ---
+      // 2. Visuals Loader
       const loadVisuals = async () => {
           let finalPoster = movie.posterUrl;
           let finalBanner = movie.bannerUrl;
 
           try {
+              // Намагаємось отримати чисті зображення.
+              // Таймаут для API запиту коротший (300мс), ніж safety timer (400мс),
+              // щоб дати шанс встигнути завантажити саме чисте зображення.
               const cleanImagesPromise = API.fetchCleanImages(movie.id, movie.mediaType);
-              const timeoutPromise = new Promise<{poster?: string, banner?: string}>((_, reject) => 
-                  setTimeout(() => reject('timeout'), 300)
+              const apiTimeoutPromise = new Promise<{poster?: string, banner?: string}>((_, reject) => 
+                  setTimeout(() => reject('api_timeout'), 300)
               );
 
-              const cleanImages = await Promise.race([cleanImagesPromise, timeoutPromise]);
+              const cleanImages = await Promise.race([cleanImagesPromise, apiTimeoutPromise]);
 
               if (cleanImages.poster) finalPoster = cleanImages.poster;
               if (cleanImages.banner) finalBanner = cleanImages.banner;
 
           } catch (e) {
-              // ignore
+              // Або помилка мережі, або таймаут API. 
+              // Продовжуємо зі стандартними (finalPoster = movie.posterUrl)
           }
 
           if (!isMounted) return;
+
+          // КРИТИЧНИЙ МОМЕНТ:
+          // Якщо Safety Timer вже спрацював (користувач вже бачить анімацію зі стандартним постером),
+          // ми НЕ оновлюємо стейт на "чистий" постер, щоб уникнути блимання/підміни.
+          if (animationTriggered) return;
 
           const imgToLoad = window.innerWidth < 768 ? finalPoster : finalBanner;
           
           const img = new Image();
           img.src = imgToLoad;
           
+          // Preload success
           img.onload = () => {
-              if (isMounted) {
+              if (isMounted && !animationTriggered) {
+                  clearTimeout(safetyTimer); // Скасовуємо запобіжник, ми встигли!
+                  
                   setActivePosterSrc(finalPoster);
                   setActiveBannerSrc(finalBanner);
                   setIsImageLoaded(true);
-                  clearTimeout(safetyTimer);
+                  
                   triggerShowAnimation();
               }
           };
 
+          // Preload error
           img.onerror = () => {
-             if (isMounted) {
+             if (isMounted && !animationTriggered) {
+                 clearTimeout(safetyTimer);
+                 
                  setActivePosterSrc(movie.posterUrl);
                  setActiveBannerSrc(movie.bannerUrl);
                  setIsImageLoaded(true);
-                 clearTimeout(safetyTimer);
+                 
                  triggerShowAnimation();
              }
           }
       };
 
-      // --- 2. DATA/METADATA STREAM ---
+      // --- METADATA STREAM (Low Priority) ---
       const loadMetadata = async () => {
           try {
               const [logoData, detailsData] = await Promise.all([
@@ -183,9 +206,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
 
-  // Helper styles for sequential animation
-  // Коли isVisible = true, ми додаємо затримку. 
-  // Коли false (закриття), затримка 0, щоб все зникло миттєво разом з вікном.
   const baseTransition = "transition-all duration-700 ease-out transform";
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
@@ -236,12 +256,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
-            {/* 1. HERO IMAGE AREA (NO DELAY - MOVES WITH WINDOW) */}
+            {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full h-[65vh] md:h-[60vh] bg-[#0a0a0a]">
                 
+                {/* Fallback dark background */}
                 <div 
                     className={`
                         absolute inset-0 z-0 bg-[#121212] 
+                        transition-opacity duration-500
                         ${isImageLoaded ? 'opacity-0' : 'opacity-100'}
                     `}
                 >
@@ -255,7 +277,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                       decoding="sync"
                       className={`
                         block md:hidden w-full h-full object-cover object-center
-                        transition-opacity duration-300 ease-in-out
+                        transition-opacity duration-500 ease-in-out
                         ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
                       `}
                     />
@@ -267,7 +289,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                       decoding="sync"
                       className={`
                         hidden md:block w-full h-full object-cover object-top
-                        transition-opacity duration-300 ease-in-out
+                        transition-opacity duration-500 ease-in-out
                         ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
                       `}
                     />
