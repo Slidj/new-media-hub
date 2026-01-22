@@ -43,12 +43,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       
       let isMounted = true;
 
-      // 1. SMART IMAGE LOADING STRATEGY
-      // Goal: Avoid showing "text-burned" posters if possible.
-      // Logic: Wait for API check. If clean exists -> show clean. If not -> show standard.
       const loadImages = async () => {
          try {
-             // Parallel fetch: Clean Images + Logo + Details
              const [cleanImages, logoData, detailsData] = await Promise.all([
                  API.fetchCleanImages(movie.id, movie.mediaType),
                  !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
@@ -57,12 +53,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
              if (!isMounted) return;
 
-             // --- HANDLE IMAGES ---
-             // Decide which URL to use
              const targetPoster = cleanImages.poster || movie.posterUrl;
              const targetBanner = cleanImages.banner || movie.bannerUrl;
 
-             // Preload image in memory before rendering to ensure smooth fade-in
              const imgToLoad = window.innerWidth < 768 ? targetPoster : targetBanner;
              
              const imgObj = new Image();
@@ -74,7 +67,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                      setIsImageLoaded(true);
                  }
              };
-             // Failsafe: if image errors, force show what we have
              imgObj.onerror = () => {
                  if (isMounted) {
                      setActivePosterSrc(targetPoster);
@@ -83,7 +75,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                  }
              };
 
-             // --- HANDLE DATA ---
              if (movie.logoUrl) {
                  setLogoUrl(movie.logoUrl);
              } else if (logoData) {
@@ -102,7 +93,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
          } catch (e) {
              console.error("Modal data load error", e);
-             // Fallback to standard data immediately if error
              if (isMounted) {
                  setActivePosterSrc(movie.posterUrl);
                  setActiveBannerSrc(movie.bannerUrl);
@@ -113,9 +103,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
       loadImages();
 
-      const animId = requestAnimationFrame(() => {
+      // OPTIMIZATION: Use setTimeout instead of requestAnimationFrame for smoother entry
+      // This ensures the browser has painted the "hidden" state before applying the transition.
+      const timer = setTimeout(() => {
           setIsVisible(true);
-      });
+      }, 50);
 
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
@@ -128,7 +120,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
       return () => {
         isMounted = false;
-        cancelAnimationFrame(animId);
+        clearTimeout(timer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -144,7 +136,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const handleClose = () => {
     setIsVisible(false);
-    setTimeout(onClose, 400);
+    setTimeout(onClose, 350); // Match CSS duration
   };
 
   const handlePlayClick = () => {
@@ -158,7 +150,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       {/* Overlay */}
       <div 
         className={`
-          absolute inset-0 bg-black/90 backdrop-blur-md
+          absolute inset-0 bg-black/80 backdrop-blur-sm
           transition-opacity duration-300 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
@@ -197,9 +189,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full h-[65vh] md:h-[60vh] bg-[#0a0a0a]">
                 
-                {/* LOADING SKELETON / PLACEHOLDER 
-                    Shown while we decide which image to use and while it loads.
-                */}
+                {/* SKELETON */}
                 <div 
                     className={`
                         absolute inset-0 z-0 bg-[#121212] 
@@ -207,13 +197,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                         ${isImageLoaded ? 'opacity-0' : 'opacity-100'}
                     `}
                 >
-                    {/* Subtle pulse effect */}
                     <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-black via-[#1a1a1a] to-black opacity-50"></div>
                 </div>
 
-                {/* 
-                   MOBILE (Portrait)
-                */}
+                {/* IMAGES */}
                 {activePosterSrc && (
                     <img 
                       src={activePosterSrc} 
@@ -225,10 +212,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                       `}
                     />
                 )}
-
-                {/* 
-                   DESKTOP (Landscape)
-                */}
                 {activeBannerSrc && (
                     <img 
                       src={activeBannerSrc} 
@@ -241,7 +224,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     />
                 )}
                 
-                {/* === CINEMATIC GRADIENT STACK === */}
+                {/* GRADIENTS */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
@@ -257,28 +240,35 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 ${isVisible ? 'opacity-100' : 'opacity-0'}
             `}>
                 
-                {/* Logo & Tagline Container */}
+                {/* Logo & Tagline Container - FIXED HEIGHT TO PREVENT JUMP */}
                 <div className="flex flex-col items-center justify-end gap-3 mb-2">
-                    {/* Only show Title/Logo if image is loaded to prevent popping */}
-                    <div className={`w-full flex justify-center transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                        {logoUrl ? (
-                            <img 
-                                src={logoUrl} 
-                                alt={movie.title} 
-                                className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl animate-fade-in-up"
-                            />
-                        ) : (
-                            <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
-                                {movie.title}
-                            </h2>
-                        )}
+                    {/* 
+                       Reserving explicit height (h-28 / h-36) ensures that whether it's text or logo,
+                       or loading, the container size is constant. No layout shift.
+                    */}
+                    <div className="w-full h-28 md:h-36 flex items-end justify-center">
+                        <div className={`transition-all duration-500 w-full flex justify-center ${isImageLoaded ? 'opacity-100 transform-none' : 'opacity-0 translate-y-4'}`}>
+                            {logoUrl ? (
+                                <img 
+                                    src={logoUrl} 
+                                    alt={movie.title} 
+                                    className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl"
+                                />
+                            ) : (
+                                <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
+                                    {movie.title}
+                                </h2>
+                            )}
+                        </div>
                     </div>
 
-                    {tagline && (
-                        <p className="text-white/70 text-sm md:text-lg italic font-medium animate-fade-in-up text-center drop-shadow-md" style={{ animationDelay: '100ms' }}>
-                            {tagline}
-                        </p>
-                    )}
+                    <div className="h-6 flex items-center justify-center w-full">
+                        {tagline && (
+                            <p className="text-white/70 text-sm md:text-lg italic font-medium text-center drop-shadow-md animate-fade-in-up">
+                                {tagline}
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 {/* Metadata Row */}

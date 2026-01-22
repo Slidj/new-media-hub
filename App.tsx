@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Modal } from './components/Modal';
@@ -14,6 +14,87 @@ import { API } from './services/tmdb';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
+// --- OPTIMIZED MOVIE CARD COMPONENT ---
+// Separated and Memoized to prevent re-rendering entire grid on infinite scroll
+interface MovieCardProps {
+    movie: Movie;
+    index: number;
+    activeCategory: Category;
+    onClick: (movie: Movie) => void;
+}
+
+const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProps) => {
+    // Determine Top 10 badge only if trending category
+    const isTop10 = activeCategory === 'trending' && index < 10;
+    
+    // SVG Path for the ribbon
+    const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
+
+    return (
+        <div 
+            className="animate-fade-in-up fill-mode-forwards"
+            style={{ 
+                animationDelay: `${Math.min((index % 15) * 50, 500)}ms`,
+                // Use will-change to hint browser about upcoming transforms (smoother scroll)
+                willChange: 'transform, opacity'
+            }}
+        >
+            <div 
+                className="
+                    relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
+                    transform-gpu transition-transform duration-200 ease-out
+                    hover:scale-105 hover:z-50 hover:shadow-2xl hover:shadow-black
+                    active:scale-95 active:brightness-75
+                "
+                onClick={() => onClick(movie)}
+            >
+                <img
+                    src={movie.smallPosterUrl || movie.posterUrl}
+                    className="w-full h-full object-cover bg-[#222]"
+                    alt={movie.title}
+                    loading="lazy"
+                    decoding="async" // Helps with main thread jank
+                />
+                
+                {isTop10 && (
+                <div className="absolute top-0 right-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
+                        <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
+                        <path d={ribbonPath} />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pb-1">
+                        <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
+                        <span className="text-sm font-black leading-none text-white">10</span>
+                        </div>
+                </div>
+                )}
+
+                {movie.mediaType === 'tv' && (
+                <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
+                        <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
+                        <path d={ribbonPath} />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center pb-1">
+                        <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
+                        </div>
+                </div>
+                )}
+
+                <div className="absolute bottom-2 right-2 z-20">
+                <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
+                    <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+                    <span className="text-[10px] font-bold text-white">{movie.rating}</span>
+                </div>
+                </div>
+
+                {/* Removed complex hover overlay for better mobile performance, or simplified it */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+        </div>
+    );
+});
+
+// --- MAIN APP COMPONENT ---
+
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
@@ -23,7 +104,6 @@ function App() {
   const [user, setUser] = useState<WebAppUser | null>(null);
 
   // SMART LANGUAGE INIT: 
-  // Read Telegram data immediately via lazy initialization to prevent "English flash"
   const [lang, setLang] = useState<Language>(() => {
     try {
       if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code) {
@@ -61,13 +141,10 @@ function App() {
       const tgUser = tg.initDataUnsafe?.user;
       if (tgUser) {
         setUser(tgUser);
-        // Double check language in case it changed or init failed
         if (tgUser.language_code) {
            const detectedLang = getLanguage(tgUser.language_code);
            if (detectedLang !== lang) {
              setLang(detectedLang);
-             // If language changed post-init, we might need to reset, 
-             // but usually the lazy init covers the start-up case.
            }
         }
       } else {
@@ -80,7 +157,7 @@ function App() {
         });
       }
     }
-  }, []); // Only run once
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -89,18 +166,15 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handler for changing categories
-  const handleCategoryChange = (newCategory: Category) => {
+  const handleCategoryChange = useCallback((newCategory: Category) => {
     if (activeCategory === newCategory) return;
     setActiveCategory(newCategory);
-    setMovies([]); // Clear current list immediately
-    setPage(1); // Reset page
+    setMovies([]); 
+    setPage(1); 
     setHasMore(true);
-    // Note: The main useEffect listening to [activeCategory, page] will trigger the load
-  };
+  }, [activeCategory]);
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
-    // Prevent double fetching, BUT allow if pageNum is 1 (implies a refresh/change of category/lang)
     if (isLoadingRef.current) return;
     
     isLoadingRef.current = true;
@@ -138,9 +212,6 @@ function App() {
             return [...prev, ...uniqueNew];
           });
 
-          // Only set hero if it's the first page and we don't have one (or refreshing full list)
-          // For sub-categories, we might want to keep the main hero or update it. 
-          // Let's update it to match the category context.
           if (pageNum === 1 && newMovies.length > 0) {
             const randomIndex = Math.floor(Math.random() * Math.min(newMovies.length, 10));
             const randomHero = newMovies[randomIndex]; 
@@ -157,10 +228,9 @@ function App() {
     }
   }, []);
 
-  // Main Load Effect (Handles Initial Load + Page Changes + Category Changes)
+  // Main Load Effect
   useEffect(() => {
     if (activeTab === 'home') {
-        // Force reload if language changed effectively by passing current vars
         loadMovies(page, lang, activeCategory);
     }
   }, [page, lang, activeTab, activeCategory, loadMovies]);
@@ -173,24 +243,26 @@ function App() {
       const scrollHeight = document.documentElement.scrollHeight;
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
-
-      if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore && !isLoadingRef.current) {
+      
+      // Load earlier (1000px from bottom) to make it feel seamless
+      if (scrollTop + clientHeight >= scrollHeight - 1000 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Throttling scroll event listener could be better, but native passive listener is usually okay
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, activeTab]);
+
+  // Memoized handlers to pass to MovieCard
+  const handleMovieClick = useCallback((movie: Movie) => {
+    setSelectedMovie(movie);
+  }, []);
 
   if (showSplash) {
     return <Preloader />;
   }
-
-  // SVG Path for the ribbon with curved inward bottom
-  // M0 0 H28 V36 C28 36 14 28 0 36 V0 Z
-  // Draws top bar, right side down, curves up to center then down to left, left side up.
-  const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white pb-24">
@@ -224,83 +296,22 @@ function App() {
           )}
           
           <section className="relative z-30 mt-4 md:-mt-12 px-2 md:px-12 pb-10">
+            {/* 
+               Using specific content-visibility to improve rendering performance for large lists 
+               But 'content-visibility: auto' can cause scrollbar jumping, so we rely on React.memo first.
+            */}
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-              {movies.map((movie, index) => {
-                // Determine Top 10 badge only if trending category
-                const isTop10 = activeCategory === 'trending' && index < 10;
-                const delay = Math.min((index % 15) * 50, 500); 
-                
-                return (
-                  <div 
+              {movies.map((movie, index) => (
+                  <MovieCard 
                     key={`${movie.id}-${index}`}
-                    className="opacity-0 animate-fade-in-up fill-mode-forwards"
-                    style={{ animationDelay: `${delay}ms` }}
-                  >
-                    <div 
-                        className="
-                            relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
-                            transition-transform duration-200 ease-out
-                            hover:scale-110 hover:z-50 hover:shadow-2xl hover:shadow-black
-                            active:scale-95 active:brightness-75
-                        "
-                        onClick={() => setSelectedMovie(movie)}
-                    >
-                        <img
-                        src={movie.smallPosterUrl || movie.posterUrl}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        alt={movie.title}
-                        loading="lazy"
-                        />
-                        
-                        {/* 
-                            NEW DESIGN: Top 10 Badge (Right Corner)
-                            SVG Shape: "Oblique cut with rounded concavity inward"
-                        */}
-                        {isTop10 && (
-                        <div className="absolute top-0 right-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
-                             <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
-                                <path d={ribbonPath} />
-                             </svg>
-                             <div className="absolute inset-0 flex flex-col items-center justify-center pb-1">
-                                <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
-                                <span className="text-sm font-black leading-none text-white">10</span>
-                             </div>
-                        </div>
-                        )}
+                    movie={movie}
+                    index={index}
+                    activeCategory={activeCategory}
+                    onClick={handleMovieClick}
+                  />
+              ))}
 
-                        {/* 
-                            NEW DESIGN: Series Badge (Left Corner)
-                            SVG Shape: "Oblique cut with rounded concavity inward"
-                        */}
-                        {movie.mediaType === 'tv' && (
-                        <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
-                             <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
-                                <path d={ribbonPath} />
-                             </svg>
-                             <div className="absolute inset-0 flex items-center justify-center pb-1">
-                                <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
-                             </div>
-                        </div>
-                        )}
-
-                        <div className="absolute bottom-2 right-2 z-20">
-                        <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
-                            <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                            <span className="text-[10px] font-bold text-white">{movie.rating}</span>
-                        </div>
-                        </div>
-
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
-                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-t-[10px] border-t-white border-r-[6px] border-r-transparent transform rotate-[-90deg] ml-1"></div>
-                            </div>
-                        </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {loading && Array.from({ length: 12 }).map((_, i) => (
+              {loading && Array.from({ length: 6 }).map((_, i) => (
                   <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
                     <SkeletonCard />
                   </div>
@@ -334,7 +345,7 @@ function App() {
           onClose={() => setSelectedMovie(null)} 
           onPlay={(m) => {
              setPlayingMovie(m);
-             setSelectedMovie(null); // Optional: close detail modal when starting playback
+             setSelectedMovie(null); 
           }}
           lang={lang}
         />
