@@ -16,8 +16,8 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
   const t = translations[lang];
 
   useEffect(() => {
-    // Check for Telegram environment to adjust layout
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
+    // Більш надійна перевірка наявності Telegram WebApp
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       setIsTelegram(true);
     }
 
@@ -44,18 +44,15 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
   return (
     <div 
       className={`
-        fixed left-0 w-full z-30
+        fixed left-0 w-full z-40
         transition-all duration-500 ease-in-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
-        ${!isTelegram ? 'top-[60px] md:top-[80px]' : ''}
+        ${!isTelegram ? 'top-[70px] md:top-[90px]' : ''}
       `}
-      style={isTelegram ? { top: 'calc(135px + env(safe-area-inset-top))' } : undefined}
+      // Для Telegram встановлюємо значно більший відступ (160px), 
+      // оскільки логотип зміщено вниз через mt-24 (96px) + висота логотипа.
+      style={isTelegram ? { top: 'calc(160px + env(safe-area-inset-top))' } : undefined}
     >
-        {/* 
-           justify-center: центрує кнопки на екрані.
-           overflow-x-auto: дозволяє скрол на дуже вузьких екранах.
-           no-scrollbar: ховає скролбар.
-        */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar px-2 w-full items-center justify-center">
             {categories.map((cat, index) => (
                 <button
@@ -67,7 +64,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                         transition-all duration-300 active:scale-95 border backdrop-blur-md shadow-lg
                         ${activeCategory === cat.id 
                             ? 'bg-white text-black border-white' 
-                            : 'bg-black/30 text-white border-white/20 hover:bg-black/50'
+                            : 'bg-black/40 text-white border-white/20 hover:bg-black/60'
                         }
                     `}
                     style={{ 
