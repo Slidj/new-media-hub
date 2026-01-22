@@ -33,21 +33,21 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
           className="hidden md:block w-full h-full object-cover object-top"
         />
         
-        {/* Gradients for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+        {/* Gradients for readability - Reduced intensity at the bottom to avoid double darkening */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block"></div>
       </div>
 
-      {/* Content Area - Adjusted padding-bottom to sit comfortably near the bottom, not too high */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-12 md:pb-20 px-4 md:px-12 w-full">
+      {/* Content Area - Low padding (pb-8) allows buttons to sit at the very bottom, clearly visible above the list */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-12 px-4 md:px-12 w-full">
             
             {/* Title / Logo Logic */}
-            <div className="mb-6 md:mb-8 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
+            <div className="mb-4 md:mb-6 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
                         alt={movie.title} 
-                        className="w-64 md:w-[500px] max-h-48 md:max-h-72 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]"
+                        className="w-64 md:w-[500px] max-h-40 md:max-h-64 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]"
                     />
                 ) : (
                     <h1 className="text-4xl md:text-7xl font-black text-center md:text-left drop-shadow-2xl uppercase tracking-tighter leading-none">
@@ -60,7 +60,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
             <div className="flex items-center justify-center md:justify-start gap-3 md:gap-4 w-full md:w-auto px-4 md:px-0">
               <button 
                 onClick={onPlay}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
               >
                 <Play className="w-6 h-6 md:w-8 md:h-8 fill-black" />
                 <span className="text-lg md:text-xl">{t.play}</span>
@@ -68,7 +68,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
               
               <button 
                 onClick={onMoreInfo}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10"
               >
                 <Info className="w-6 h-6 md:w-8 md:h-8" />
                 <span className="text-lg md:text-xl">{t.moreInfo}</span>
