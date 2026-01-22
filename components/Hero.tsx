@@ -38,8 +38,8 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block"></div>
       </div>
 
-      {/* Content Area - Significantly increased padding-bottom to lift buttons way above the parallax fold */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-44 md:pb-64 px-4 md:px-12 w-full">
+      {/* Content Area - Adjusted padding-bottom to sit comfortably near the bottom, not too high */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-12 md:pb-20 px-4 md:px-12 w-full">
             
             {/* Title / Logo Logic */}
             <div className="mb-6 md:mb-8 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
@@ -56,8 +56,6 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
                 )}
             </div>
             
-            {/* Metadata REMOVED as requested */}
-
             {/* Buttons - Compact & Centered on Mobile */}
             <div className="flex items-center justify-center md:justify-start gap-3 md:gap-4 w-full md:w-auto px-4 md:px-0">
               <button 

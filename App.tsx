@@ -318,7 +318,8 @@ function App() {
                 <div className="w-full h-[75vh] md:h-[90vh] pointer-events-none" />
                 
                 {/* 2. The Main Content 'Sheet' */}
-                <section className="relative bg-black min-h-screen -mt-24 md:-mt-32 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
+                {/* REDUCED NEGATIVE MARGIN TO PUSH LIST DOWN */}
+                <section className="relative bg-black min-h-screen -mt-8 md:-mt-12 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
                     
                     {/* Gradient Overlay for smooth transition - MADE SOFTER */}
                     <div className="absolute top-0 left-0 right-0 -translate-y-full h-48 bg-gradient-to-t from-black to-transparent pointer-events-none" />
