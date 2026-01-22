@@ -38,16 +38,16 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block"></div>
       </div>
 
-      {/* Content Area - Increased padding-bottom to lift content above the scrolling list overlap */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-32 md:pb-48 px-4 md:px-12 w-full">
+      {/* Content Area - Significantly increased padding-bottom to lift buttons way above the parallax fold */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-44 md:pb-64 px-4 md:px-12 w-full">
             
             {/* Title / Logo Logic */}
-            <div className="mb-5 md:mb-8 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
+            <div className="mb-6 md:mb-8 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
                         alt={movie.title} 
-                        className="w-56 md:w-[500px] max-h-40 md:max-h-64 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]"
+                        className="w-64 md:w-[500px] max-h-48 md:max-h-72 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]"
                     />
                 ) : (
                     <h1 className="text-4xl md:text-7xl font-black text-center md:text-left drop-shadow-2xl uppercase tracking-tighter leading-none">
@@ -56,32 +56,24 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
                 )}
             </div>
             
-            {/* Metadata (Tags) */}
-            <div className="flex items-center gap-3 text-sm md:text-lg font-medium mb-6 md:mb-8 drop-shadow-md text-gray-100">
-                <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
-                <span>{movie.year}</span>
-                <span className="bg-[#333]/80 backdrop-blur-sm px-2 py-0.5 rounded text-xs md:text-sm border border-white/30">{movie.rating}</span>
-                {movie.mediaType === 'tv' && (
-                   <span className="border border-white/30 px-1.5 rounded text-xs md:text-sm">HD</span>
-                )}
-            </div>
+            {/* Metadata REMOVED as requested */}
 
             {/* Buttons - Compact & Centered on Mobile */}
             <div className="flex items-center justify-center md:justify-start gap-3 md:gap-4 w-full md:w-auto px-4 md:px-0">
               <button 
                 onClick={onPlay}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-xl"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
               >
-                <Play className="w-5 h-5 md:w-7 md:h-7 fill-black" />
-                <span className="text-base md:text-xl">{t.play}</span>
+                <Play className="w-6 h-6 md:w-8 md:h-8 fill-black" />
+                <span className="text-lg md:text-xl">{t.play}</span>
               </button>
               
               <button 
                 onClick={onMoreInfo}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10"
               >
-                <Info className="w-5 h-5 md:w-7 md:h-7" />
-                <span className="text-base md:text-xl">{t.moreInfo}</span>
+                <Info className="w-6 h-6 md:w-8 md:h-8" />
+                <span className="text-lg md:text-xl">{t.moreInfo}</span>
               </button>
             </div>
       </div>
