@@ -183,6 +183,32 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
   }
 };
 
+// New function to fetch textless images (clean posters/banners)
+export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ poster?: string; banner?: string }> => {
+    try {
+        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+        // Request images specifically without language filter (null) or english as fallback
+        // 'include_image_language=null' is the trick to get textless images
+        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}&include_image_language=null,en`);
+        
+        if (!request.ok) return {};
+
+        const data = await request.json();
+        
+        // Find best textless poster (iso_639_1 === null)
+        const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || data.posters?.[0];
+        const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || data.backdrops?.[0];
+
+        return {
+            poster: cleanPosterObj ? `${POSTER_BASE_URL}${cleanPosterObj.file_path}` : undefined,
+            banner: cleanBannerObj ? `${IMAGE_BASE_URL}${cleanBannerObj.file_path}` : undefined
+        };
+    } catch (error) {
+        console.error("Error fetching clean images:", error);
+        return {};
+    }
+};
+
 export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ duration: string | null, tagline: string | null }> => {
   try {
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
@@ -246,6 +272,7 @@ export const API = {
   fetchDiscoverCartoons,
   searchContent,
   fetchMovieLogo,
+  fetchCleanImages,
   fetchExternalIds,
   fetchMovieDuration,
   fetchMovieDetails

@@ -18,25 +18,47 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
+  
+  // State for clean images (no text)
+  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
+  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
+  
+  // Fade states: true only when the clean image has fully loaded
+  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
+  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
+  
   const t = translations[lang];
 
   useEffect(() => {
     if (movie) {
+      // Reset all states immediately when movie changes
+      setLogoUrl(null);
+      setDuration(null);
+      setTagline(null);
+      setCleanPosterUrl(null);
+      setCleanBannerUrl(null);
+      setIsCleanPosterLoaded(false);
+      setIsCleanBannerLoaded(false);
+
       if (window.Telegram?.WebApp) {
         setPlatform(window.Telegram.WebApp.platform);
       }
       
       const loadDetails = async () => {
-        // 1. Logo
+        // 1. Fetch Textless Images
+        const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
+        if (cleanImages.poster) setCleanPosterUrl(cleanImages.poster);
+        if (cleanImages.banner) setCleanBannerUrl(cleanImages.banner);
+
+        // 2. Logo
         if (movie.logoUrl) {
             setLogoUrl(movie.logoUrl);
         } else {
             const fetchedLogo = await API.fetchMovieLogo(movie.id, movie.mediaType === 'tv');
             if (fetchedLogo) setLogoUrl(fetchedLogo);
-            else setLogoUrl(null);
         }
 
-        // 2. Details (Duration & Tagline)
+        // 3. Details (Duration & Tagline)
         const details = await API.fetchMovieDetails(movie.id, movie.mediaType);
         
         if (movie.duration && movie.duration !== 'N/A') {
@@ -47,8 +69,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         if (details.tagline) {
             setTagline(details.tagline);
-        } else {
-            setTagline(null);
         }
       };
       loadDetails();
@@ -135,42 +155,69 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             
             {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full h-[65vh] md:h-[60vh]">
-                {/* 
-                   MOBILE IMAGE STRATEGY:
-                   Use 'posterUrl' (Vertical) for mobile. 
-                   Because mobile screens are tall, using a wide banner (16:9) creates massive cropping (zooming).
-                   The vertical poster fits the screen ratio, showing all characters/context.
-                */}
-                <img 
-                  src={movie.posterUrl} 
-                  alt={movie.title} 
-                  className="block md:hidden w-full h-full object-cover object-center"
-                  loading="eager"
-                />
-
-                {/* DESKTOP IMAGE STRATEGY:
-                   Use 'bannerUrl' (Horizontal) for desktop screens.
-                */}
-                <img 
-                  src={movie.bannerUrl} 
-                  alt={movie.title} 
-                  className="hidden md:block w-full h-full object-cover object-top"
-                  loading="eager"
-                />
                 
-                {/* === CINEMATIC GRADIENT STACK === */}
+                {/* --- MOBILE (Portrait) Strategy --- */}
+                <div className="block md:hidden w-full h-full relative">
+                    {/* Layer 1: Base Standard Poster (Always Visible Immediately) */}
+                    <img 
+                        src={movie.posterUrl} 
+                        alt={movie.title} 
+                        className="absolute inset-0 w-full h-full object-cover object-center z-0"
+                    />
+                    
+                    {/* Layer 2: Clean Poster Overlay (Fades in when loaded) */}
+                    {cleanPosterUrl && (
+                        <img 
+                            src={cleanPosterUrl}
+                            alt="" 
+                            className={`
+                                absolute inset-0 w-full h-full object-cover object-center z-10
+                                transition-opacity duration-700 ease-in-out
+                                ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
+                            `}
+                            onLoad={() => setIsCleanPosterLoaded(true)}
+                        />
+                    )}
+                </div>
+
+                {/* --- DESKTOP (Landscape) Strategy --- */}
+                <div className="hidden md:block w-full h-full relative">
+                    {/* Layer 1: Base Standard Banner */}
+                    <img 
+                        src={movie.bannerUrl} 
+                        alt={movie.title} 
+                        className="absolute inset-0 w-full h-full object-cover object-top z-0"
+                    />
+                    
+                    {/* Layer 2: Clean Banner Overlay */}
+                    {cleanBannerUrl && (
+                        <img 
+                            src={cleanBannerUrl}
+                            alt="" 
+                            className={`
+                                absolute inset-0 w-full h-full object-cover object-top z-10
+                                transition-opacity duration-700 ease-in-out
+                                ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
+                            `}
+                            onLoad={() => setIsCleanBannerLoaded(true)}
+                        />
+                    )}
+                </div>
                 
-                {/* Top Shade: Ensures close button is visible */}
-                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
+                {/* === CINEMATIC GRADIENT STACK (Overlays everything) === */}
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                    {/* Top Shade */}
+                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
 
-                {/* Layer 1: The Long Soft Fade (Starts high, very subtle) */}
-                <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+                    {/* Layer 1: Long Fade */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
 
-                {/* Layer 2: The Medium Blend (Where content sits) */}
-                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent"></div>
+                    {/* Layer 2: Medium Blend */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent"></div>
 
-                {/* Layer 3: The Solid Base (Connects seamlessly to content div) */}
-                <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]"></div>
+                    {/* Layer 3: Solid Base */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]"></div>
+                </div>
             </div>
 
             {/* 2. CONTENT AREA */}
