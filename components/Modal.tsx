@@ -43,68 +43,91 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       
       let isMounted = true;
 
-      const loadImages = async () => {
-         try {
-             const [cleanImages, logoData, detailsData] = await Promise.all([
-                 API.fetchCleanImages(movie.id, movie.mediaType),
-                 !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
-                 API.fetchMovieDetails(movie.id, movie.mediaType)
-             ]);
+      // --- 1. VISUALS PRIORITY STREAM ---
+      // We do not wait for details/logos to show the main image.
+      const loadVisuals = async () => {
+          // Defaults (standard images usually cached from grid)
+          let finalPoster = movie.posterUrl;
+          let finalBanner = movie.bannerUrl;
 
-             if (!isMounted) return;
+          try {
+              // Race: Try to get clean image in 500ms. If network is slow, fallback to standard immediately.
+              const cleanImagesPromise = API.fetchCleanImages(movie.id, movie.mediaType);
+              const timeoutPromise = new Promise<{poster?: string, banner?: string}>((_, reject) => 
+                  setTimeout(() => reject('timeout'), 500)
+              );
 
-             const targetPoster = cleanImages.poster || movie.posterUrl;
-             const targetBanner = cleanImages.banner || movie.bannerUrl;
+              // Wait for fastest
+              const cleanImages = await Promise.race([cleanImagesPromise, timeoutPromise]);
 
-             const imgToLoad = window.innerWidth < 768 ? targetPoster : targetBanner;
-             
-             const imgObj = new Image();
-             imgObj.src = imgToLoad;
-             imgObj.onload = () => {
-                 if (isMounted) {
-                     setActivePosterSrc(targetPoster);
-                     setActiveBannerSrc(targetBanner);
-                     setIsImageLoaded(true);
-                 }
-             };
-             imgObj.onerror = () => {
-                 if (isMounted) {
-                     setActivePosterSrc(targetPoster);
-                     setActiveBannerSrc(targetBanner);
-                     setIsImageLoaded(true);
-                 }
-             };
+              if (cleanImages.poster) finalPoster = cleanImages.poster;
+              if (cleanImages.banner) finalBanner = cleanImages.banner;
 
-             if (movie.logoUrl) {
-                 setLogoUrl(movie.logoUrl);
-             } else if (logoData) {
-                 setLogoUrl(logoData);
-             }
+          } catch (e) {
+              // If timeout or error, just ignore and use standard (fastest path)
+              // console.log("Using standard image due to timeout/error");
+          }
 
-             if (movie.duration && movie.duration !== 'N/A') {
-                 setDuration(movie.duration);
-             } else if (detailsData.duration) {
-                 setDuration(detailsData.duration);
-             }
+          if (!isMounted) return;
 
-             if (detailsData.tagline) {
-                 setTagline(detailsData.tagline);
-             }
-
-         } catch (e) {
-             console.error("Modal data load error", e);
+          // Preload the chosen image
+          const imgToLoad = window.innerWidth < 768 ? finalPoster : finalBanner;
+          const img = new Image();
+          img.src = imgToLoad;
+          
+          img.onload = () => {
+              if (isMounted) {
+                  setActivePosterSrc(finalPoster);
+                  setActiveBannerSrc(finalBanner);
+                  setIsImageLoaded(true);
+              }
+          };
+          // Even if error, show something
+          img.onerror = () => {
              if (isMounted) {
                  setActivePosterSrc(movie.posterUrl);
                  setActiveBannerSrc(movie.bannerUrl);
                  setIsImageLoaded(true);
              }
-         }
+          }
       };
 
-      loadImages();
+      // --- 2. DATA/METADATA STREAM ---
+      // Runs in parallel, does not block visual loading
+      const loadMetadata = async () => {
+          try {
+              const [logoData, detailsData] = await Promise.all([
+                  !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
+                  API.fetchMovieDetails(movie.id, movie.mediaType)
+              ]);
+
+              if (!isMounted) return;
+
+              if (movie.logoUrl) {
+                  setLogoUrl(movie.logoUrl);
+              } else if (logoData) {
+                  setLogoUrl(logoData);
+              }
+
+              if (movie.duration && movie.duration !== 'N/A') {
+                  setDuration(movie.duration);
+              } else if (detailsData.duration) {
+                  setDuration(detailsData.duration);
+              }
+
+              if (detailsData.tagline) {
+                  setTagline(detailsData.tagline);
+              }
+          } catch (e) {
+              console.error("Metadata load error", e);
+          }
+      };
+
+      // FIRE BOTH STREAMS
+      loadVisuals();
+      loadMetadata();
 
       // OPTIMIZATION: Use setTimeout instead of requestAnimationFrame for smoother entry
-      // This ensures the browser has painted the "hidden" state before applying the transition.
       const timer = setTimeout(() => {
           setIsVisible(true);
       }, 50);
