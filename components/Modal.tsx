@@ -49,7 +49,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           if (animationTriggered || !isMounted) return;
           animationTriggered = true;
           
-          // Подвійний rAF для гарантії, що DOM оновився з картинкою перед початком транзішну
           requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                   setIsVisible(true);
@@ -57,11 +56,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           });
       };
 
-      // Safety Timeout: Якщо картинка вантажиться довше 400мс, все одно показуємо вікно,
-      // щоб користувач не думав, що додаток завис.
+      // Safety Timeout
       const safetyTimer = setTimeout(() => {
           if (!animationTriggered && isMounted) {
-              // Fallback: ставимо стандартні картинки, якщо Clean/HD не встигли
               if (!activePosterSrc) setActivePosterSrc(movie.posterUrl);
               if (!activeBannerSrc) setActiveBannerSrc(movie.bannerUrl);
               setIsImageLoaded(true);
@@ -75,9 +72,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           let finalBanner = movie.bannerUrl;
 
           try {
-              // Спроба отримати чисті зображення (без тексту)
               const cleanImagesPromise = API.fetchCleanImages(movie.id, movie.mediaType);
-              // Чекаємо не більше 300мс на API відповідь щодо чистих картинок
               const timeoutPromise = new Promise<{poster?: string, banner?: string}>((_, reject) => 
                   setTimeout(() => reject('timeout'), 300)
               );
@@ -88,29 +83,22 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
               if (cleanImages.banner) finalBanner = cleanImages.banner;
 
           } catch (e) {
-              // ignore fetch errors
+              // ignore
           }
 
           if (!isMounted) return;
 
-          // Визначаємо, яку картинку зараз треба завантажити для пристрою
           const imgToLoad = window.innerWidth < 768 ? finalPoster : finalBanner;
           
-          // ПРЕЛОАДИНГ: Створюємо об'єкт Image в пам'яті
           const img = new Image();
           img.src = imgToLoad;
           
           img.onload = () => {
               if (isMounted) {
-                  // Картинка в кеші, можна ставити стейт
                   setActivePosterSrc(finalPoster);
                   setActiveBannerSrc(finalBanner);
                   setIsImageLoaded(true);
-                  
-                  // Скасовуємо таймер безпеки, бо ми встигли завантажити картинку
                   clearTimeout(safetyTimer);
-                  
-                  // ЗАПУСКАЄМО АНІМАЦІЮ ТІЛЬКИ ЗАРАЗ
                   triggerShowAnimation();
               }
           };
@@ -126,7 +114,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           }
       };
 
-      // --- 2. DATA/METADATA STREAM (Parallel, low priority) ---
+      // --- 2. DATA/METADATA STREAM ---
       const loadMetadata = async () => {
           try {
               const [logoData, detailsData] = await Promise.all([
@@ -186,7 +174,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const handleClose = () => {
     setIsVisible(false);
-    // Чекаємо завершення анімації (500ms) перед повним демонтажем
     setTimeout(onClose, 500); 
   };
 
@@ -196,9 +183,16 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
 
+  // Helper styles for sequential animation
+  // Коли isVisible = true, ми додаємо затримку. 
+  // Коли false (закриття), затримка 0, щоб все зникло миттєво разом з вікном.
+  const baseTransition = "transition-all duration-700 ease-out transform";
+  const hiddenState = "opacity-0 translate-y-8";
+  const visibleState = "opacity-100 translate-y-0";
+
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
-      {/* Overlay: Збільшена тривалість до 700ms для м'якості */}
+      {/* Overlay */}
       <div 
         className={`
           absolute inset-0 bg-black/80 backdrop-blur-sm
@@ -214,10 +208,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#0a0a0a] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
-          /* CRITICAL ANIMATION FIXES */
           transform-gpu 
           transition-transform duration-500 
-          /* cubic-bezier(0.32, 0.72, 0, 1) - це дуже плавна крива "Soft Ease Out" */
           ease-[cubic-bezier(0.32,0.72,0,1)]
           
           flex flex-col will-change-transform ring-1 ring-white/10
@@ -244,10 +236,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
-            {/* 1. HERO IMAGE AREA */}
+            {/* 1. HERO IMAGE AREA (NO DELAY - MOVES WITH WINDOW) */}
             <div className="relative w-full h-[65vh] md:h-[60vh] bg-[#0a0a0a]">
                 
-                {/* SKELETON LAYER - visible only if images fail or during very short gap */}
                 <div 
                     className={`
                         absolute inset-0 z-0 bg-[#121212] 
@@ -257,7 +248,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-[#1a1a1a] to-black opacity-50"></div>
                 </div>
 
-                {/* IMAGES with decoding="sync" for instant rendering */}
                 {activePosterSrc && (
                     <img 
                       src={activePosterSrc} 
@@ -292,17 +282,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 </div>
             </div>
 
-            {/* 2. CONTENT AREA */}
-            <div className={`
-                relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32
-                transition-all duration-700 delay-100 ease-out
-                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-            `}>
+            {/* 2. CONTENT AREA WITH CASCADING ANIMATIONS */}
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32">
                 
-                {/* Logo & Tagline Container */}
-                <div className="flex flex-col items-center justify-end gap-3 mb-2">
+                {/* A. Logo & Tagline (DELAY 300ms) */}
+                <div className={`
+                    flex flex-col items-center justify-end gap-3 mb-2
+                    ${baseTransition} ${isVisible ? 'delay-300' : 'delay-0'}
+                    ${isVisible ? visibleState : hiddenState}
+                `}>
                     <div className="w-full h-28 md:h-36 flex items-end justify-center">
-                        <div className={`transition-all duration-700 w-full flex justify-center ${isImageLoaded ? 'opacity-100 transform-none' : 'opacity-0 translate-y-4'}`}>
+                        <div className="w-full flex justify-center">
                             {logoUrl ? (
                                 <img 
                                     src={logoUrl} 
@@ -319,15 +309,19 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
                     <div className="h-6 flex items-center justify-center w-full">
                         {tagline && (
-                            <p className="text-white/70 text-sm md:text-lg italic font-medium text-center drop-shadow-md animate-fade-in-up">
+                            <p className="text-white/70 text-sm md:text-lg italic font-medium text-center drop-shadow-md">
                                 {tagline}
                             </p>
                         )}
                     </div>
                 </div>
 
-                {/* Metadata Row */}
-                <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
+                {/* B. Metadata Row (DELAY 400ms) */}
+                <div className={`
+                    flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md
+                    ${baseTransition} ${isVisible ? 'delay-[400ms]' : 'delay-0'}
+                    ${isVisible ? visibleState : hiddenState}
+                `}>
                     <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                     <span>{movie.year}</span>
                     <span className="bg-[#262626] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
@@ -337,8 +331,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
                 </div>
 
-                {/* BIG ACTION BUTTONS */}
-                <div className="flex flex-col gap-3 pt-2">
+                {/* C. BIG ACTION BUTTONS (DELAY 500ms) */}
+                <div className={`
+                    flex flex-col gap-3 pt-2
+                    ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
+                    ${isVisible ? visibleState : hiddenState}
+                `}>
                     <button 
                         onClick={handlePlayClick}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
@@ -362,10 +360,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                     </div>
                 </div>
 
-                {/* Description */}
-                <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-2">
-                    {movie.description}
-                </p>
+                {/* D. Description (DELAY 600ms) */}
+                <div className={`
+                    ${baseTransition} ${isVisible ? 'delay-[600ms]' : 'delay-0'}
+                    ${isVisible ? visibleState : hiddenState}
+                `}>
+                    <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-2">
+                        {movie.description}
+                    </p>
+                </div>
 
             </div>
         </div>
