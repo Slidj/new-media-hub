@@ -17,9 +17,9 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   return (
     <div className="relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden bg-black">
       {/* Background Image Container */}
-      <div className="absolute top-0 left-0 w-full h-full">
+      <div className="absolute inset-0 z-0">
         
-        {/* Mobile: Vertical Poster (Smart Adaptability) */}
+        {/* Mobile: Vertical Poster */}
         <img
           src={movie.posterUrl}
           alt={movie.title}
@@ -33,16 +33,21 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
           className="hidden md:block w-full h-full object-cover object-top"
         />
         
-        {/* Gradients for readability - Stronger at bottom (black/80) because buttons are lower now */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block"></div>
+        {/* Overlays */}
+        <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
+        
+        {/* Desktop Side Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent hidden md:block pointer-events-none"></div>
+
+        {/* BOTTOM GRADIENT: Small, just to blend into the list below */}
+        <div className="absolute bottom-0 left-0 w-full h-28 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-10"></div>
       </div>
 
-      {/* Content Area - pb-5 puts buttons very low, just above the fold */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-5 md:pb-10 px-4 md:px-12 w-full">
+      {/* Content Area - Z-20 ensures it is above the gradients */}
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-12 px-4 md:px-12 w-full">
             
-            {/* Title / Logo Logic */}
-            <div className="mb-4 md:mb-6 flex justify-center md:justify-start w-full transition-transform duration-700 hover:scale-105 origin-bottom">
+            {/* Title / Logo */}
+            <div className="mb-6 flex justify-center md:justify-start w-full">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
@@ -56,11 +61,11 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
                 )}
             </div>
             
-            {/* Buttons */}
-            <div className="flex items-center justify-center md:justify-start gap-3 md:gap-4 w-full md:w-auto px-4 md:px-0">
+            {/* Buttons - Fully clickable */}
+            <div className="flex items-center justify-center md:justify-start gap-4 w-full md:w-auto">
               <button 
                 onClick={onPlay}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
+                className="flex items-center justify-center gap-2 px-8 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30"
               >
                 <Play className="w-6 h-6 md:w-8 md:h-8 fill-black" />
                 <span className="text-lg md:text-xl">{t.play}</span>
@@ -68,7 +73,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
               
               <button 
                 onClick={onMoreInfo}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10"
+                className="flex items-center justify-center gap-2 px-8 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10 z-30"
               >
                 <Info className="w-6 h-6 md:w-8 md:h-8" />
                 <span className="text-lg md:text-xl">{t.moreInfo}</span>

@@ -117,9 +117,6 @@ function App() {
   const [hasMore, setHasMore] = useState(true);
   
   const isLoadingRef = useRef(false);
-  
-  // Ref for Parallax effect
-  const heroRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -160,28 +157,6 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // --- PARALLAX SCROLL EFFECT ---
-  useEffect(() => {
-    if (activeTab !== 'home') return;
-
-    const handleParallax = () => {
-        if (!heroRef.current) return;
-        
-        const scrolled = window.scrollY;
-        
-        // Stop calculating if the hero is completely off-screen (optimization)
-        if (scrolled > 1200) return;
-
-        // "Parallax Factor": 0.35
-        const rate = scrolled * 0.35;
-        heroRef.current.style.transform = `translate3d(0, -${rate}px, 0)`;
-    };
-
-    // Use passive listener for better scroll performance on mobile
-    window.addEventListener('scroll', handleParallax, { passive: true });
-    return () => window.removeEventListener('scroll', handleParallax);
-  }, [activeTab]);
-
 
   const handleCategoryChange = useCallback((newCategory: Category) => {
     if (activeCategory === newCategory) return;
@@ -189,8 +164,6 @@ function App() {
     setMovies([]); 
     setPage(1); 
     setHasMore(true);
-    // Reset parallax on category change
-    if (heroRef.current) heroRef.current.style.transform = `translate3d(0, 0, 0)`;
   }, [activeCategory]);
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
@@ -295,35 +268,18 @@ function App() {
       
       {activeTab === 'home' ? (
         <>
-            {/* FIXED PARALLAX LAYER (z-0) */}
-            {/* Added ref and will-change-transform for performance */}
+            {/* Standard Block Layout - No Parallax, No Fixed Positioning */}
             {featuredMovie && (
-              <div 
-                ref={heroRef}
-                className="fixed top-0 left-0 w-full h-[75vh] md:h-[90vh] z-0 pointer-events-auto will-change-transform"
-              >
                  <Hero 
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
                     onPlay={() => setPlayingMovie(featuredMovie)}
                     lang={lang}
                  />
-              </div>
             )}
 
-            {/* SCROLLABLE CONTENT LAYER (z-20) */}
-            <main className="relative z-20 w-full">
-                
-                {/* 1. Transparent Spacer to reveal fixed Hero below */}
-                <div className="w-full h-[75vh] md:h-[90vh] pointer-events-none" />
-                
-                {/* 2. The Main Content 'Sheet' */}
-                {/* No negative margin (mt-0) ensures clear separation */}
-                <section className="relative bg-black min-h-screen mt-0 px-2 md:px-12 pb-10 shadow-[0_-50px_100px_50px_rgba(0,0,0,0.8)]">
-                    
-                    {/* Gradient Overlay VERY small (h-10) to just blur the edge, not cover buttons */}
-                    <div className="absolute top-0 left-0 right-0 -translate-y-full h-10 bg-gradient-to-t from-black to-transparent pointer-events-none" />
-
+            <main className="relative z-10 w-full bg-black">
+                <section className="px-2 md:px-12 pb-10">
                     <CategoryNav 
                         lang={lang} 
                         activeCategory={activeCategory} 
