@@ -12,16 +12,15 @@ interface CategoryNavProps {
 
 export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [isTelegram, setIsTelegram] = useState(false);
+  
+  // Ініціалізуємо значення відразу, щоб уникнути стрибка (layout shift) при монтуванні
+  const [isTelegram] = useState(() => 
+    typeof window !== 'undefined' && Boolean(window.Telegram?.WebApp?.initData)
+  );
+  
   const t = translations[lang];
 
   useEffect(() => {
-    // Використовуємо initData для надійної перевірки сесії Telegram,
-    // щоб логіка співпадала з Navbar (де логотип опускається).
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
-      setIsTelegram(true);
-    }
-
     const handleScroll = () => {
       // Ховаємо категорії, якщо проскролили більше 50px
       if (window.scrollY > 50) {
@@ -50,13 +49,12 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
         ${!isTelegram ? 'top-[70px] md:top-[90px]' : ''}
       `}
-      // 170px: 96px (mt-24) + висота лого + відступи. 
-      // Гарантує, що меню буде під логотипом у Telegram.
-      style={isTelegram ? { top: 'calc(170px + env(safe-area-inset-top))' } : undefined}
+      // 165px: Оптимальний відступ, щоб категорії були під логотипом, але не занадто низько
+      style={isTelegram ? { top: 'calc(165px + env(safe-area-inset-top))' } : undefined}
     >
         {/* Зовнішній контейнер для центрування */}
         <div className="flex justify-center w-full px-2">
-            {/* Внутрішній контейнер: дозволяє скрол, якщо контент не вміщається, але центрується, якщо місця вистачає */}
+            {/* Внутрішній контейнер */}
             <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-full items-center py-1">
                 {categories.map((cat, index) => (
                     <button
@@ -72,7 +70,8 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                             }
                         `}
                         style={{ 
-                            animationDelay: `${index * 100 + 300}ms`,
+                            // Значно зменшено затримку (було +300ms), щоб прибрати ефект "прозорості" на старті
+                            animationDelay: `${index * 50}ms`,
                             animationFillMode: 'forwards'
                         }}
                     >
