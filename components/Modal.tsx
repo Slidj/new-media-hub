@@ -19,59 +19,99 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   
-  // State for clean images (no text)
-  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
-  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
-  
-  // Fade states: true only when the clean image has fully loaded
-  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
-  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
+  // Image states
+  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
+  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   
   const t = translations[lang];
 
   useEffect(() => {
     if (movie) {
-      // Reset all states immediately when movie changes
+      // RESET ALL STATES
+      setActivePosterSrc(null);
+      setActiveBannerSrc(null);
+      setIsImageLoaded(false);
+      
       setLogoUrl(null);
       setDuration(null);
       setTagline(null);
-      setCleanPosterUrl(null);
-      setCleanBannerUrl(null);
-      setIsCleanPosterLoaded(false);
-      setIsCleanBannerLoaded(false);
 
       if (window.Telegram?.WebApp) {
         setPlatform(window.Telegram.WebApp.platform);
       }
       
-      const loadDetails = async () => {
-        // 1. Fetch Textless Images
-        const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
-        if (cleanImages.poster) setCleanPosterUrl(cleanImages.poster);
-        if (cleanImages.banner) setCleanBannerUrl(cleanImages.banner);
+      let isMounted = true;
 
-        // 2. Logo
-        if (movie.logoUrl) {
-            setLogoUrl(movie.logoUrl);
-        } else {
-            const fetchedLogo = await API.fetchMovieLogo(movie.id, movie.mediaType === 'tv');
-            if (fetchedLogo) setLogoUrl(fetchedLogo);
-        }
+      // 1. SMART IMAGE LOADING STRATEGY
+      // Goal: Avoid showing "text-burned" posters if possible.
+      // Logic: Wait for API check. If clean exists -> show clean. If not -> show standard.
+      const loadImages = async () => {
+         try {
+             // Parallel fetch: Clean Images + Logo + Details
+             const [cleanImages, logoData, detailsData] = await Promise.all([
+                 API.fetchCleanImages(movie.id, movie.mediaType),
+                 !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
+                 API.fetchMovieDetails(movie.id, movie.mediaType)
+             ]);
 
-        // 3. Details (Duration & Tagline)
-        const details = await API.fetchMovieDetails(movie.id, movie.mediaType);
-        
-        if (movie.duration && movie.duration !== 'N/A') {
-            setDuration(movie.duration);
-        } else {
-            if (details.duration) setDuration(details.duration);
-        }
+             if (!isMounted) return;
 
-        if (details.tagline) {
-            setTagline(details.tagline);
-        }
+             // --- HANDLE IMAGES ---
+             // Decide which URL to use
+             const targetPoster = cleanImages.poster || movie.posterUrl;
+             const targetBanner = cleanImages.banner || movie.bannerUrl;
+
+             // Preload image in memory before rendering to ensure smooth fade-in
+             const imgToLoad = window.innerWidth < 768 ? targetPoster : targetBanner;
+             
+             const imgObj = new Image();
+             imgObj.src = imgToLoad;
+             imgObj.onload = () => {
+                 if (isMounted) {
+                     setActivePosterSrc(targetPoster);
+                     setActiveBannerSrc(targetBanner);
+                     setIsImageLoaded(true);
+                 }
+             };
+             // Failsafe: if image errors, force show what we have
+             imgObj.onerror = () => {
+                 if (isMounted) {
+                     setActivePosterSrc(targetPoster);
+                     setActiveBannerSrc(targetBanner);
+                     setIsImageLoaded(true);
+                 }
+             };
+
+             // --- HANDLE DATA ---
+             if (movie.logoUrl) {
+                 setLogoUrl(movie.logoUrl);
+             } else if (logoData) {
+                 setLogoUrl(logoData);
+             }
+
+             if (movie.duration && movie.duration !== 'N/A') {
+                 setDuration(movie.duration);
+             } else if (detailsData.duration) {
+                 setDuration(detailsData.duration);
+             }
+
+             if (detailsData.tagline) {
+                 setTagline(detailsData.tagline);
+             }
+
+         } catch (e) {
+             console.error("Modal data load error", e);
+             // Fallback to standard data immediately if error
+             if (isMounted) {
+                 setActivePosterSrc(movie.posterUrl);
+                 setActiveBannerSrc(movie.bannerUrl);
+                 setIsImageLoaded(true);
+             }
+         }
       };
-      loadDetails();
+
+      loadImages();
 
       const animId = requestAnimationFrame(() => {
           setIsVisible(true);
@@ -87,6 +127,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       }
 
       return () => {
+        isMounted = false;
         cancelAnimationFrame(animId);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
@@ -154,68 +195,57 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
         <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
             
             {/* 1. HERO IMAGE AREA */}
-            <div className="relative w-full h-[65vh] md:h-[60vh]">
+            <div className="relative w-full h-[65vh] md:h-[60vh] bg-[#0a0a0a]">
                 
-                {/* --- MOBILE (Portrait) Strategy --- */}
-                <div className="block md:hidden w-full h-full relative">
-                    {/* Layer 1: Base Standard Poster (Always Visible Immediately) */}
-                    <img 
-                        src={movie.posterUrl} 
-                        alt={movie.title} 
-                        className="absolute inset-0 w-full h-full object-cover object-center z-0"
-                    />
-                    
-                    {/* Layer 2: Clean Poster Overlay (Fades in when loaded) */}
-                    {cleanPosterUrl && (
-                        <img 
-                            src={cleanPosterUrl}
-                            alt="" 
-                            className={`
-                                absolute inset-0 w-full h-full object-cover object-center z-10
-                                transition-opacity duration-700 ease-in-out
-                                ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
-                            `}
-                            onLoad={() => setIsCleanPosterLoaded(true)}
-                        />
-                    )}
+                {/* LOADING SKELETON / PLACEHOLDER 
+                    Shown while we decide which image to use and while it loads.
+                */}
+                <div 
+                    className={`
+                        absolute inset-0 z-0 bg-[#121212] 
+                        transition-opacity duration-500 ease-out
+                        ${isImageLoaded ? 'opacity-0' : 'opacity-100'}
+                    `}
+                >
+                    {/* Subtle pulse effect */}
+                    <div className="absolute inset-0 animate-pulse bg-gradient-to-t from-black via-[#1a1a1a] to-black opacity-50"></div>
                 </div>
 
-                {/* --- DESKTOP (Landscape) Strategy --- */}
-                <div className="hidden md:block w-full h-full relative">
-                    {/* Layer 1: Base Standard Banner */}
+                {/* 
+                   MOBILE (Portrait)
+                */}
+                {activePosterSrc && (
                     <img 
-                        src={movie.bannerUrl} 
-                        alt={movie.title} 
-                        className="absolute inset-0 w-full h-full object-cover object-top z-0"
+                      src={activePosterSrc} 
+                      alt={movie.title} 
+                      className={`
+                        block md:hidden w-full h-full object-cover object-center
+                        transition-opacity duration-700 ease-in-out
+                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                      `}
                     />
-                    
-                    {/* Layer 2: Clean Banner Overlay */}
-                    {cleanBannerUrl && (
-                        <img 
-                            src={cleanBannerUrl}
-                            alt="" 
-                            className={`
-                                absolute inset-0 w-full h-full object-cover object-top z-10
-                                transition-opacity duration-700 ease-in-out
-                                ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
-                            `}
-                            onLoad={() => setIsCleanBannerLoaded(true)}
-                        />
-                    )}
-                </div>
+                )}
+
+                {/* 
+                   DESKTOP (Landscape)
+                */}
+                {activeBannerSrc && (
+                    <img 
+                      src={activeBannerSrc} 
+                      alt={movie.title} 
+                      className={`
+                        hidden md:block w-full h-full object-cover object-top
+                        transition-opacity duration-700 ease-in-out
+                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                      `}
+                    />
+                )}
                 
-                {/* === CINEMATIC GRADIENT STACK (Overlays everything) === */}
+                {/* === CINEMATIC GRADIENT STACK === */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
-                    {/* Top Shade */}
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
-
-                    {/* Layer 1: Long Fade */}
                     <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
-
-                    {/* Layer 2: Medium Blend */}
                     <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent"></div>
-
-                    {/* Layer 3: Solid Base */}
                     <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]"></div>
                 </div>
             </div>
@@ -229,19 +259,21 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 
                 {/* Logo & Tagline Container */}
                 <div className="flex flex-col items-center justify-end gap-3 mb-2">
-                    {logoUrl ? (
-                        <img 
-                            src={logoUrl} 
-                            alt={movie.title} 
-                            className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl animate-fade-in-up"
-                        />
-                    ) : (
-                        <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
-                            {movie.title}
-                        </h2>
-                    )}
+                    {/* Only show Title/Logo if image is loaded to prevent popping */}
+                    <div className={`w-full flex justify-center transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                        {logoUrl ? (
+                            <img 
+                                src={logoUrl} 
+                                alt={movie.title} 
+                                className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl animate-fade-in-up"
+                            />
+                        ) : (
+                            <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
+                                {movie.title}
+                            </h2>
+                        )}
+                    </div>
 
-                    {/* Tagline */}
                     {tagline && (
                         <p className="text-white/70 text-sm md:text-lg italic font-medium animate-fade-in-up text-center drop-shadow-md" style={{ animationDelay: '100ms' }}>
                             {tagline}
@@ -270,7 +302,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                         <span className="text-lg font-bold">{t.play}</span>
                     </button>
 
-                    {/* Secondary Actions */}
                     <div className="grid grid-cols-3 gap-3">
                         <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
                             <Plus className="w-6 h-6" />
