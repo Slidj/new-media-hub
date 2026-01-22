@@ -12,20 +12,16 @@ interface CategoryNavProps {
 
 export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [isTelegram, setIsTelegram] = useState(false);
   const t = translations[lang];
 
   useEffect(() => {
-    // Detect Telegram environment to adjust spacing
-    if (window.Telegram?.WebApp?.initData) {
-      setIsTelegram(true);
-    }
-
     const handleScroll = () => {
-      // Logic: Show only when very close to top (less than 80px scrolled)
-      // Otherwise hide to give more screen space for content
-      const scrollTop = window.scrollY;
-      setIsVisible(scrollTop < 80);
+      // Ховаємо категорії, якщо проскролили більше 50px
+      if (window.scrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -39,41 +35,37 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
     { id: 'cartoons', label: t.cartoons },
   ];
 
-  // Dynamic positioning logic
-  // For Telegram: Header has huge mt-24 (96px) + content (~40px) + mb-4 (16px) ~= 152px offset needed
-  // We place it at 140px to sit nicely below the logo area.
-  const telegramTop = isVisible ? 'top-[140px]' : 'top-[90px]';
-  
-  // For Web: Header is ~70px height total
-  const webTop = isVisible ? 'top-[70px]' : 'top-[20px]';
-
-  const topClass = isTelegram ? telegramTop : webTop;
-
   return (
     <div 
       className={`
-        fixed left-0 w-full z-50 px-3 md:px-12 flex justify-start md:justify-start
-        transition-all duration-500 ease-in-out pointer-events-none
-        ${topClass}
-        ${isVisible ? 'opacity-100' : 'opacity-0'}
+        fixed top-[60px] md:top-[80px] left-0 w-full z-30
+        transition-all duration-500 ease-in-out
+        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
       `}
     >
-        {/* Scrollable container with pointer events enabled */}
-        <div className={`flex gap-2 pointer-events-auto overflow-x-auto no-scrollbar pb-2 w-full ${!isVisible ? 'pointer-events-none' : ''}`}>
+        {/* 
+           justify-center: центрує кнопки.
+           gap-2: компактніші проміжки.
+           no-scrollbar: приховує скролбар, якщо він все ж з'явиться.
+        */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar px-2 w-full items-center justify-center">
             {categories.map((cat, index) => (
                 <button
                     key={cat.id}
                     onClick={() => onSelectCategory(cat.id)}
                     className={`
-                        whitespace-nowrap px-3 py-1.5 rounded-[4px] text-xs md:text-sm font-bold flex-shrink-0
-                        transition-all duration-300 active:scale-95 shadow-lg
-                        opacity-0 animate-slide-in-left
+                        opacity-0 animate-fade-in-up
+                        whitespace-nowrap px-4 py-1.5 rounded-[4px] text-sm font-bold flex-shrink-0
+                        transition-all duration-300 active:scale-95 border backdrop-blur-md shadow-lg
                         ${activeCategory === cat.id 
-                            ? 'bg-white text-black' 
-                            : 'bg-black/60 text-white hover:bg-black/80 backdrop-blur-md border border-white/20'
+                            ? 'bg-white text-black border-white' 
+                            : 'bg-black/30 text-white border-white/20 hover:bg-black/50'
                         }
                     `}
-                    style={{ animationDelay: `${index * 100}ms` }}
+                    style={{ 
+                        animationDelay: `${index * 100 + 300}ms`,
+                        animationFillMode: 'forwards'
+                    }}
                 >
                     {cat.label}
                 </button>

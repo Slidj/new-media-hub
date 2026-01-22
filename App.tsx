@@ -164,6 +164,7 @@ function App() {
     setMovies([]); 
     setPage(1); 
     setHasMore(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeCategory]);
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
@@ -268,7 +269,14 @@ function App() {
       
       {activeTab === 'home' ? (
         <>
-            {/* Standard Block Layout - No Parallax, No Fixed Positioning */}
+            {/* FIXED CATEGORY NAV (Z-40) - Sits on top of Hero */}
+            <CategoryNav 
+                lang={lang} 
+                activeCategory={activeCategory} 
+                onSelectCategory={handleCategoryChange} 
+            />
+
+            {/* HERO SECTION (Standard Flow) */}
             {featuredMovie && (
                  <Hero 
                     movie={featuredMovie} 
@@ -278,15 +286,10 @@ function App() {
                  />
             )}
 
-            <main className="relative z-10 w-full bg-black">
-                <section className="px-2 md:px-12 pb-10">
-                    <CategoryNav 
-                        lang={lang} 
-                        activeCategory={activeCategory} 
-                        onSelectCategory={handleCategoryChange} 
-                    />
-
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4 pt-4">
+            {/* MAIN CONTENT GRID */}
+            <main className="relative z-10 w-full bg-black -mt-1">
+                <section className="px-2 md:px-12 pb-10 pt-2">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                         {movies.map((movie, index) => (
                             <MovieCard 
                                 key={`${movie.id}-${index}`}
