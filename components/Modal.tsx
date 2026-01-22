@@ -135,10 +135,26 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
             
             {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full h-[65vh] md:h-[60vh]">
+                {/* 
+                   MOBILE IMAGE STRATEGY:
+                   Use 'posterUrl' (Vertical) for mobile. 
+                   Because mobile screens are tall, using a wide banner (16:9) creates massive cropping (zooming).
+                   The vertical poster fits the screen ratio, showing all characters/context.
+                */}
+                <img 
+                  src={movie.posterUrl} 
+                  alt={movie.title} 
+                  className="block md:hidden w-full h-full object-cover object-center"
+                  loading="eager"
+                />
+
+                {/* DESKTOP IMAGE STRATEGY:
+                   Use 'bannerUrl' (Horizontal) for desktop screens.
+                */}
                 <img 
                   src={movie.bannerUrl} 
                   alt={movie.title} 
-                  className="w-full h-full object-cover object-top"
+                  className="hidden md:block w-full h-full object-cover object-top"
                   loading="eager"
                 />
                 
