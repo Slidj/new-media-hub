@@ -12,9 +12,15 @@ interface CategoryNavProps {
 
 export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [isTelegram, setIsTelegram] = useState(false);
   const t = translations[lang];
 
   useEffect(() => {
+    // Check for Telegram environment to adjust layout
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initData) {
+      setIsTelegram(true);
+    }
+
     const handleScroll = () => {
       // Ховаємо категорії, якщо проскролили більше 50px
       if (window.scrollY > 50) {
@@ -38,15 +44,17 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
   return (
     <div 
       className={`
-        fixed top-[60px] md:top-[80px] left-0 w-full z-30
+        fixed left-0 w-full z-30
         transition-all duration-500 ease-in-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
+        ${!isTelegram ? 'top-[60px] md:top-[80px]' : ''}
       `}
+      style={isTelegram ? { top: 'calc(135px + env(safe-area-inset-top))' } : undefined}
     >
         {/* 
-           justify-center: центрує кнопки.
-           gap-2: компактніші проміжки.
-           no-scrollbar: приховує скролбар, якщо він все ж з'явиться.
+           justify-center: центрує кнопки на екрані.
+           overflow-x-auto: дозволяє скрол на дуже вузьких екранах.
+           no-scrollbar: ховає скролбар.
         */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar px-2 w-full items-center justify-center">
             {categories.map((cat, index) => (
