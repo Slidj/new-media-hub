@@ -215,7 +215,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
           transform-gpu 
           transition-transform duration-500 
@@ -233,7 +233,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
         <button 
           onClick={handleClose}
           className={`
-            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/50 backdrop-blur-md
+            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/50 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
             transition-all duration-500 delay-100
             ${isMobile ? 'top-3 right-3' : 'top-4 right-4'}
@@ -243,13 +243,13 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </button>
 
-        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#141414]">
+        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
             {/* 1. HERO IMAGE AREA */}
-            <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#0a0a0a]">
+            <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818]">
                 
                 {/* Background placeholder */}
-                <div className={`absolute inset-0 z-0 bg-[#121212] ${isImageLoaded ? 'opacity-0' : 'opacity-100'}`} />
+                <div className={`absolute inset-0 z-0 bg-[#181818] ${isImageLoaded ? 'opacity-0' : 'opacity-100'}`} />
 
                 {activePosterSrc && (
                     <img 
@@ -276,12 +276,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                     />
                 )}
                 
-                {/* Gradients */}
+                {/* Gradients to match #181818 */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
-                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#141414] via-[#141414]/90 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#141414]"></div>
+                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#181818]/60 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#181818] via-[#181818]/90 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#181818]"></div>
                 </div>
             </div>
 
