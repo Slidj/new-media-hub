@@ -1,5 +1,5 @@
 
-// Update: Navbar with Version Indicator v5.0 (Green for success)
+// Update: Navbar with Version Indicator v6.1
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -34,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   }, []);
 
   const handleForceReload = () => {
+     localStorage.clear();
      window.location.reload();
   };
 
@@ -65,13 +66,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v5.0: Green to confirm update */}
+            {/* VERSION INDICATOR v6.1 */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="Update Successful - Tap to reload"
+                title="Stable Version - Tap to hard reset"
             >
-                v5.0
+                v6.1
             </button>
           </div>
         </div>
