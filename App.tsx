@@ -337,6 +337,7 @@ function App() {
              setPlayingMovie(m);
              setSelectedMovie(null); 
           }}
+          onMovieSelect={setSelectedMovie} // Pass the setter to handle recommendations
           lang={lang}
         />
       )}

@@ -30,7 +30,14 @@ export const translations = {
     errorGemini: "Sorry, I'm having trouble connecting to the movie database right now.",
     configureKey: "Please configure the Gemini API Key.",
     noResponse: "I couldn't generate a response regarding that.",
-    series: "SERIES"
+    series: "SERIES",
+    overview: "Overview",
+    trailers: "Trailers & More",
+    moreLikeThis: "More Like This",
+    cast: "Cast",
+    director: "Director",
+    noTrailers: "No trailers available",
+    noRecommendations: "No recommendations found"
   },
   uk: {
     home: "Головна",
@@ -60,7 +67,14 @@ export const translations = {
     errorGemini: "Вибачте, зараз я не можу з'єднатися з базою даних фільмів.",
     configureKey: "Будь ласка, налаштуйте ключ Gemini API.",
     noResponse: "Я не зміг згенерувати відповідь щодо цього.",
-    series: "СЕРІАЛ"
+    series: "СЕРІАЛ",
+    overview: "Огляд",
+    trailers: "Трейлери та інше",
+    moreLikeThis: "Схоже",
+    cast: "Актори",
+    director: "Режисер",
+    noTrailers: "Трейлери відсутні",
+    noRecommendations: "Рекомендації відсутні"
   },
   ru: {
     home: "Главная",
@@ -90,7 +104,14 @@ export const translations = {
     errorGemini: "Извините, сейчас я не могу соединиться с базой данных фильмов.",
     configureKey: "Пожалуйста, настройте ключ Gemini API.",
     noResponse: "Я не смог сгенерировать ответ по этому поводу.",
-    series: "СЕРИАЛ"
+    series: "СЕРИАЛ",
+    overview: "Обзор",
+    trailers: "Трейлеры и другое",
+    moreLikeThis: "Похожее",
+    cast: "Актеры",
+    director: "Режиссер",
+    noTrailers: "Трейлеры отсутствуют",
+    noRecommendations: "Рекомендации отсутствуют"
   }
 };
 

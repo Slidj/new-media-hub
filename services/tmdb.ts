@@ -1,5 +1,5 @@
 
-import { Movie } from '../types';
+import { Movie, Cast, Video } from '../types';
 import { MOVIES } from '../constants';
 
 const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
@@ -12,6 +12,8 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
 const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w780';
 // w342 is perfect for the 3-column grid (much faster scroll)
 const SMALL_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w342';
+// w185 for cast profiles
+const PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w185';
 
 // Keep requests object for legacy or specific calls if needed
 const requests = {
@@ -244,6 +246,69 @@ export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 't
   }
 }
 
+// Fetch Cast/Credits
+export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Cast[]> => {
+    try {
+        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/credits?api_key=${API_KEY}`);
+        
+        if (!request.ok) return [];
+        const data = await request.json();
+
+        return data.cast
+            .filter((p: any) => p.profile_path) // Only with photos
+            .slice(0, 15) // Limit to top 15
+            .map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                character: p.character,
+                profilePath: `${PROFILE_BASE_URL}${p.profile_path}`
+            }));
+    } catch (error) {
+        return [];
+    }
+};
+
+// Fetch Videos (Trailers)
+export const fetchVideos = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Video[]> => {
+    try {
+        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/videos?api_key=${API_KEY}`);
+        
+        if (!request.ok) return [];
+        const data = await request.json();
+
+        return data.results
+            .filter((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+            .map((v: any) => ({
+                id: v.id,
+                key: v.key,
+                name: v.name,
+                site: v.site,
+                type: v.type
+            }));
+    } catch (error) {
+        return [];
+    }
+};
+
+// Fetch Recommendations
+export const fetchRecommendations = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<Movie[]> => {
+    try {
+        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+        const url = `${BASE_URL}/${endpoint}/${movieId}/recommendations?api_key=${API_KEY}&language=${language}&page=1`;
+        const request = await fetch(url);
+        if (!request.ok) return [];
+        const data = await request.json();
+        return data.results
+            .filter((m: any) => m.poster_path)
+            .slice(0, 12)
+            .map((m: any) => mapResultToMovie(m, language));
+    } catch (error) {
+        return [];
+    }
+};
+
 // Keeping this for backward compatibility if other files import it, but mapping it to new function
 export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<string | null> => {
     const details = await fetchMovieDetails(movieId, mediaType);
@@ -275,5 +340,8 @@ export const API = {
   fetchCleanImages,
   fetchExternalIds,
   fetchMovieDuration,
-  fetchMovieDetails
+  fetchMovieDetails,
+  fetchCredits,
+  fetchVideos,
+  fetchRecommendations
 };

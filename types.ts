@@ -16,6 +16,21 @@ export interface Movie {
   mediaType: 'movie' | 'tv';
 }
 
+export interface Cast {
+  id: number;
+  name: string;
+  character: string;
+  profilePath: string | null;
+}
+
+export interface Video {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;

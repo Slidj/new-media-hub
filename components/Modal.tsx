@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { X, Play, Plus, ThumbsUp, Share2 } from 'lucide-react';
-import { Movie } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Play, Plus, ThumbsUp, Share2, Youtube } from 'lucide-react';
+import { Movie, Cast, Video } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
 
@@ -9,10 +9,14 @@ interface ModalProps {
   movie: Movie | null;
   onClose: () => void;
   onPlay: (movie: Movie) => void;
+  // Додано optional prop для переходу на рекомендований фільм
+  onMovieSelect?: (movie: Movie) => void; 
   lang: Language;
 }
 
-export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) => {
+type TabType = 'overview' | 'trailers' | 'more_like_this';
+
+export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSelect, lang }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   
@@ -21,11 +25,18 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   
+  // New Extended Content States
+  const [cast, setCast] = useState<Cast[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+
   // Image States
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   
+  const scrollRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
   useEffect(() => {
@@ -38,6 +49,13 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       setLogoUrl(null);
       setDuration(null);
       setTagline(null);
+      setCast([]);
+      setVideos([]);
+      setRecommendations([]);
+      setActiveTab('overview');
+      
+      // Reset scroll position
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
       if (window.Telegram?.WebApp) {
         setPlatform(window.Telegram.WebApp.platform);
@@ -45,18 +63,13 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       
       let isMounted = true;
 
-      // 2. Головна функція підготовки контенту
+      // 2. Головна функція підготовки контенту (зображення)
       const prepareContent = async () => {
-          // --- ЕТАП 1: Вибір джерела зображення ---
-          // Ми хочемо "чисте" зображення. Даємо API 600мс на відповідь.
-          // Це не занадто довго для UX, але достатньо, щоб уникнути показу тексту на постері.
-          
           let targetPoster = movie.posterUrl;
           let targetBanner = movie.bannerUrl;
 
           try {
               const cleanPromise = API.fetchCleanImages(movie.id, movie.mediaType);
-              // Таймер терпіння: якщо API тупить довше 600мс, ми не чекаємо і показуємо оригінал
               const timeoutPromise = new Promise<{poster?: string, banner?: string} | null>((resolve) => 
                   setTimeout(() => resolve(null), 600)
               );
@@ -64,20 +77,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
               const result = await Promise.race([cleanPromise, timeoutPromise]);
 
               if (result) {
-                  // API відповіло швидко. Якщо є чисті картинки — беремо їх.
                   if (result.poster) targetPoster = result.poster;
                   if (result.banner) targetBanner = result.banner;
               }
-              // Якщо result === null (timeout), ми просто залишаємось на movie.posterUrl
-          } catch (e) {
-              // Помилка API — залишаємось на оригіналі
-          }
+          } catch (e) { }
 
           if (!isMounted) return;
-
-          // --- ЕТАП 2: Preloading ---
-          // Тепер, коли ми ВИРІШИЛИ, яку картинку показувати, ми її вантажимо.
-          // Жодних підмін. Що завантажили — те й покажемо.
           
           const imgToLoad = window.innerWidth < 768 ? targetPoster : targetBanner;
           const img = new Image();
@@ -85,14 +90,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
 
           const launchModal = () => {
               if (!isMounted) return;
-              
-              // Встановлюємо фінальні URL
               setActivePosterSrc(targetPoster);
               setActiveBannerSrc(targetBanner);
               setIsImageLoaded(true);
-
-              // --- ЕТАП 3: Запуск анімації ---
-              // Використовуємо подвійний rAF для ідеальної плавності CSS transitions
               requestAnimationFrame(() => {
                   requestAnimationFrame(() => {
                       setIsVisible(true);
@@ -100,17 +100,19 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
               });
           };
 
-          // Запускаємо модалку як тільки картинка готова (або якщо сталася помилка завантаження, щоб не блокувати UI)
           img.onload = launchModal;
           img.onerror = launchModal;
       };
 
-      // 3. Завантаження метаданих (паралельно, не блокує UI)
+      // 3. Завантаження метаданих (паралельно)
       const loadMetadata = async () => {
           try {
-              const [logoData, detailsData] = await Promise.all([
+              const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
-                  API.fetchMovieDetails(movie.id, movie.mediaType)
+                  API.fetchMovieDetails(movie.id, movie.mediaType),
+                  API.fetchCredits(movie.id, movie.mediaType),
+                  API.fetchVideos(movie.id, movie.mediaType),
+                  API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US')
               ]);
 
               if (!isMounted) return;
@@ -122,13 +124,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
               else if (detailsData.duration) setDuration(detailsData.duration);
 
               if (detailsData.tagline) setTagline(detailsData.tagline);
+              
+              setCast(castData);
+              setVideos(videoData);
+              setRecommendations(recData);
+
           } catch (e) { console.error(e); }
       };
 
       prepareContent();
       loadMetadata();
 
-      // Telegram Button Setup
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -161,6 +167,19 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
   const handlePlayClick = () => {
     onPlay(movie);
   };
+  
+  const handleRecommendationClick = (recMovie: Movie) => {
+      // If we have a handler from App.tsx, we use it to switch the modal content
+      if (onMovieSelect) {
+          setIsVisible(false);
+          setTimeout(() => onMovieSelect(recMovie), 300);
+      }
+  };
+
+  const handleTrailerClick = (videoKey: string) => {
+      // Open YouTube in a new tab/app
+      window.open(`https://www.youtube.com/watch?v=${videoKey}`, '_blank');
+  };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
@@ -183,7 +202,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#0a0a0a] md:bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#141414] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
           transform-gpu 
           transition-transform duration-500 
@@ -211,12 +230,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
           <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </button>
 
-        <div className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe">
+        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#141414]">
             
             {/* 1. HERO IMAGE AREA */}
-            <div className="relative w-full h-[65vh] md:h-[60vh] bg-[#0a0a0a]">
+            <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#0a0a0a]">
                 
-                {/* Background placeholder while waiting for render */}
+                {/* Background placeholder */}
                 <div className={`absolute inset-0 z-0 bg-[#121212] ${isImageLoaded ? 'opacity-0' : 'opacity-100'}`} />
 
                 {activePosterSrc && (
@@ -247,28 +266,28 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                 {/* Gradients */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#0a0a0a]"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#141414] via-[#141414]/90 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#141414]"></div>
                 </div>
             </div>
 
             {/* 2. CONTENT AREA (Staggered Animations) */}
-            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-4 -mt-24 md:-mt-32">
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-32 md:-mt-40">
                 
-                {/* Logo & Tagline */}
+                {/* A. Logo & Tagline */}
                 <div className={`
                     flex flex-col items-center justify-end gap-3 mb-2
                     ${baseTransition} ${isVisible ? 'delay-300' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
-                    <div className="w-full h-28 md:h-36 flex items-end justify-center">
+                    <div className="w-full h-24 md:h-32 flex items-end justify-center">
                         <div className="w-full flex justify-center">
                             {logoUrl ? (
                                 <img 
                                     src={logoUrl} 
                                     alt={movie.title} 
-                                    className="w-2/3 md:w-1/3 max-h-28 md:max-h-36 object-contain drop-shadow-xl"
+                                    className="w-2/3 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl"
                                 />
                             ) : (
                                 <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
@@ -277,68 +296,196 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, lang }) =>
                             )}
                         </div>
                     </div>
-
-                    <div className="h-6 flex items-center justify-center w-full">
-                        {tagline && (
-                            <p className="text-white/70 text-sm md:text-lg italic font-medium text-center drop-shadow-md">
-                                {tagline}
-                            </p>
-                        )}
-                    </div>
                 </div>
 
-                {/* Metadata */}
+                {/* B. Metadata & Buttons */}
                 <div className={`
-                    flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md
+                     space-y-4
                     ${baseTransition} ${isVisible ? 'delay-[400ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
-                    <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
-                    <span>{movie.year}</span>
-                    <span className="bg-[#262626] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
-                    {duration && duration !== 'N/A' && (
-                        <span>{duration}</span>
-                    )}
-                    <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
-                </div>
+                    {/* Metadata Row */}
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
+                        <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
+                        <span>{movie.year}</span>
+                        <span className="bg-[#404040] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
+                        {duration && duration !== 'N/A' && (
+                            <span>{duration}</span>
+                        )}
+                        <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
+                    </div>
 
-                {/* Buttons */}
-                <div className={`
-                    flex flex-col gap-3 pt-2
-                    ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
-                    ${isVisible ? visibleState : hiddenState}
-                `}>
-                    <button 
-                        onClick={handlePlayClick}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
-                    >
-                        <Play className="w-7 h-7 fill-black" />
-                        <span className="text-lg font-bold">{t.play}</span>
-                    </button>
-
-                    <div className="grid grid-cols-3 gap-3">
-                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
-                            <Plus className="w-6 h-6" />
-                        </button>
-                        
-                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
-                            <ThumbsUp className="w-6 h-6" />
+                     {/* Action Buttons */}
+                    <div className="flex flex-col gap-3">
+                        <button 
+                            onClick={handlePlayClick}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
+                        >
+                            <Play className="w-7 h-7 fill-black" />
+                            <span className="text-lg font-bold">{t.play}</span>
                         </button>
 
-                        <button className="flex items-center justify-center h-12 bg-[#1a1a1a] text-white/90 rounded-[4px] hover:bg-[#262626] active:scale-[0.98] transition border border-white/10">
-                            <Share2 className="w-6 h-6" />
-                        </button>
+                        <div className="grid grid-cols-3 gap-3">
+                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
+                                <Plus className="w-5 h-5" />
+                            </button>
+                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
+                                <ThumbsUp className="w-5 h-5" />
+                            </button>
+                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
+                                <Share2 className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Description */}
+                {/* C. TABS & EXTENDED INFO (DELAY 500ms) */}
                 <div className={`
-                    ${baseTransition} ${isVisible ? 'delay-[600ms]' : 'delay-0'}
+                    ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
-                    <p className="text-sm md:text-base leading-relaxed text-gray-300 pt-2">
-                        {movie.description}
-                    </p>
+                    
+                    {/* Tab Selection */}
+                    <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
+                        <button 
+                            onClick={() => setActiveTab('overview')}
+                            className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                        >
+                            {t.overview}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('trailers')}
+                            className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'trailers' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                        >
+                            {t.trailers}
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('more_like_this')}
+                            className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'more_like_this' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                        >
+                            {t.moreLikeThis}
+                        </button>
+                    </div>
+
+                    {/* TAB CONTENT */}
+                    <div className="min-h-[200px]">
+                        
+                        {/* 1. OVERVIEW TAB */}
+                        {activeTab === 'overview' && (
+                            <div className="space-y-6 animate-fade-in-up">
+                                <div>
+                                    {tagline && (
+                                        <p className="text-white/60 text-sm italic mb-2 font-medium">"{tagline}"</p>
+                                    )}
+                                    <p className="text-sm md:text-base leading-relaxed text-white">
+                                        {movie.description}
+                                    </p>
+                                </div>
+                                
+                                {/* Cast List (Horizontal Scroll) */}
+                                {cast.length > 0 && (
+                                    <div className="space-y-2">
+                                        <h3 className="text-sm font-semibold text-gray-400">{t.cast}</h3>
+                                        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                                            {cast.map((actor) => (
+                                                <div key={actor.id} className="flex-shrink-0 w-20 flex flex-col items-center gap-1">
+                                                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-800 border border-white/10">
+                                                        {actor.profilePath ? (
+                                                            <img src={actor.profilePath} alt={actor.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">N/A</div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] text-center text-gray-300 leading-tight line-clamp-2">{actor.name}</span>
+                                                    <span className="text-[9px] text-center text-gray-500 leading-tight line-clamp-1">{actor.character}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Genres Tags */}
+                                <div className="space-y-2">
+                                    <h3 className="text-sm font-semibold text-gray-400">{t.genres}</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {movie.genre.map((g, idx) => (
+                                            <span key={idx} className="text-xs px-2 py-1 bg-[#262626] rounded text-gray-200">
+                                                {g}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. TRAILERS TAB */}
+                        {activeTab === 'trailers' && (
+                            <div className="space-y-3 animate-fade-in-up">
+                                {videos.length > 0 ? (
+                                    videos.map((video) => (
+                                        <div 
+                                            key={video.id} 
+                                            className="group flex gap-3 bg-[#1f1f1f] rounded-md overflow-hidden cursor-pointer hover:bg-[#2a2a2a] transition border border-white/5"
+                                            onClick={() => handleTrailerClick(video.key)}
+                                        >
+                                            <div className="relative w-32 md:w-40 aspect-video bg-black flex-shrink-0">
+                                                <img 
+                                                    src={`https://img.youtube.com/vi/${video.key}/mqdefault.jpg`} 
+                                                    alt={video.name}
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="w-8 h-8 rounded-full bg-black/60 border border-white/30 flex items-center justify-center">
+                                                        <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="py-2 pr-2 flex flex-col justify-center">
+                                                <h4 className="text-sm font-medium text-white line-clamp-2 leading-snug">{video.name}</h4>
+                                                <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                                                    <Youtube className="w-3 h-3" />
+                                                    <span>{video.type}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-10 text-center text-gray-500">
+                                        {t.noTrailers}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 3. MORE LIKE THIS TAB */}
+                        {activeTab === 'more_like_this' && (
+                            <div className="animate-fade-in-up">
+                                {recommendations.length > 0 ? (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {recommendations.map((recMovie) => (
+                                            <div 
+                                                key={recMovie.id} 
+                                                className="aspect-[2/3] bg-[#222] rounded overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200"
+                                                onClick={() => handleRecommendationClick(recMovie)}
+                                            >
+                                                <img 
+                                                    src={recMovie.posterUrl} 
+                                                    alt={recMovie.title} 
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-10 text-center text-gray-500">
+                                        {t.noRecommendations}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                    </div>
                 </div>
 
             </div>
