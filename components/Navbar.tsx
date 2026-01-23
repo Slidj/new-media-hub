@@ -1,5 +1,5 @@
 
-// Update: Navbar with Version Indicator v6.1
+// Update: Navbar with Version Indicator v6.2
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -66,13 +66,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v6.1 */}
+            {/* VERSION INDICATOR v6.2 */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="Stable Version - Tap to hard reset"
+                title="v6.2 Stable - Tap to hard reset"
             >
-                v6.1
+                v6.2
             </button>
           </div>
         </div>
