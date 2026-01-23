@@ -239,7 +239,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/50 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
             transition-all duration-500 delay-100
-            ${isMobile ? 'top-14 right-4' : 'top-4 right-4'} 
+            ${isMobile ? 'top-20 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
