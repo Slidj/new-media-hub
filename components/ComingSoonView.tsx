@@ -40,8 +40,12 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
           newSet.delete(movieId);
       } else {
           newSet.add(movieId);
-          if (window.Telegram?.WebApp?.HapticFeedback) {
-             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+          // FIX: Check if HapticFeedback is supported (version >= 6.1)
+          if (window.Telegram?.WebApp) {
+             const tg = window.Telegram.WebApp;
+             if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
+                 tg.HapticFeedback.impactOccurred('medium');
+             }
           }
       }
       setRemindedMovies(newSet);

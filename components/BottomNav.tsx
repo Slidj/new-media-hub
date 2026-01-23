@@ -14,8 +14,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
   const t = translations[lang];
 
   const handleTabClick = (tab: TabType) => {
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    // FIX: Check if HapticFeedback is supported (version >= 6.1)
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('light');
+      }
     }
     onTabChange(tab);
   };

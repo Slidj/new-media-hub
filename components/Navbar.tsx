@@ -1,5 +1,5 @@
 
-// Update: Navbar with Version Indicator
+// Update: Navbar with Version Indicator v3.0
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -33,6 +33,11 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleForceReload = () => {
+     // Force reload ignoring cache
+     window.location.reload();
+  };
+
   return (
     <nav 
       className={`
@@ -61,8 +66,14 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR: If you don't see this, you are on old cache */}
-            <span className="text-[10px] font-bold text-white/50 border border-white/20 px-1 rounded bg-white/10">v2.0</span>
+            {/* VERSION INDICATOR v3.0: Click to Force Reload */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
+                className="text-[10px] font-bold text-white/50 border border-white/20 px-1 rounded bg-white/10 hover:bg-red-500 hover:text-white transition-colors"
+                title="Tap to reload app"
+            >
+                v3.0
+            </button>
           </div>
         </div>
 
