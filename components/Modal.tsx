@@ -9,7 +9,6 @@ interface ModalProps {
   movie: Movie | null;
   onClose: () => void;
   onPlay: (movie: Movie) => void;
-  // Додано optional prop для переходу на рекомендований фільм
   onMovieSelect?: (movie: Movie) => void; 
   lang: Language;
 }
@@ -31,7 +30,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // Image States
+  // Image States (Restored for Clean Images)
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -44,11 +43,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
   useEffect(() => {
     if (movie) {
-      // 1. Скидання стану (Миттєво)
-      setIsVisible(false);
-      setActivePosterSrc(null);
-      setActiveBannerSrc(null);
-      setIsImageLoaded(false);
+      // 1. Initial Reset
+      // Спочатку ставимо звичайні постери, щоб користувач щось бачив
+      setActivePosterSrc(movie.posterUrl);
+      setActiveBannerSrc(movie.bannerUrl);
+      setIsImageLoaded(true);
+
       setLogoUrl(null);
       setDuration(null);
       setTagline(null);
@@ -67,59 +67,41 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       
       let isMounted = true;
 
-      // 2. Головна функція підготовки контенту (зображення)
-      const prepareContent = async () => {
-          let targetPoster = movie.posterUrl;
-          let targetBanner = movie.bannerUrl;
+      // 2. Animation
+      requestAnimationFrame(() => {
+          setIsVisible(true);
+      });
 
-          try {
-              const cleanPromise = API.fetchCleanImages(movie.id, movie.mediaType);
-              const timeoutPromise = new Promise<{poster?: string, banner?: string} | null>((resolve) => 
-                  setTimeout(() => resolve(null), 600)
-              );
-
-              const result = await Promise.race([cleanPromise, timeoutPromise]);
-
-              if (result) {
-                  if (result.poster) targetPoster = result.poster;
-                  if (result.banner) targetBanner = result.banner;
-              }
-          } catch (e) { }
-
-          if (!isMounted) return;
-          
-          const imgToLoad = window.innerWidth < 768 ? targetPoster : targetBanner;
-          const img = new Image();
-          img.src = imgToLoad;
-
-          const launchModal = () => {
-              if (!isMounted) return;
-              setActivePosterSrc(targetPoster);
-              setActiveBannerSrc(targetBanner);
-              setIsImageLoaded(true);
-              requestAnimationFrame(() => {
-                  requestAnimationFrame(() => {
-                      setIsVisible(true);
-                  });
-              });
-          };
-
-          img.onload = launchModal;
-          img.onerror = launchModal;
-      };
-
-      // 3. Завантаження метаданих (паралельно)
+      // 3. Load Metadata & Clean Images
       const loadMetadata = async () => {
           try {
-              const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
+              const [logoData, detailsData, castData, videoData, recData, cleanImages] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
                   API.fetchCredits(movie.id, movie.mediaType),
                   API.fetchVideos(movie.id, movie.mediaType),
-                  API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US')
+                  API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US'),
+                  API.fetchCleanImages(movie.id, movie.mediaType) // Повертаємо запит на чисті картинки
               ]);
 
               if (!isMounted) return;
+
+              // Apply Clean Images if found
+              if (cleanImages.poster) {
+                  // Preload image to avoid flicker
+                  const img = new Image();
+                  img.src = cleanImages.poster;
+                  img.onload = () => {
+                      if(isMounted) setActivePosterSrc(cleanImages.poster);
+                  };
+              }
+              if (cleanImages.banner) {
+                   const img = new Image();
+                   img.src = cleanImages.banner;
+                   img.onload = () => {
+                       if(isMounted) setActiveBannerSrc(cleanImages.banner);
+                   };
+              }
 
               if (movie.logoUrl) setLogoUrl(movie.logoUrl);
               else if (logoData) setLogoUrl(logoData);
@@ -136,7 +118,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           } catch (e) { console.error(e); }
       };
 
-      prepareContent();
       loadMetadata();
 
       if (window.Telegram?.WebApp) {
@@ -158,6 +139,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           }
         }
       };
+    } else {
+        setIsVisible(false);
     }
   }, [movie]);
 
@@ -173,7 +156,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   };
   
   const handleRecommendationClick = (recMovie: Movie) => {
-      // If we have a handler from App.tsx, we use it to switch the modal content
       if (onMovieSelect) {
           setIsVisible(false);
           setTimeout(() => onMovieSelect(recMovie), 300);
@@ -181,7 +163,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   };
 
   const handleTrailerClick = (videoKey: string) => {
-      // Opens the internal player instead of new tab
       setPlayingTrailerKey(videoKey);
   };
 
@@ -190,13 +171,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
 
-  // Вираховуємо безпечний origin для YouTube. 
-  // Якщо ми в Telegram WebApp або локально, origin може бути специфічним.
   const getYoutubeOrigin = () => {
       if (typeof window !== 'undefined' && window.location.origin) {
           return window.location.origin;
       }
-      return 'https://localhost'; // Fallback
+      return 'https://localhost';
   };
 
   return (
@@ -252,7 +231,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
             <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818]">
                 
                 {/* Background placeholder */}
-                <div className={`absolute inset-0 z-0 bg-[#181818] ${isImageLoaded ? 'opacity-0' : 'opacity-100'}`} />
+                <div className="absolute inset-0 z-0 bg-[#181818]" />
 
                 {activePosterSrc && (
                     <img 
@@ -341,6 +320,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             <span className="text-lg font-bold">{t.play}</span>
                         </button>
 
+                        {/* Updated Grid to 4 Columns for ThumbsDown */}
                         <div className="grid grid-cols-4 gap-3">
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <Plus className="w-5 h-5" />
@@ -348,6 +328,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsUp className="w-5 h-5" />
                             </button>
+                            {/* Added ThumbsDown Button */}
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsDown className="w-5 h-5" />
                             </button>
