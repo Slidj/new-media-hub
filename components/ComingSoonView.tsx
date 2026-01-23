@@ -56,7 +56,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
 
   if (loading) {
       return (
-          <div className="fixed inset-0 z-40 bg-black pt-[100px] pb-24 px-4 space-y-8 overflow-hidden">
+          <div className="pt-[100px] pb-24 px-4 space-y-8 bg-black min-h-screen">
               {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="animate-pulse flex gap-4">
                       <div className="w-12 pt-2 flex flex-col items-center gap-2">
@@ -75,7 +75,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-black pt-[100px] pb-24 overflow-y-auto no-scrollbar overscroll-contain">
+    <div className="min-h-screen bg-black pt-[100px] pb-24 overflow-y-auto no-scrollbar">
       
       {/* Header */}
       <div className="px-6 mb-6 flex items-center gap-3">
