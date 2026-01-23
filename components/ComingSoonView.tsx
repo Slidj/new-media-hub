@@ -1,10 +1,11 @@
 
-// Update: Coming Soon View with Fixed Scrolling
+// Update: Coming Soon View - Fixed Mobile Scroll & Layout
 import React, { useState, useEffect } from 'react';
-import { Bell, Info, Share2, Play } from 'lucide-react';
+import { Bell, Info, Play } from 'lucide-react';
 import { Movie } from '../types';
 import { API } from '../services/tmdb';
 import { Language, translations } from '../utils/translations';
+import { SkeletonCard } from './SkeletonCard';
 
 interface ComingSoonViewProps {
   onMovieSelect: (movie: Movie) => void;
@@ -57,8 +58,8 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
 
   if (loading) {
       return (
-          <div className="fixed inset-0 z-40 bg-black pt-[100px] pb-24 px-4 space-y-8 overflow-hidden">
-              {Array.from({ length: 3 }).map((_, i) => (
+          <div className="min-h-screen bg-black pt-[120px] px-4 space-y-8 pb-32">
+              {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="animate-pulse flex gap-4">
                       <div className="w-12 pt-2 flex flex-col items-center gap-2">
                           <div className="h-4 w-8 bg-gray-800 rounded"></div>
@@ -76,17 +77,19 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-black pt-[100px] pb-24 overflow-y-auto no-scrollbar overscroll-contain">
+    // Changed from 'fixed inset-0' to standard flow 'min-h-screen'
+    // This allows native browser scrolling which is much smoother on mobile
+    <div className="min-h-screen w-full bg-black pt-[110px] pb-32 md:pb-12 overflow-x-hidden">
       
       {/* Header */}
-      <div className="px-6 mb-6 flex items-center gap-3">
-          <div className="p-2 bg-[#E50914] rounded-full">
+      <div className="px-4 md:px-12 mb-6 flex items-center gap-3">
+          <div className="p-2 bg-[#E50914] rounded-full shadow-lg shadow-red-900/20">
             <Bell className="w-5 h-5 text-white fill-white" />
           </div>
           <h2 className="text-xl font-bold text-white">{t.comingSoon}</h2>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-10 px-2 md:px-0">
         {movies.map((movie, index) => {
             const { day, month } = formatDate(movie.releaseDate);
             const isReminded = remindedMovies.has(movie.id);
@@ -97,69 +100,70 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                     className="flex w-full group opacity-0 animate-fade-in-up"
                     style={{ animationDelay: `${index * 100}ms` }}
                 >
-                    {/* Left Column: Date */}
-                    <div className="w-[60px] md:w-[80px] shrink-0 flex flex-col items-center pt-2 sticky top-[100px] h-fit">
-                        <span className="text-gray-400 text-sm md:text-base font-bold tracking-wider">{month}</span>
-                        <span className="text-white text-3xl md:text-4xl font-black">{day}</span>
+                    {/* Left Column: Date - Sticky works correctly in normal flow */}
+                    <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[120px] h-fit z-10">
+                        <span className="text-gray-400 text-sm md:text-lg font-bold tracking-wider drop-shadow-md">{month}</span>
+                        <span className="text-white text-3xl md:text-5xl font-black drop-shadow-lg">{day}</span>
                     </div>
 
                     {/* Right Column: Content */}
-                    <div className="flex-1 pr-4 md:pr-12 cursor-pointer" onClick={() => onMovieSelect(movie)}>
+                    <div className="flex-1 pr-2 md:pr-12 cursor-pointer" onClick={() => onMovieSelect(movie)}>
                         
                         {/* Image Block */}
-                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-[#181818] mb-4 shadow-lg border border-white/5">
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-[#181818] mb-4 shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300">
                             <img 
                                 src={movie.bannerUrl || movie.posterUrl} 
                                 alt={movie.title}
-                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition duration-500"
+                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition duration-500 transform group-hover:scale-105"
                                 loading="lazy"
                             />
                             
                             {/* Play Icon Overlay */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 scale-50 group-hover:scale-100">
-                                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                                <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 scale-50 group-hover:scale-100 shadow-xl">
+                                    <Play className="w-6 h-6 text-white fill-white ml-1" />
                                 </div>
                             </div>
 
                             {/* Logo Overlay (simulated with Text) */}
-                            <div className="absolute bottom-3 left-3 right-3">
-                                <h3 className="text-2xl font-bebas text-white uppercase drop-shadow-lg leading-none tracking-wide text-transparent bg-clip-text bg-gradient-to-t from-white to-gray-300">
+                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/60 to-transparent">
+                                <h3 className="text-xl md:text-3xl font-bebas text-white uppercase drop-shadow-lg leading-none tracking-wide">
                                     {movie.title}
                                 </h3>
                             </div>
                         </div>
 
                         {/* Action Bar */}
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-3 px-1">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm md:text-base font-bold text-white/90">
-                                    {t.coming} {day} {month}
+                                <div className="h-px w-4 bg-red-600/50"></div>
+                                <span className="text-xs md:text-sm font-bold text-white/90 uppercase tracking-widest">
+                                    {t.coming} • {day} {month}
                                 </span>
                             </div>
                             
-                            <div className="flex gap-4">
-                                <div className="flex flex-col items-center gap-1" onClick={(e) => toggleReminder(e, movie.id)}>
-                                    <Bell className={`w-6 h-6 transition-all duration-300 ${isReminded ? 'text-[#E50914] fill-[#E50914]' : 'text-white'}`} />
-                                    <span className={`text-[10px] uppercase font-bold tracking-wider ${isReminded ? 'text-[#E50914]' : 'text-gray-400'}`}>
+                            <div className="flex gap-5">
+                                <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition" onClick={(e) => toggleReminder(e, movie.id)}>
+                                    <Bell className={`w-5 h-5 md:w-6 md:h-6 transition-all duration-300 ${isReminded ? 'text-[#E50914] fill-[#E50914]' : 'text-white'}`} />
+                                    <span className={`text-[9px] md:text-[10px] uppercase font-bold tracking-wider ${isReminded ? 'text-[#E50914]' : 'text-gray-400'}`}>
                                         {isReminded ? t.reminded : t.remindMe}
                                     </span>
                                 </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <Info className="w-6 h-6 text-white" />
-                                    <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t.moreInfo}</span>
+                                <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition">
+                                    <Info className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                    <span className="text-[9px] md:text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t.moreInfo}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Text Content */}
-                        <div className="space-y-2">
+                        <div className="space-y-3 px-1">
                             <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
                                 {movie.description}
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 {movie.genre.slice(0, 3).map((g, idx) => (
-                                    <span key={idx} className="text-[10px] px-2 py-1 bg-[#181818] rounded text-gray-300 border border-white/10">
+                                    <span key={idx} className="text-[10px] px-2.5 py-1 bg-[#181818] rounded-full text-gray-300 border border-white/10">
                                         {g}
                                     </span>
                                 ))}
