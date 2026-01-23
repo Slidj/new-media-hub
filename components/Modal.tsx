@@ -35,6 +35,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  // Trailer Player State
+  const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
@@ -53,6 +56,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       setVideos([]);
       setRecommendations([]);
       setActiveTab('overview');
+      setPlayingTrailerKey(null);
       
       // Reset scroll position
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
@@ -177,8 +181,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   };
 
   const handleTrailerClick = (videoKey: string) => {
-      // Open YouTube in a new tab/app
-      window.open(`https://www.youtube.com/watch?v=${videoKey}`, '_blank');
+      // Opens the internal player instead of new tab
+      setPlayingTrailerKey(videoKey);
   };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
@@ -490,6 +494,29 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
             </div>
         </div>
+
+        {/* --- TRAILER PLAYER OVERLAY (INTERNAL) --- */}
+        {playingTrailerKey && (
+            <div className="fixed inset-0 z-[120] bg-black flex flex-col items-center justify-center animate-fade-in-up">
+                {/* Close Trailer Button */}
+                <button 
+                    onClick={() => setPlayingTrailerKey(null)}
+                    className="absolute top-6 right-6 p-2 bg-[#1a1a1a] text-white rounded-full hover:bg-[#333] transition z-50 group border border-white/10"
+                >
+                    <X className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                </button>
+
+                <div className="w-full max-w-5xl aspect-video px-0 md:px-10">
+                     <iframe
+                        src={`https://www.youtube.com/embed/${playingTrailerKey}?autoplay=1&rel=0&modestbranding=1`}
+                        title="YouTube video player"
+                        className="w-full h-full shadow-2xl rounded-none md:rounded-lg"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    ></iframe>
+                </div>
+            </div>
+        )}
       </div>
     </div>
   );
