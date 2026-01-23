@@ -4,6 +4,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- ANTI-CACHE META TAGS -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <title>Media Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,6 +59,7 @@
         padding: 0;
         min-height: 100vh;
         width: 100%;
+        overscroll-behavior-y: none; /* Запобігає "гумовому" ефекту всієї сторінки */
       }
 
       .pt-safe {
@@ -70,7 +77,6 @@
         100% { transform: scale(4); opacity: 0; }
       }
 
-      /* Оновлена анімація для ефекту "виїзду" знизу */
       @keyframes fadeInUp {
         from {
           opacity: 0;
@@ -80,10 +86,6 @@
           opacity: 1;
           transform: translateY(0) scale(1);
         }
-      }
-
-      .opacity-0-start {
-        opacity: 0;
       }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -103,6 +105,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="./index.tsx?v=2.0"></script>
   </body>
 </html>

@@ -14,20 +14,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
   const t = translations[lang];
 
   const handleTabClick = (tab: TabType) => {
-    // Додаємо тактильний відгук (вібрацію) для користувача
     if (window.Telegram?.WebApp?.HapticFeedback) {
       window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
     onTabChange(tab);
   };
 
-  // Helper class for buttons
-  const btnClass = "flex-1 flex flex-col items-center justify-center gap-1 py-2 cursor-pointer transition active:scale-90 select-none touch-manipulation";
-  const activeClass = "text-white";
+  const btnClass = "flex-1 flex flex-col items-center justify-center gap-1 py-2 cursor-pointer transition active:scale-90 select-none touch-manipulation focus:outline-none";
+  const activeClass = "text-white scale-105";
   const inactiveClass = "text-gray-500 hover:text-gray-300";
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-md border-t border-[#222] px-2 md:hidden z-[200] flex justify-between items-center pb-safe">
+    // Z-INDEX set to 9999 to guarantee it is on top
+    <div className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t border-[#222] px-2 md:hidden z-[9999] flex justify-between items-center pb-safe safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
       
       <button 
         type="button"

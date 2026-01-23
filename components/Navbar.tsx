@@ -1,5 +1,5 @@
 
-// Update: Navbar Logic
+// Update: Navbar with Version Indicator
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -20,7 +20,6 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   const t = translations[lang];
 
   useEffect(() => {
-    // Перевіряємо наявність об'єкта Telegram WebApp
     if (window.Telegram?.WebApp?.initData) {
       setIsTelegram(true);
     }
@@ -37,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
   return (
     <nav 
       className={`
-        fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
+        fixed top-0 left-0 w-full z-[1000] transition-all duration-500 ease-in-out
         ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
           ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
           : 'bg-gradient-to-b from-black/80 via-black/20 to-transparent'
@@ -48,13 +47,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
       <div 
         className={`
           flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          ${isTelegram ? 'mt-24 mb-4' : 'py-4 md:py-6'}
+          ${isTelegram ? 'mt-4 mb-2' : 'py-4 md:py-6'}
         `}
       >
         <div className="flex items-center gap-6 md:gap-12">
-          {/* Logo - Cinematic Premium Style (Bebas Neue) */}
+          {/* Logo */}
           <div 
-            className="cursor-pointer transition-transform duration-300 active:scale-95 origin-left"
+            className="flex items-center gap-2 cursor-pointer transition-transform duration-300 active:scale-95 origin-left"
             onClick={onHomeClick}
           >
             <h1 
@@ -62,20 +61,19 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
+            {/* VERSION INDICATOR: If you don't see this, you are on old cache */}
+            <span className="text-[10px] font-bold text-white/50 border border-white/20 px-1 rounded bg-white/10">v2.0</span>
           </div>
         </div>
 
         <div className="flex items-center gap-4 md:gap-6 text-white">
-          {/* Search: Приховано на мобільних (є в нижньому меню), показано на десктопі */}
           <Search 
             className={`hidden md:block w-6 h-6 cursor-pointer transition hover:scale-110 ${activeTab === 'search' ? 'text-[#E50914]' : 'hover:text-gray-300'}`}
             onClick={onSearchClick}
           />
 
-          {/* Gift: Нова іконка (заділ на майбутнє) - видима всюди */}
           <Gift className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
 
-          {/* Bell: Тепер видима і на мобільних пристроях */}
           <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hover:scale-110" />
           
           <div className="flex items-center gap-2 cursor-pointer group">
