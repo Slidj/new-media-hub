@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
-import { WebAppUser } from '../types';
+import { WebAppUser, TabType } from '../types';
 import { Language, translations } from '../utils/translations';
 
 interface NavbarProps {
@@ -9,7 +9,7 @@ interface NavbarProps {
   lang: Language;
   onSearchClick: () => void;
   onHomeClick: () => void;
-  activeTab: 'home' | 'search';
+  activeTab: TabType;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHomeClick, activeTab }) => {
@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     <nav 
       className={`
         fixed top-0 left-0 w-full z-[100] transition-all duration-500 ease-in-out
-        ${isScrolled || activeTab === 'search'
+        ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
           ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
           : 'bg-gradient-to-b from-black/80 via-black/20 to-transparent'
         }

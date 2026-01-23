@@ -7,9 +7,10 @@ import { BottomNav } from './components/BottomNav';
 import { SkeletonCard } from './components/SkeletonCard';
 import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
+import { ComingSoonView } from './components/ComingSoonView';
 import { CategoryNav, Category } from './components/CategoryNav';
 import { Player } from './components/Player';
-import { Movie, WebAppUser } from './types';
+import { Movie, WebAppUser, TabType } from './types';
 import { API } from './services/tmdb';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -27,8 +28,6 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
     const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
     // Розрахунок затримки для ефекту "ланцюжка".
-    // Використовуємо остачу від ділення на 20 (розмір сторінки API),
-    // щоб кожна нова сторінка починала анімацію з початку (0ms -> 50ms -> 100ms...).
     const animDelay = (index % 20) * 70; 
 
     return (
@@ -112,7 +111,7 @@ function App() {
     return 'en';
   });
   
-  const [activeTab, setActiveTab] = useState<'home' | 'search'>('home');
+  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [activeCategory, setActiveCategory] = useState<Category>('trending');
   
   const [featuredMovie, setFeaturedMovie] = useState<Movie | null>(null);
@@ -241,9 +240,6 @@ function App() {
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
       
-      // OPTIMIZATION: Зменшено поріг спрацювання з 1000 до 400.
-      // Тепер нові фільми вантажаться, коли користувач ближче до низу.
-      // Це зменшує навантаження на мережу і рендеринг.
       if (scrollTop + clientHeight >= scrollHeight - 400 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
@@ -275,7 +271,7 @@ function App() {
         activeTab={activeTab}
       />
       
-      {activeTab === 'home' ? (
+      {activeTab === 'home' && (
         <>
             {/* FIXED CATEGORY NAV (Z-40) - Sits on top of Hero */}
             <CategoryNav 
@@ -290,9 +286,6 @@ function App() {
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
                     onPlay={() => {
-                        // Тут ми НЕ встановлюємо selectedMovie, бо Hero не прив'язаний до модалки,
-                        // але якби ми хотіли зберегти контекст, можна було б. 
-                        // Для Hero просто запускаємо плеєр.
                         setPlayingMovie(featuredMovie);
                     }}
                     lang={lang}
@@ -313,7 +306,7 @@ function App() {
                             />
                         ))}
 
-                        {/* Loading Skeletons - 6 штук, щоб візуально відповідало 2 рядам на мобільному */}
+                        {/* Loading Skeletons */}
                         {loading && Array.from({ length: 6 }).map((_, i) => (
                             <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                                 <SkeletonCard />
@@ -329,10 +322,19 @@ function App() {
                 </section>
             </main>
         </>
-      ) : (
+      )}
+
+      {activeTab === 'search' && (
         <SearchView 
           lang={lang} 
           onMovieSelect={setSelectedMovie} 
+        />
+      )}
+
+      {activeTab === 'coming_soon' && (
+        <ComingSoonView
+            lang={lang}
+            onMovieSelect={setSelectedMovie}
         />
       )}
 
@@ -348,8 +350,6 @@ function App() {
           movie={selectedMovie} 
           onClose={() => setSelectedMovie(null)} 
           onPlay={(m) => {
-             // CRITICAL FIX: We set playingMovie but DO NOT clear selectedMovie.
-             // This keeps the Modal alive underneath the Player.
              setPlayingMovie(m);
           }}
           onMovieSelect={setSelectedMovie} 

@@ -12,6 +12,7 @@ export interface Movie {
   duration: string;
   rating: string;
   year: number;
+  releaseDate?: string; // New field for Coming Soon
   match: number;
   mediaType: 'movie' | 'tv';
 }
@@ -52,6 +53,8 @@ export interface WebAppUser {
   language_code?: string;
   photo_url?: string;
 }
+
+export type TabType = 'home' | 'search' | 'coming_soon';
 
 // Telegram WebApp Types
 declare global {

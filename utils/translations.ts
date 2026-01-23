@@ -37,7 +37,11 @@ export const translations = {
     cast: "Cast",
     director: "Director",
     noTrailers: "No trailers available",
-    noRecommendations: "No recommendations found"
+    noRecommendations: "No recommendations found",
+    remindMe: "Remind Me",
+    reminded: "Reminded",
+    coming: "Coming",
+    share: "Share"
   },
   uk: {
     home: "Головна",
@@ -74,7 +78,11 @@ export const translations = {
     cast: "Актори",
     director: "Режисер",
     noTrailers: "Трейлери відсутні",
-    noRecommendations: "Рекомендації відсутні"
+    noRecommendations: "Рекомендації відсутні",
+    remindMe: "Нагадати",
+    reminded: "Нагадаю",
+    coming: "Прем'єра",
+    share: "Поділитись"
   },
   ru: {
     home: "Главная",
@@ -111,7 +119,11 @@ export const translations = {
     cast: "Актеры",
     director: "Режиссер",
     noTrailers: "Трейлеры отсутствуют",
-    noRecommendations: "Рекомендации отсутствуют"
+    noRecommendations: "Рекомендации отсутствуют",
+    remindMe: "Напомнить",
+    reminded: "Напомню",
+    coming: "Премьера",
+    share: "Поделиться"
   }
 };
 

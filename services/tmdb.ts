@@ -63,6 +63,7 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
     duration: 'N/A', // Placeholder, will be fetched in Modal
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
     year: parseInt((result.release_date || result.first_air_date || '2024').substring(0, 4)),
+    releaseDate: result.release_date || result.first_air_date,
     match: result.vote_average ? Math.round(result.vote_average * 10) : 0,
     mediaType: isTv ? 'tv' : 'movie',
   };
@@ -95,8 +96,23 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
       .map((m: any) => mapResultToMovie(m, language));
   } catch (error) {
     console.error("Error fetching trending:", error);
-    // Return static backup data if API fails so the app isn't empty
     return page === 1 ? MOVIES : [];
+  }
+};
+
+// Fetch Upcoming (Coming Soon)
+export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
+  try {
+    const url = `${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=${language}&page=${page}`;
+    const request = await fetch(url);
+    if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
+    const data = await request.json();
+    return data.results
+      .filter((m: any) => m.backdrop_path) // Upcoming needs banner
+      .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
+  } catch (error) {
+    console.error("Error fetching upcoming:", error);
+    return [];
   }
 };
 
@@ -144,7 +160,6 @@ export const fetchDiscoverCartoons = async (page: number = 1, language: string =
         .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
     } catch (error) {
       console.error("Error fetching cartoons:", error);
-      // Fallback: just return movies, might not be cartoons but better than nothing
       return page === 1 ? MOVIES : [];
     }
 };
@@ -161,7 +176,6 @@ export const searchContent = async (query: string, language: string = 'en-US'): 
             .map((m: any) => mapResultToMovie(m, language));
     } catch (error) {
         console.error("Error searching content:", error);
-        // Basic local search on backup data
         return MOVIES.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
     }
 }
@@ -185,19 +199,15 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
   }
 };
 
-// New function to fetch textless images (clean posters/banners)
 export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ poster?: string; banner?: string }> => {
     try {
         const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-        // Request images specifically without language filter (null) or english as fallback
-        // 'include_image_language=null' is the trick to get textless images
         const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}&include_image_language=null,en`);
         
         if (!request.ok) return {};
 
         const data = await request.json();
         
-        // Find best textless poster (iso_639_1 === null)
         const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || data.posters?.[0];
         const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || data.backdrops?.[0];
 
@@ -246,7 +256,6 @@ export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 't
   }
 }
 
-// Fetch Cast/Credits
 export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Cast[]> => {
     try {
         const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
@@ -256,8 +265,8 @@ export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): 
         const data = await request.json();
 
         return data.cast
-            .filter((p: any) => p.profile_path) // Only with photos
-            .slice(0, 15) // Limit to top 15
+            .filter((p: any) => p.profile_path)
+            .slice(0, 15)
             .map((p: any) => ({
                 id: p.id,
                 name: p.name,
@@ -269,7 +278,6 @@ export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): 
     }
 };
 
-// Fetch Videos (Trailers)
 export const fetchVideos = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Video[]> => {
     try {
         const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
@@ -292,7 +300,6 @@ export const fetchVideos = async (movieId: string, mediaType: 'movie' | 'tv'): P
     }
 };
 
-// Fetch Recommendations
 export const fetchRecommendations = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<Movie[]> => {
     try {
         const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
@@ -309,7 +316,6 @@ export const fetchRecommendations = async (movieId: string, mediaType: 'movie' |
     }
 };
 
-// Keeping this for backward compatibility if other files import it, but mapping it to new function
 export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<string | null> => {
     const details = await fetchMovieDetails(movieId, mediaType);
     return details.duration;
@@ -335,6 +341,7 @@ export const API = {
   fetchDiscoverMovies,
   fetchDiscoverTV,
   fetchDiscoverCartoons,
+  fetchUpcoming,
   searchContent,
   fetchMovieLogo,
   fetchCleanImages,
