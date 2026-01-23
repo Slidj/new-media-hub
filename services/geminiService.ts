@@ -7,9 +7,18 @@ export const getMovieChatResponse = async (movie: Movie, history: ChatMessage[],
   const t = translations[lang];
 
   try {
-    // According to guidelines, the API key must be obtained exclusively from process.env.API_KEY.
-    // We assume it is pre-configured and valid.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // FIX for Build Failure:
+    // TypeScript/Vite might fail on 'process.env' during build time.
+    // We access the key from the global window object defined in index.html.
+    // Using (window as any) bypasses TypeScript checking for this property.
+    const apiKey = (window as any).process?.env?.API_KEY || '';
+
+    if (!apiKey) {
+        console.error("API Key is missing in window.process.env");
+        return t.configureKey;
+    }
+
+    const ai = new GoogleGenAI({ apiKey: apiKey });
     
     const langInstruction = lang === 'uk' ? "Відповідай українською мовою." : lang === 'ru' ? "Отвечай на русском языке." : "Respond in English.";
 

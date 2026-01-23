@@ -1,5 +1,5 @@
 
-// Update: Navbar with Version Indicator v3.0
+// Update: Navbar with Version Indicator v4.0
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -66,13 +66,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v3.0: Click to Force Reload */}
+            {/* VERSION INDICATOR v4.0: Click to Force Reload */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-white/50 border border-white/20 px-1 rounded bg-white/10 hover:bg-red-500 hover:text-white transition-colors"
                 title="Tap to reload app"
             >
-                v3.0
+                v4.0
             </button>
           </div>
         </div>
