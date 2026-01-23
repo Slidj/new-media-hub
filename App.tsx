@@ -26,11 +26,16 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
     const isTop10 = activeCategory === 'trending' && index < 10;
     const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
+    // Розрахунок затримки для ефекту "ланцюжка".
+    // Використовуємо остачу від ділення на 20 (розмір сторінки API),
+    // щоб кожна нова сторінка починала анімацію з початку (0ms -> 50ms -> 100ms...).
+    const animDelay = (index % 20) * 70; 
+
     return (
         <div 
-            className="animate-fade-in-up fill-mode-forwards"
+            className="opacity-0 animate-fade-in-up fill-mode-forwards"
             style={{ 
-                animationDelay: `${Math.min((index % 15) * 50, 500)}ms`,
+                animationDelay: `${animDelay}ms`,
                 willChange: 'transform, opacity'
             }}
         >
@@ -227,7 +232,7 @@ function App() {
     }
   }, [page, lang, activeTab, activeCategory, loadMovies]);
 
-  // Infinite Scroll Logic
+  // Infinite Scroll Logic (Optimized Threshold)
   useEffect(() => {
     if (activeTab !== 'home') return;
 
@@ -236,7 +241,10 @@ function App() {
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
       
-      if (scrollTop + clientHeight >= scrollHeight - 1000 && !loading && hasMore && !isLoadingRef.current) {
+      // OPTIMIZATION: Зменшено поріг спрацювання з 1000 до 400.
+      // Тепер нові фільми вантажаться, коли користувач ближче до низу.
+      // Це зменшує навантаження на мережу і рендеринг.
+      if (scrollTop + clientHeight >= scrollHeight - 400 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
@@ -305,8 +313,9 @@ function App() {
                             />
                         ))}
 
+                        {/* Loading Skeletons - 6 штук, щоб візуально відповідало 2 рядам на мобільному */}
                         {loading && Array.from({ length: 6 }).map((_, i) => (
-                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                                 <SkeletonCard />
                             </div>
                         ))}
