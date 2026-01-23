@@ -1,4 +1,5 @@
 
+// Update: Navbar Logic
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';

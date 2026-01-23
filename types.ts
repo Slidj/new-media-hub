@@ -1,4 +1,5 @@
 
+// Update: Types for Coming Soon Feature
 export interface Movie {
   id: string;
   title: string;

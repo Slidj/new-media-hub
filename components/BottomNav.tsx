@@ -1,4 +1,5 @@
 
+// Update: Bottom Navigation
 import React from 'react';
 import { Home, Search, MonitorPlay, Download, Menu } from 'lucide-react';
 import { Language, translations } from '../utils/translations';

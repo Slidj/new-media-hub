@@ -1,4 +1,5 @@
 
+// Update: Coming Soon View with Fixed Scrolling
 import React, { useState, useEffect } from 'react';
 import { Bell, Info, Share2, Play } from 'lucide-react';
 import { Movie } from '../types';

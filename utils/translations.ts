@@ -1,4 +1,5 @@
 
+// Update: Translations for Coming Soon Feature
 export type Language = 'en' | 'uk' | 'ru';
 
 export const translations = {

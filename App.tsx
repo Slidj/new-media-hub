@@ -1,4 +1,5 @@
 
+// Update: Main App Component Integration
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
