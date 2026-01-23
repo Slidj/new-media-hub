@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Plus, ThumbsUp, Share2, Youtube } from 'lucide-react';
+import { X, Play, Plus, ThumbsUp, ThumbsDown, Share2, Youtube } from 'lucide-react';
 import { Movie, Cast, Video } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
@@ -341,12 +341,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             <span className="text-lg font-bold">{t.play}</span>
                         </button>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-4 gap-3">
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <Plus className="w-5 h-5" />
                             </button>
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsUp className="w-5 h-5" />
+                            </button>
+                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
+                                <ThumbsDown className="w-5 h-5" />
                             </button>
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <Share2 className="w-5 h-5" />
