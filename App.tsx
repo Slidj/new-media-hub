@@ -281,7 +281,12 @@ function App() {
                  <Hero 
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                    onPlay={() => setPlayingMovie(featuredMovie)}
+                    onPlay={() => {
+                        // Тут ми НЕ встановлюємо selectedMovie, бо Hero не прив'язаний до модалки,
+                        // але якби ми хотіли зберегти контекст, можна було б. 
+                        // Для Hero просто запускаємо плеєр.
+                        setPlayingMovie(featuredMovie);
+                    }}
                     lang={lang}
                  />
             )}
@@ -334,10 +339,11 @@ function App() {
           movie={selectedMovie} 
           onClose={() => setSelectedMovie(null)} 
           onPlay={(m) => {
+             // CRITICAL FIX: We set playingMovie but DO NOT clear selectedMovie.
+             // This keeps the Modal alive underneath the Player.
              setPlayingMovie(m);
-             setSelectedMovie(null); 
           }}
-          onMovieSelect={setSelectedMovie} // Pass the setter to handle recommendations
+          onMovieSelect={setSelectedMovie} 
           lang={lang}
         />
       )}

@@ -63,13 +63,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose }) => {
   return (
     <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center">
       {/* Кнопка закриття 
-          - top-20: Опущено ще нижче для уникнення конфліктів з інтерфейсом системи/телеграму
+          - top-24 (96px): Значно нижче, щоб бути під "чубчиком" та кнопками Телеграму
           - opacity логіка: стає 30% прозорою через 3 сек, але 100% при наведенні/натисканні
       */}
       <button 
         onClick={onClose}
         className={`
-            absolute top-20 right-6 z-[210] p-2.5 
+            absolute top-24 right-6 z-[210] p-2.5 
             bg-black/40 text-white rounded-full backdrop-blur-md 
             border border-white/10 shadow-lg
             transition-all duration-700 ease-in-out

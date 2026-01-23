@@ -229,14 +229,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           }
         `}
       >
-        {/* Close Button */}
+        {/* Close Button - LOWERED FOR TELEGRAM HEADER */}
         <button 
-          onClick={handleClose}
+          onClick={(e) => {
+             e.stopPropagation();
+             handleClose();
+          }}
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/50 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a]
             transition-all duration-500 delay-100
-            ${isMobile ? 'top-3 right-3' : 'top-4 right-4'}
+            ${isMobile ? 'top-14 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
@@ -507,10 +510,13 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
         {/* --- TRAILER PLAYER OVERLAY (INTERNAL) --- */}
         {playingTrailerKey && (
             <div className="fixed inset-0 z-[120] bg-black flex flex-col items-center justify-center animate-fade-in-up">
-                {/* Close Trailer Button */}
+                {/* Close Trailer Button - LOWERED FOR TELEGRAM HEADER */}
                 <button 
-                    onClick={() => setPlayingTrailerKey(null)}
-                    className="absolute top-6 right-6 p-2 bg-[#1a1a1a] text-white rounded-full hover:bg-[#333] transition z-50 group border border-white/10"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setPlayingTrailerKey(null);
+                    }}
+                    className="absolute top-20 right-6 p-2 bg-[#1a1a1a] text-white rounded-full hover:bg-[#333] transition z-50 group border border-white/10"
                 >
                     <X className="w-6 h-6 group-hover:scale-110 transition-transform" />
                 </button>
