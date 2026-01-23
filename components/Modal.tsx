@@ -190,6 +190,15 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
 
+  // Вираховуємо безпечний origin для YouTube. 
+  // Якщо ми в Telegram WebApp або локально, origin може бути специфічним.
+  const getYoutubeOrigin = () => {
+      if (typeof window !== 'undefined' && window.location.origin) {
+          return window.location.origin;
+      }
+      return 'https://localhost'; // Fallback
+  };
+
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
       {/* Overlay */}
@@ -508,7 +517,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
                 <div className="w-full max-w-5xl aspect-video px-0 md:px-10">
                      <iframe
-                        src={`https://www.youtube.com/embed/${playingTrailerKey}?autoplay=1&rel=0&modestbranding=1`}
+                        src={`https://www.youtube.com/embed/${playingTrailerKey}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&fs=1&playsinline=1&origin=${encodeURIComponent(getYoutubeOrigin())}`}
                         title="YouTube video player"
                         className="w-full h-full shadow-2xl rounded-none md:rounded-lg"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
