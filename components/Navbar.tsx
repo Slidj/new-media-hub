@@ -1,5 +1,5 @@
 
-// Update: Navbar with MAXIMIZED Safe Area v8.0
+// Update: Navbar with MAXIMIZED Safe Area v9.0
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -60,13 +60,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v8.0 */}
+            {/* VERSION INDICATOR v9.0 */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="v8.0 Fixed - Tap to reset"
+                title="v9.0 Clean & Sync"
             >
-                v8.0
+                v9.0
             </button>
           </div>
         </div>

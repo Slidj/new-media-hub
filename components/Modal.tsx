@@ -30,8 +30,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // IMAGE STATES
-  // v8.0: Start with NULL or Fallback, but do NOT animate until we confirm the final image.
+  // IMAGE STATES v9.0
+  // Start with NULL. We do NOT want to show the dirty standard image ever.
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
   
@@ -43,8 +43,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
   useEffect(() => {
     if (movie) {
-      // Reset states
-      setIsVisible(false); // Ensure hidden initially
+      // 1. Reset everything
+      setIsVisible(false);
+      setActivePosterSrc(null); // Clear previous images immediately
+      setActiveBannerSrc(null);
+      
       setLogoUrl(null);
       setDuration(null);
       setTagline(null);
@@ -54,7 +57,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       setActiveTab('overview');
       setPlayingTrailerKey(null);
       
-      // Reset scroll
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
       if (window.Telegram?.WebApp) {
@@ -63,54 +65,46 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       
       let isMounted = true;
 
-      // --- CRITICAL: PRELOAD & SYNC ANIMATION LOGIC v8.0 ---
-      const prepareModal = async () => {
+      const startModalSequence = async () => {
           try {
-              // 1. Fetch Clean Images (Priority)
-              // We do this BEFORE showing anything to ensure "Clean Image Here and Now"
+              // 2. Fetch Clean Images FIRST
+              // We do not show anything yet.
               const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
               
-              // 2. Determine Final URLs
-              // If clean image exists, use it. Otherwise fallback to standard movie.posterUrl
+              // 3. Determine Final URLs (Prefer Clean, Fallback to Standard)
               const finalPoster = cleanImages.poster || movie.posterUrl;
               const finalBanner = cleanImages.banner || movie.bannerUrl;
 
-              // 3. Preload Images
-              // We create Image objects to force the browser to download/cache them.
-              // Only when they are ready do we update state and trigger animation.
-              const preloadImage = (src: string): Promise<void> => {
-                  return new Promise((resolve) => {
-                      if (!src) { resolve(); return; }
+              // 4. PRELOAD CRITICAL IMAGE
+              // We force the browser to download the image into cache BEFORE we start animation.
+              // This ensures "synchronous" appearance.
+              const isMobile = window.innerWidth < 768;
+              const imageToPreload = isMobile ? finalPoster : finalBanner;
+
+              if (imageToPreload) {
+                  await new Promise<void>((resolve) => {
                       const img = new Image();
-                      img.src = src;
+                      img.src = imageToPreload;
                       img.onload = () => resolve();
-                      img.onerror = () => resolve(); // Proceed even if error
+                      img.onerror = () => resolve(); // Don't block forever on error
                   });
-              };
+              }
 
-              // Determine which image is critical based on screen width (simple heuristic)
-              // This optimization prevents waiting for Desktop banner on Mobile and vice versa
-              const isMobileScreen = window.innerWidth < 768;
-              const criticalImage = isMobileScreen ? finalPoster : finalBanner;
-
-              // Wait for critical image (max 1 second timeout to prevent hanging)
-              const timeoutPromise = new Promise(resolve => setTimeout(resolve, 1000));
-              await Promise.race([preloadImage(criticalImage), timeoutPromise]);
-              
               if (!isMounted) return;
 
-              // 4. Update State & Trigger Animation
+              // 5. Set Images & TRIGGER ANIMATION
+              // Now the image is in memory, so it will appear instantly without swap.
               setActivePosterSrc(finalPoster);
               setActiveBannerSrc(finalBanner);
               
-              // Use double requestAnimationFrame to ensure DOM paint is ready before adding the class
+              // Double RAF ensures the state update is painted before we add the animation class
               requestAnimationFrame(() => {
                   requestAnimationFrame(() => {
                       if (isMounted) setIsVisible(true);
                   });
               });
 
-              // 5. Fetch Secondary Metadata (Background)
+              // 6. Load Secondary Data (Background)
               const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
@@ -133,9 +127,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
               setVideos(videoData);
               setRecommendations(recData);
 
-          } catch (e) { 
-              console.error("Modal prepare error", e);
-              // Fallback in case of total failure: show what we have
+          } catch (e) {
+              console.error("Modal sequence error", e);
+              // Fallback: show standard immediately if something fails
               if (isMounted) {
                   setActivePosterSrc(movie.posterUrl);
                   setActiveBannerSrc(movie.bannerUrl);
@@ -144,7 +138,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           }
       };
 
-      prepareModal();
+      startModalSequence();
 
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
@@ -260,22 +254,22 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                 {/* Background placeholder */}
                 <div className="absolute inset-0 z-0 bg-[#181818]" />
 
-                {/* Mobile Poster - Renders ONLY when activePosterSrc is ready */}
+                {/* Mobile Poster */}
                 {activePosterSrc && (
                     <img 
                       src={activePosterSrc} 
                       alt={movie.title} 
-                      decoding="sync" // Force sync decoding for instant appearance
+                      decoding="sync"
                       className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
                     />
                 )}
 
-                {/* Desktop Banner - Renders ONLY when activeBannerSrc is ready */}
+                {/* Desktop Banner */}
                 {activeBannerSrc && (
                     <img 
                       src={activeBannerSrc} 
                       alt={movie.title} 
-                      decoding="sync" // Force sync decoding for instant appearance
+                      decoding="sync"
                       className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
                     />
                 )}

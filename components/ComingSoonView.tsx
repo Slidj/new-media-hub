@@ -4,7 +4,6 @@ import { Bell, Info, Play, MonitorPlay } from 'lucide-react';
 import { Movie } from '../types';
 import { API } from '../services/tmdb';
 import { Language, translations } from '../utils/translations';
-import { SkeletonCard } from './SkeletonCard';
 
 interface ComingSoonViewProps {
   onMovieSelect: (movie: Movie) => void;
@@ -64,7 +63,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
 
   if (loading) {
       return (
-          <div className="min-h-screen bg-black pt-[170px] px-4 space-y-8 pb-32">
+          <div className="fixed inset-0 z-30 bg-black pt-[calc(170px+env(safe-area-inset-top))] px-4 space-y-8 pb-32 overflow-y-auto no-scrollbar">
               <div className="flex items-center gap-3 mb-6">
                  <div className="w-9 h-9 bg-gray-800 rounded-full animate-pulse"></div>
                  <div className="h-6 w-32 bg-gray-800 rounded animate-pulse"></div>
@@ -87,8 +86,9 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    // Updated padding-top: safe-area + 170px to account for taller navbar
-    <div className="min-h-screen w-full bg-black pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-x-hidden">
+    // FIX: Changed from relative container to FIXED overlay (z-30) with independent scrolling
+    // This prevents scrolling "Coming Soon" from affecting the main window scroll position
+    <div className="fixed inset-0 z-30 w-full bg-black pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-y-auto overflow-x-hidden overscroll-contain no-scrollbar">
       
       {/* Header */}
       <div className="px-4 md:px-12 mb-6 flex items-center gap-3">
@@ -117,7 +117,8 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                         style={{ animationDelay: `${index * 100}ms` }}
                     >
                         {/* Left Column: Date */}
-                        <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[170px] h-fit z-10">
+                        {/* sticky top value aligns with the padding-top of the container (170px) so it sticks below navbar */}
+                        <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[10px] h-fit z-10">
                             <span className="text-gray-400 text-sm md:text-lg font-bold tracking-wider drop-shadow-md">{month}</span>
                             <span className="text-white text-3xl md:text-5xl font-black drop-shadow-lg">{day}</span>
                         </div>
