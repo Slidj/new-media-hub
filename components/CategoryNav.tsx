@@ -13,11 +13,6 @@ interface CategoryNavProps {
 export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory }) => {
   const [isVisible, setIsVisible] = useState(true);
   
-  // Ініціалізуємо значення відразу, щоб уникнути стрибка (layout shift) при монтуванні
-  const [isTelegram] = useState(() => 
-    typeof window !== 'undefined' && Boolean(window.Telegram?.WebApp?.initData)
-  );
-  
   const t = translations[lang];
 
   useEffect(() => {
@@ -47,10 +42,12 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
         fixed left-0 w-full z-40
         transition-all duration-500 ease-in-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
-        ${!isTelegram ? 'top-[70px] md:top-[90px]' : ''}
       `}
-      // 165px: Оптимальний відступ, щоб категорії були під логотипом, але не занадто низько
-      style={isTelegram ? { top: 'calc(165px + env(safe-area-inset-top))' } : undefined}
+      /* 
+         Fix: Adjust top position to account for safe-area + new Navbar height.
+         Base: ~90px + env(safe-area-inset-top)
+      */
+      style={{ top: 'calc(90px + env(safe-area-inset-top))' }}
     >
         {/* Зовнішній контейнер для центрування */}
         <div className="flex justify-center w-full px-2">
@@ -70,7 +67,6 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                             }
                         `}
                         style={{ 
-                            // Значно зменшено затримку (було +300ms), щоб прибрати ефект "прозорості" на старті
                             animationDelay: `${index * 50}ms`,
                             animationFillMode: 'forwards'
                         }}

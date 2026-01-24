@@ -33,7 +33,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   // Image States (Restored for Clean Images)
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -47,7 +46,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       // Спочатку ставимо звичайні постери, щоб користувач щось бачив
       setActivePosterSrc(movie.posterUrl);
       setActiveBannerSrc(movie.bannerUrl);
-      setIsImageLoaded(true);
 
       setLogoUrl(null);
       setDuration(null);
@@ -88,7 +86,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
               // Apply Clean Images if found
               if (cleanImages.poster) {
-                  // Preload image to avoid flicker
                   const img = new Image();
                   img.src = cleanImages.poster;
                   img.onload = () => {
@@ -238,11 +235,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activePosterSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className={`
-                        block md:hidden w-full h-full object-cover object-center
-                        transition-opacity duration-500 ease-in-out
-                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
-                      `}
+                      className="block md:hidden w-full h-full object-cover object-center relative z-10"
                     />
                 )}
                 {activeBannerSrc && (
@@ -250,11 +243,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activeBannerSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className={`
-                        hidden md:block w-full h-full object-cover object-top
-                        transition-opacity duration-500 ease-in-out
-                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
-                      `}
+                      className="hidden md:block w-full h-full object-cover object-top relative z-10"
                     />
                 )}
                 

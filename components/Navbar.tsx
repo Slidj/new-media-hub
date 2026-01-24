@@ -1,5 +1,5 @@
 
-// Update: Navbar with Version Indicator v6.3
+// Update: Navbar with Safe Area Fix v6.4
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -15,15 +15,12 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHomeClick, activeTab }) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isTelegram, setIsTelegram] = useState(false);
   const [imgError, setImgError] = useState(false);
+  
+  // Видалено залежність isTelegram для стилів, використовуємо універсальний підхід
   const t = translations[lang];
 
   useEffect(() => {
-    if (window.Telegram?.WebApp?.initData) {
-      setIsTelegram(true);
-    }
-
     const handleScroll = () => {
       const offset = window.pageYOffset || document.documentElement.scrollTop;
       setIsScrolled(offset > 10);
@@ -42,18 +39,16 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     <nav 
       className={`
         fixed top-0 left-0 w-full z-[1000] transition-all duration-500 ease-in-out
+        /* CRITICAL FIX: Safe area padding + base padding to avoid notch overlap */
+        pt-[calc(env(safe-area-inset-top)+12px)] pb-4
         ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
           ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
-          : 'bg-gradient-to-b from-black/80 via-black/20 to-transparent'
+          : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
         }
-        ${isTelegram ? 'pt-safe' : ''}
       `}
     >
       <div 
-        className={`
-          flex items-center justify-between px-4 md:px-12 transition-all duration-300
-          ${isTelegram ? 'mt-4 mb-2' : 'py-4 md:py-6'}
-        `}
+        className="flex items-center justify-between px-4 md:px-12 transition-all duration-300"
       >
         <div className="flex items-center gap-6 md:gap-12">
           {/* Logo */}
@@ -66,13 +61,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v6.3 */}
+            {/* VERSION INDICATOR v6.4 */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="v6.3 Build Fix - Tap to hard reset"
+                title="v6.4 Fix - Tap to hard reset"
             >
-                v6.3
+                v6.4
             </button>
           </div>
         </div>
