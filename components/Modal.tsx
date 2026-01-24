@@ -24,15 +24,17 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   
-  // New Extended Content States
+  // Extended Content States
   const [cast, setCast] = useState<Cast[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // Image States
-  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
-  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
+  // CLEAN IMAGE STATES (Double Layer System)
+  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
+  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
+  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
+  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
 
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -43,8 +45,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   useEffect(() => {
     if (movie) {
       // 1. Initial Reset
-      setActivePosterSrc(movie.posterUrl);
-      setActiveBannerSrc(movie.bannerUrl);
+      // We do NOT rely on swapping 'activePosterSrc'.
+      // Instead we reset the 'clean' layer states.
+      setCleanPosterUrl(null);
+      setCleanBannerUrl(null);
+      setIsCleanPosterLoaded(false);
+      setIsCleanBannerLoaded(false);
 
       setLogoUrl(null);
       setDuration(null);
@@ -69,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           setIsVisible(true);
       });
 
-      // 3. Load Metadata & Clean Images (RESTORED)
+      // 3. Load Metadata & Clean Images
       const loadMetadata = async () => {
           try {
               const [logoData, detailsData, castData, videoData, recData, cleanImages] = await Promise.all([
@@ -83,21 +89,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
               if (!isMounted) return;
 
-              // Handle Clean Images with preload to minimize glitch
-              // We only swap IF we found a clean image
+              // Set Clean Images URLs (Loading happens via <img> tag events)
               if (cleanImages.poster) {
-                  const img = new Image();
-                  img.src = cleanImages.poster;
-                  img.onload = () => {
-                      if(isMounted) setActivePosterSrc(cleanImages.poster);
-                  };
+                  setCleanPosterUrl(cleanImages.poster);
               }
               if (cleanImages.banner) {
-                   const img = new Image();
-                   img.src = cleanImages.banner;
-                   img.onload = () => {
-                       if(isMounted) setActiveBannerSrc(cleanImages.banner);
-                   };
+                  setCleanBannerUrl(cleanImages.banner);
               }
 
               if (movie.logoUrl) setLogoUrl(movie.logoUrl);
@@ -225,30 +222,57 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA */}
+            {/* 1. HERO IMAGE AREA - DOUBLE LAYER SYSTEM */}
             <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818]">
                 
                 {/* Background placeholder */}
                 <div className="absolute inset-0 z-0 bg-[#181818]" />
 
-                {activePosterSrc && (
+                {/* --- MOBILE LAYERS --- */}
+                {/* Layer 1: Standard Poster (Always Visible, Bottom Layer) */}
+                <img 
+                  src={movie.posterUrl} 
+                  alt={movie.title} 
+                  decoding="sync"
+                  className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
+                />
+                {/* Layer 2: Clean Poster (Fades in on top) */}
+                {cleanPosterUrl && (
                     <img 
-                      src={activePosterSrc} 
-                      alt={movie.title} 
-                      decoding="sync"
-                      className="block md:hidden w-full h-full object-cover object-center relative z-10 transition-opacity duration-300"
+                        src={cleanPosterUrl}
+                        alt="clean poster"
+                        className={`
+                            block md:hidden w-full h-full object-cover object-center absolute inset-0 z-11
+                            transition-opacity duration-1000 ease-in-out
+                            ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
+                        onLoad={() => setIsCleanPosterLoaded(true)}
                     />
                 )}
-                {activeBannerSrc && (
+
+                {/* --- DESKTOP LAYERS --- */}
+                {/* Layer 1: Standard Banner */}
+                <img 
+                  src={movie.bannerUrl} 
+                  alt={movie.title} 
+                  decoding="sync"
+                  className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
+                />
+                {/* Layer 2: Clean Banner */}
+                {cleanBannerUrl && (
                     <img 
-                      src={activeBannerSrc} 
-                      alt={movie.title} 
-                      decoding="sync"
-                      className="hidden md:block w-full h-full object-cover object-top relative z-10 transition-opacity duration-300"
+                        src={cleanBannerUrl}
+                        alt="clean banner"
+                        className={`
+                            hidden md:block w-full h-full object-cover object-top absolute inset-0 z-11
+                            transition-opacity duration-1000 ease-in-out
+                            ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
+                        onLoad={() => setIsCleanBannerLoaded(true)}
                     />
                 )}
                 
-                {/* Gradients */}
+                {/* Gradients (Z-index 20, above all images) */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#181818]/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
