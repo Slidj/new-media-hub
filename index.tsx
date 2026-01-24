@@ -3,8 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// FORCE CACHE CLEAR v6.6
-const CURRENT_VERSION = '6.6';
+// FORCE CACHE CLEAR v6.7
+const CURRENT_VERSION = '6.7';
 
 const clearCacheSafe = async () => {
   try {
@@ -61,7 +61,7 @@ const renderError = (message: string, stack?: string) => {
   if (rootElement) {
     rootElement.innerHTML = `
       <div style="background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif; text-align: center;">
-        <h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Initialization Error v6.6</h1>
+        <h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Initialization Error v6.7</h1>
         <p style="color: #ccc; margin-bottom: 20px;">${message}</p>
         <pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">${stack || 'No stack trace available'}</pre>
         <button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">Force Reset</button>
