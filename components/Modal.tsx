@@ -30,14 +30,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // CLEAN IMAGE STATES (Double Layer System with Blur Strategy)
-  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
-  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
-  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
-  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
-  
-  // Track if we finished checking for clean images
-  const [cleanSearchFinished, setCleanSearchFinished] = useState(false);
+  // IMAGE STATES (Simple Single Layer)
+  // Init with null to prevent showing standard image before checking for clean one
+  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
+  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -48,11 +45,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   useEffect(() => {
     if (movie) {
       // 1. Initial Reset
-      setCleanPosterUrl(null);
-      setCleanBannerUrl(null);
-      setIsCleanPosterLoaded(false);
-      setIsCleanBannerLoaded(false);
-      setCleanSearchFinished(false);
+      setActivePosterSrc(null);
+      setActiveBannerSrc(null);
+      setIsImageLoaded(false);
 
       setLogoUrl(null);
       setDuration(null);
@@ -80,6 +75,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       // 3. Load Metadata & Clean Images
       const loadMetadata = async () => {
           try {
+              // Parallel fetching
               const [logoData, detailsData, castData, videoData, recData, cleanImages] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
@@ -91,12 +87,10 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
               if (!isMounted) return;
 
-              // Set Clean Images
-              if (cleanImages.poster) setCleanPosterUrl(cleanImages.poster);
-              if (cleanImages.banner) setCleanBannerUrl(cleanImages.banner);
-              
-              // Mark search as finished to allow standard poster to unblur if no clean one found
-              setCleanSearchFinished(true);
+              // LOGIC: Use clean image if available, otherwise fallback to standard (movie.*Url)
+              // We set this NOW, so the user sees the "final" decision immediately.
+              setActivePosterSrc(cleanImages.poster || movie.posterUrl);
+              setActiveBannerSrc(cleanImages.banner || movie.bannerUrl);
 
               if (movie.logoUrl) setLogoUrl(movie.logoUrl);
               else if (logoData) setLogoUrl(logoData);
@@ -111,8 +105,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
               setRecommendations(recData);
 
           } catch (e) { 
-              console.error(e); 
-              if (isMounted) setCleanSearchFinished(true);
+              console.error(e);
+              // Fallback in case of error
+              if (isMounted) {
+                  setActivePosterSrc(movie.posterUrl);
+                  setActiveBannerSrc(movie.bannerUrl);
+              }
           }
       };
 
@@ -176,14 +174,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       return 'https://localhost';
   };
 
-  // --- BLUR LOGIC ---
-  // Standard poster stays blurred IF:
-  // 1. We are still searching for a clean image (!cleanSearchFinished)
-  // 2. OR We found a clean image but it hasn't loaded yet (cleanPosterUrl && !isCleanPosterLoaded)
-  // This hides the text on the standard poster, preventing the "substitution" glitch visual.
-  const shouldBlurPoster = !cleanSearchFinished || (cleanPosterUrl && !isCleanPosterLoaded);
-  const shouldBlurBanner = !cleanSearchFinished || (cleanBannerUrl && !isCleanBannerLoaded);
-
   return (
     // Z-INDEX 100: Above Navbar (50), Below Player (200)
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto">
@@ -234,65 +224,43 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA - DOUBLE LAYER SYSTEM WITH BLUR */}
+            {/* 1. HERO IMAGE AREA - SINGLE OPTIMIZED LAYER */}
             <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818] overflow-hidden">
                 
                 {/* Background placeholder */}
                 <div className="absolute inset-0 z-0 bg-[#181818]" />
 
-                {/* --- MOBILE LAYERS --- */}
-                {/* Layer 1: Standard Poster (Blurred while loading clean one) */}
-                <img 
-                  src={movie.posterUrl} 
-                  alt={movie.title} 
-                  decoding="sync"
-                  className={`
-                    block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10
-                    transition-all duration-700 ease-in-out
-                    ${shouldBlurPoster ? 'blur-md scale-110' : 'blur-0 scale-100'}
-                  `}
-                />
-                {/* Layer 2: Clean Poster (Fades in on top) */}
-                {cleanPosterUrl && (
+                {/* Mobile Poster */}
+                {activePosterSrc && (
                     <img 
-                        src={cleanPosterUrl}
-                        alt="clean poster"
-                        className={`
-                            block md:hidden w-full h-full object-cover object-center absolute inset-0 z-11
-                            transition-opacity duration-700 ease-in-out
-                            ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
-                        `}
-                        onLoad={() => setIsCleanPosterLoaded(true)}
+                      src={activePosterSrc} 
+                      alt={movie.title} 
+                      decoding="sync"
+                      className={`
+                        block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10
+                        transition-opacity duration-500 ease-in-out
+                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      onLoad={() => setIsImageLoaded(true)}
                     />
                 )}
 
-                {/* --- DESKTOP LAYERS --- */}
-                {/* Layer 1: Standard Banner */}
-                <img 
-                  src={movie.bannerUrl} 
-                  alt={movie.title} 
-                  decoding="sync"
-                  className={`
-                    hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10
-                    transition-all duration-700 ease-in-out
-                    ${shouldBlurBanner ? 'blur-md scale-110' : 'blur-0 scale-100'}
-                  `}
-                />
-                {/* Layer 2: Clean Banner */}
-                {cleanBannerUrl && (
+                {/* Desktop Banner */}
+                {activeBannerSrc && (
                     <img 
-                        src={cleanBannerUrl}
-                        alt="clean banner"
-                        className={`
-                            hidden md:block w-full h-full object-cover object-top absolute inset-0 z-11
-                            transition-opacity duration-700 ease-in-out
-                            ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
-                        `}
-                        onLoad={() => setIsCleanBannerLoaded(true)}
+                      src={activeBannerSrc} 
+                      alt={movie.title} 
+                      decoding="sync"
+                      className={`
+                        hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10
+                        transition-opacity duration-500 ease-in-out
+                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      onLoad={() => setIsImageLoaded(true)}
                     />
                 )}
                 
-                {/* Gradients (Z-index 20, above all images) */}
+                {/* Gradients */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#181818]/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
