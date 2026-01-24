@@ -64,7 +64,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
 
   if (loading) {
       return (
-          <div className="min-h-screen bg-black pt-[130px] px-4 space-y-8 pb-32">
+          <div className="min-h-screen bg-black pt-[170px] px-4 space-y-8 pb-32">
               <div className="flex items-center gap-3 mb-6">
                  <div className="w-9 h-9 bg-gray-800 rounded-full animate-pulse"></div>
                  <div className="h-6 w-32 bg-gray-800 rounded animate-pulse"></div>
@@ -87,8 +87,8 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    // Updated padding-top: safe-area + 120px to account for taller navbar
-    <div className="min-h-screen w-full bg-black pt-[calc(120px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-x-hidden">
+    // Updated padding-top: safe-area + 170px to account for taller navbar
+    <div className="min-h-screen w-full bg-black pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-x-hidden">
       
       {/* Header */}
       <div className="px-4 md:px-12 mb-6 flex items-center gap-3">
@@ -117,7 +117,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                         style={{ animationDelay: `${index * 100}ms` }}
                     >
                         {/* Left Column: Date */}
-                        <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[130px] h-fit z-10">
+                        <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[170px] h-fit z-10">
                             <span className="text-gray-400 text-sm md:text-lg font-bold tracking-wider drop-shadow-md">{month}</span>
                             <span className="text-white text-3xl md:text-5xl font-black drop-shadow-lg">{day}</span>
                         </div>

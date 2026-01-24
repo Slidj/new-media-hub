@@ -30,7 +30,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // Image States
+  // Image States - PURELY FROM PROPS (No swapping)
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
 
@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
   useEffect(() => {
     if (movie) {
-      // 1. Initial Reset
+      // 1. Initial Reset - Load images from props immediately and NEVER change them
       setActivePosterSrc(movie.posterUrl);
       setActiveBannerSrc(movie.bannerUrl);
 
@@ -69,35 +69,19 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           setIsVisible(true);
       });
 
-      // 3. Load Metadata & Clean Images (Restored)
+      // 3. Load Metadata ONLY (No more image swapping)
       const loadMetadata = async () => {
           try {
-              const [logoData, detailsData, castData, videoData, recData, cleanImages] = await Promise.all([
+              // We removed fetchCleanImages to satisfy user request "stop poster substitution"
+              const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
                   API.fetchCredits(movie.id, movie.mediaType),
                   API.fetchVideos(movie.id, movie.mediaType),
-                  API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US'),
-                  API.fetchCleanImages(movie.id, movie.mediaType)
+                  API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US')
               ]);
 
               if (!isMounted) return;
-
-              // Handle Clean Images with preload to minimize glitch
-              if (cleanImages.poster) {
-                  const img = new Image();
-                  img.src = cleanImages.poster;
-                  img.onload = () => {
-                      if(isMounted) setActivePosterSrc(cleanImages.poster);
-                  };
-              }
-              if (cleanImages.banner) {
-                   const img = new Image();
-                   img.src = cleanImages.banner;
-                   img.onload = () => {
-                       if(isMounted) setActiveBannerSrc(cleanImages.banner);
-                   };
-              }
 
               if (movie.logoUrl) setLogoUrl(movie.logoUrl);
               else if (logoData) setLogoUrl(logoData);
@@ -235,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activePosterSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className="block md:hidden w-full h-full object-cover object-center relative z-10 transition-opacity duration-500"
+                      className="block md:hidden w-full h-full object-cover object-center relative z-10"
                     />
                 )}
                 {activeBannerSrc && (
@@ -243,7 +227,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activeBannerSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className="hidden md:block w-full h-full object-cover object-top relative z-10 transition-opacity duration-500"
+                      className="hidden md:block w-full h-full object-cover object-top relative z-10"
                     />
                 )}
                 

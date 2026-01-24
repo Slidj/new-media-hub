@@ -38,8 +38,9 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    // Updated padding-top to account for taller navbar + safe area
-    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[calc(150px+env(safe-area-inset-top))] md:pt-[170px] pb-[80px]">
+    // Updated padding-top to account for taller navbar + safe area (safe-area + 80px base + search bar height)
+    // 230px ensures the search input is clearly below the navbar gradient
+    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[calc(230px+env(safe-area-inset-top))] pb-[80px]">
       
       {/* Static Search Bar Area */}
       <div className="w-full px-4 md:px-12 py-2 shrink-0 bg-black z-50">
@@ -129,7 +130,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
              <div className="flex flex-col items-center justify-center h-full pb-20 text-gray-500 animate-fade-in-up">
                 <Search className="w-16 h-16 mb-4 opacity-10" />
                 <p className="text-lg font-medium tracking-tight">{t.search}</p>
-                <p className="text-sm opacity-40">Find your next favorite story</p>
+                <p className="text-sm opacity-50 mt-2">Find movies, TV shows and more</p>
              </div>
           )}
       </div>

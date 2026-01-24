@@ -1,5 +1,5 @@
 
-// Update: Navbar with SIGNIFICANTLY Increased Safe Area v6.7
+// Update: Navbar with MAXIMIZED Safe Area v6.9
 import React, { useState, useEffect } from 'react';
 import { Search, Bell, User, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
@@ -38,8 +38,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
     <nav 
       className={`
         fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out
-        /* CRITICAL FIX: safe-area + 50px to lower content significantly below system UI */
-        pt-[calc(env(safe-area-inset-top)+50px)] pb-4
+        /* CRITICAL: Increased padding to safe-area + 80px */
+        pt-[calc(env(safe-area-inset-top)+80px)] pb-4
         ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
           ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
           : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
@@ -60,13 +60,13 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v6.7 */}
+            {/* VERSION INDICATOR v6.9 */}
             <button 
                 onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
                 className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="v6.7 Fixed Layout - Tap to reset"
+                title="v6.9 Fixed - Tap to reset"
             >
-                v6.7
+                v6.9
             </button>
           </div>
         </div>
