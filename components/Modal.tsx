@@ -30,10 +30,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // IMAGE STATES (Simple Single Layer)
-  // Init with null to prevent showing standard image before checking for clean one
-  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
-  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
+  // IMAGE STATES
+  // CRITICAL FIX: Initialize immediately with the passed movie props.
+  // This ensures the image is present in the DOM from frame #1 of the animation.
+  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(movie?.posterUrl || null);
+  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(movie?.bannerUrl || null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Trailer Player State
@@ -44,9 +45,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
   useEffect(() => {
     if (movie) {
-      // 1. Initial Reset
-      setActivePosterSrc(null);
-      setActiveBannerSrc(null);
+      // 1. Initial Reset & Immediate State Set
+      // We explicitly set these again to ensure if movie prop changed, state updates instantly
+      setActivePosterSrc(movie.posterUrl);
+      setActiveBannerSrc(movie.bannerUrl);
+      // We assume image is "loading" only for the transition effect, 
+      // but since we reuse the URL, browser cache should handle it fast.
       setIsImageLoaded(false);
 
       setLogoUrl(null);
@@ -67,15 +71,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       
       let isMounted = true;
 
-      // 2. Animation
+      // 2. Start Animation
       requestAnimationFrame(() => {
           setIsVisible(true);
       });
 
-      // 3. Load Metadata & Clean Images
+      // 3. Load Metadata & Check for Better Images (Background)
       const loadMetadata = async () => {
           try {
-              // Parallel fetching
               const [logoData, detailsData, castData, videoData, recData, cleanImages] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
@@ -87,10 +90,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
               if (!isMounted) return;
 
-              // LOGIC: Use clean image if available, otherwise fallback to standard (movie.*Url)
-              // We set this NOW, so the user sees the "final" decision immediately.
-              setActivePosterSrc(cleanImages.poster || movie.posterUrl);
-              setActiveBannerSrc(cleanImages.banner || movie.bannerUrl);
+              // If we found a clean image, update the state.
+              // Since the modal is already open with the standard image, this might cause a subtle switch,
+              // but it's better than delaying the opening.
+              if (cleanImages.poster) setActivePosterSrc(cleanImages.poster);
+              if (cleanImages.banner) setActiveBannerSrc(cleanImages.banner);
 
               if (movie.logoUrl) setLogoUrl(movie.logoUrl);
               else if (logoData) setLogoUrl(logoData);
@@ -106,11 +110,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
           } catch (e) { 
               console.error(e);
-              // Fallback in case of error
-              if (isMounted) {
-                  setActivePosterSrc(movie.posterUrl);
-                  setActiveBannerSrc(movie.bannerUrl);
-              }
           }
       };
 
@@ -224,7 +223,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA - SINGLE OPTIMIZED LAYER */}
+            {/* 1. HERO IMAGE AREA - SINGLE LAYER, IMMEDIATE LOAD */}
             <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818] overflow-hidden">
                 
                 {/* Background placeholder */}
@@ -236,12 +235,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activePosterSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className={`
-                        block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10
-                        transition-opacity duration-500 ease-in-out
-                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
-                      `}
-                      onLoad={() => setIsImageLoaded(true)}
+                      className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
+                      // We removed opacity transitions on load to ensure it's visible INSTANTLY
                     />
                 )}
 
@@ -251,12 +246,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                       src={activeBannerSrc} 
                       alt={movie.title} 
                       decoding="sync"
-                      className={`
-                        hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10
-                        transition-opacity duration-500 ease-in-out
-                        ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
-                      `}
-                      onLoad={() => setIsImageLoaded(true)}
+                      className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
                     />
                 )}
                 
