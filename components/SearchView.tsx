@@ -38,7 +38,8 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   }, [query, lang]);
 
   return (
-    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[140px] md:pt-[160px] pb-[80px]">
+    // Updated padding-top to account for taller navbar + safe area
+    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[calc(150px+env(safe-area-inset-top))] md:pt-[170px] pb-[80px]">
       
       {/* Static Search Bar Area */}
       <div className="w-full px-4 md:px-12 py-2 shrink-0 bg-black z-50">
@@ -99,7 +100,6 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                         loading="lazy"
                         />
                         
-                        {/* New Style Series Badge, moved to left-0 */}
                         {movie.mediaType === 'tv' && (
                             <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
                                 <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
