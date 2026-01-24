@@ -43,7 +43,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   useEffect(() => {
     if (movie) {
       // 1. Initial Reset
-      // Спочатку ставимо звичайні постери, щоб користувач щось бачив
       setActivePosterSrc(movie.posterUrl);
       setActiveBannerSrc(movie.bannerUrl);
 
@@ -79,12 +78,11 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                   API.fetchCredits(movie.id, movie.mediaType),
                   API.fetchVideos(movie.id, movie.mediaType),
                   API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US'),
-                  API.fetchCleanImages(movie.id, movie.mediaType) // Повертаємо запит на чисті картинки
+                  API.fetchCleanImages(movie.id, movie.mediaType)
               ]);
 
               if (!isMounted) return;
 
-              // Apply Clean Images if found
               if (cleanImages.poster) {
                   const img = new Image();
                   img.src = cleanImages.poster;
@@ -176,7 +174,8 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center pointer-events-auto">
+    // Z-INDEX 100: Above Navbar (50), Below Player (200)
+    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto">
       {/* Overlay */}
       <div 
         className={`
@@ -205,7 +204,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
           }
         `}
       >
-        {/* Close Button - LOWERED FOR TELEGRAM HEADER */}
+        {/* Close Button */}
         <button 
           onClick={(e) => {
              e.stopPropagation();
@@ -247,7 +246,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                     />
                 )}
                 
-                {/* Gradients to match #181818 */}
+                {/* Gradients */}
                 <div className="absolute inset-0 z-20 pointer-events-none">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#181818]/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
@@ -309,7 +308,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             <span className="text-lg font-bold">{t.play}</span>
                         </button>
 
-                        {/* Updated Grid to 4 Columns for ThumbsDown */}
                         <div className="grid grid-cols-4 gap-3">
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <Plus className="w-5 h-5" />
@@ -317,7 +315,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsUp className="w-5 h-5" />
                             </button>
-                            {/* Added ThumbsDown Button */}
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsDown className="w-5 h-5" />
                             </button>
@@ -328,13 +325,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                     </div>
                 </div>
 
-                {/* C. TABS & EXTENDED INFO (DELAY 500ms) */}
+                {/* C. TABS */}
                 <div className={`
                     ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
                     
-                    {/* Tab Selection */}
                     <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
                         <button 
                             onClick={() => setActiveTab('overview')}
@@ -356,10 +352,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                         </button>
                     </div>
 
-                    {/* TAB CONTENT */}
                     <div className="min-h-[200px]">
-                        
-                        {/* 1. OVERVIEW TAB */}
                         {activeTab === 'overview' && (
                             <div className="space-y-6 animate-fade-in-up">
                                 <div>
@@ -370,8 +363,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                                         {movie.description}
                                     </p>
                                 </div>
-                                
-                                {/* Cast List (Horizontal Scroll) */}
                                 {cast.length > 0 && (
                                     <div className="space-y-2">
                                         <h3 className="text-sm font-semibold text-gray-400">{t.cast}</h3>
@@ -392,8 +383,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Genres Tags */}
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-semibold text-gray-400">{t.genres}</h3>
                                     <div className="flex flex-wrap gap-2">
@@ -407,7 +396,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             </div>
                         )}
 
-                        {/* 2. TRAILERS TAB */}
                         {activeTab === 'trailers' && (
                             <div className="space-y-3 animate-fade-in-up">
                                 {videos.length > 0 ? (
@@ -446,7 +434,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                             </div>
                         )}
 
-                        {/* 3. MORE LIKE THIS TAB */}
                         {activeTab === 'more_like_this' && (
                             <div className="animate-fade-in-up">
                                 {recommendations.length > 0 ? (
@@ -473,17 +460,14 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                                 )}
                             </div>
                         )}
-
                     </div>
                 </div>
-
             </div>
         </div>
 
         {/* --- TRAILER PLAYER OVERLAY (INTERNAL) --- */}
         {playingTrailerKey && (
             <div className="fixed inset-0 z-[120] bg-black flex flex-col items-center justify-center animate-fade-in-up">
-                {/* Close Trailer Button - LOWERED FOR TELEGRAM HEADER */}
                 <button 
                     onClick={(e) => {
                         e.stopPropagation();
