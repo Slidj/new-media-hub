@@ -44,10 +44,10 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
       `}
       /* 
-         Fix: Increased top offset to match new taller Navbar (safe-area + 80px padding).
-         180px + env(safe-area-inset-top) ensures it sits below the navbar
+         Fix: Adjusted top offset to 135px + safe-area. 
+         This brings it closer to the Navbar while remaining safe.
       */
-      style={{ top: 'calc(180px + env(safe-area-inset-top))' }}
+      style={{ top: 'calc(135px + env(safe-area-inset-top))' }}
     >
         {/* Зовнішній контейнер для центрування */}
         <div className="flex justify-center w-full px-2">
