@@ -107,7 +107,7 @@ export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'
     const todayDate = new Date();
     const todayStr = todayDate.toISOString().split('T')[0];
     
-    // Look ahead 6 months
+    // Look ahead 6 months to find the REAL hits
     const futureDate = new Date();
     futureDate.setMonth(futureDate.getMonth() + 6);
     const futureStr = futureDate.toISOString().split('T')[0];
@@ -119,10 +119,13 @@ export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'
     // The UI component then sorts these "Hits" by date to create the timeline.
 
     // 1. Fetch Popular Upcoming Movies
-    const moviesUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&page=${page}&region=US&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=20&with_release_type=2|3&include_adult=false&include_video=false`;
+    // popularity.gte=10 ensures some level of global awareness
+    // region=US ensures dates are consistent with global theatrical releases
+    const moviesUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&page=${page}&region=US&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&with_release_type=2|3&include_adult=false&include_video=false`;
 
     // 2. Fetch Popular Upcoming TV Shows
-    const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&page=${page}&first_air_date.gte=${todayStr}&first_air_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=20&include_null_first_air_dates=false&include_adult=false`;
+    // Just looking for new seasons/shows airing soon
+    const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&page=${page}&first_air_date.gte=${todayStr}&first_air_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&include_null_first_air_dates=false&include_adult=false`;
 
     // Run in parallel
     const [moviesRes, tvRes] = await Promise.all([
