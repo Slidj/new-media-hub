@@ -22,10 +22,33 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
     const loadUpcoming = async () => {
         setLoading(true);
         const locale = lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US';
-        const data = await API.fetchUpcoming(1, locale);
-        if (isMounted) {
-            setMovies(data);
-            setLoading(false);
+        
+        try {
+            // FIX: Load 3 pages concurrently to fill the list, as filtering removes many items
+            const [page1, page2, page3] = await Promise.all([
+                API.fetchUpcoming(1, locale),
+                API.fetchUpcoming(2, locale),
+                API.fetchUpcoming(3, locale)
+            ]);
+
+            if (isMounted) {
+                // Merge and deduplicate by ID
+                const allMovies = [...page1, ...page2, ...page3];
+                const uniqueMovies = Array.from(new Map(allMovies.map(m => [m.id, m])).values());
+                
+                // Final sort by date just in case
+                const sortedMovies = uniqueMovies.sort((a, b) => {
+                    const dateA = new Date(a.releaseDate || '9999-12-31').getTime();
+                    const dateB = new Date(b.releaseDate || '9999-12-31').getTime();
+                    return dateA - dateB;
+                });
+
+                setMovies(sortedMovies);
+            }
+        } catch (e) {
+            console.error("Failed to load upcoming", e);
+        } finally {
+            if (isMounted) setLoading(false);
         }
     };
     loadUpcoming();
@@ -52,6 +75,9 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   const formatDate = (dateString?: string) => {
       if (!dateString) return { day: '', month: '' };
       const date = new Date(dateString);
+      // Valid date check
+      if (isNaN(date.getTime())) return { day: '', month: '' };
+
       const day = date.getDate();
       const monthNames = lang === 'uk' 
         ? ['СІЧ', 'ЛЮТ', 'БЕР', 'КВІ', 'ТРА', 'ЧЕР', 'ЛИП', 'СЕР', 'ВЕР', 'ЖОВ', 'ЛИС', 'ГРУ']

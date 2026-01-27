@@ -101,16 +101,58 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
   }
 };
 
-// Fetch Upcoming (Coming Soon)
+// REPLACED: Fetch Upcoming (Smart Netflix-Style Hype List)
 export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
   try {
-    const url = `${BASE_URL}/movie/upcoming?api_key=${API_KEY}&language=${language}&page=${page}`;
-    const request = await fetch(url);
-    if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-    const data = await request.json();
-    return data.results
-      .filter((m: any) => m.backdrop_path) // Upcoming needs banner
-      .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
+    const todayDate = new Date();
+    const todayStr = todayDate.toISOString().split('T')[0];
+    
+    // Look ahead 6 months
+    const futureDate = new Date();
+    futureDate.setMonth(futureDate.getMonth() + 6);
+    const futureStr = futureDate.toISOString().split('T')[0];
+    
+    // STRATEGY CHANGE:
+    // Instead of sorting by date (which gives us low-budget trash released tomorrow),
+    // we sort by POPULARITY.DESC within the future date range.
+    // This gives us the MOST ANTICIPATED movies/shows.
+    // The UI component then sorts these "Hits" by date to create the timeline.
+
+    // 1. Fetch Popular Upcoming Movies
+    const moviesUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&page=${page}&region=US&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=20&with_release_type=2|3&include_adult=false&include_video=false`;
+
+    // 2. Fetch Popular Upcoming TV Shows
+    const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&page=${page}&first_air_date.gte=${todayStr}&first_air_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=20&include_null_first_air_dates=false&include_adult=false`;
+
+    // Run in parallel
+    const [moviesRes, tvRes] = await Promise.all([
+        fetch(moviesUrl),
+        fetch(tvUrl)
+    ]);
+
+    let results: any[] = [];
+
+    if (moviesRes.ok) {
+        const data = await moviesRes.json();
+        const movies = data.results
+             // Double check dates to ensure they are in future (API strictness varies)
+            .filter((m: any) => m.backdrop_path && m.release_date >= todayStr)
+            .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
+        results = [...results, ...movies];
+    }
+
+    if (tvRes.ok) {
+        const data = await tvRes.json();
+        const shows = data.results
+            .filter((m: any) => m.backdrop_path && m.first_air_date >= todayStr)
+            .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'tv'}));
+        results = [...results, ...shows];
+    }
+    
+    // We return the mixed bag of Popular Future content.
+    // The ComingSoonView component handles the sorting by Date.
+    return results;
+
   } catch (error) {
     console.error("Error fetching upcoming:", error);
     return [];
