@@ -46,7 +46,17 @@ export const translations = {
     history: "History",
     saved: "Saved",
     emptyList: "Your list is empty",
-    emptyHistory: "No watch history yet"
+    emptyHistory: "No watch history yet",
+    // More Menu & Admin
+    settings: "Settings",
+    about: "About",
+    support: "Support",
+    adminPanel: "Admin Panel",
+    adminAccess: "Admin Access Granted",
+    users: "Users",
+    totalViews: "Total Views",
+    systemStatus: "System Status",
+    close: "Close"
   },
   uk: {
     home: "Головна",
@@ -91,7 +101,17 @@ export const translations = {
     history: "Історія",
     saved: "Збережене",
     emptyList: "Ваш список порожній",
-    emptyHistory: "Історія переглядів порожня"
+    emptyHistory: "Історія переглядів порожня",
+    // More Menu & Admin
+    settings: "Налаштування",
+    about: "Про додаток",
+    support: "Підтримка",
+    adminPanel: "Адмін Панель",
+    adminAccess: "Доступ адміністратора",
+    users: "Користувачі",
+    totalViews: "Переглядів",
+    systemStatus: "Статус системи",
+    close: "Закрити"
   },
   ru: {
     home: "Главная",
@@ -136,7 +156,17 @@ export const translations = {
     history: "История",
     saved: "Сохраненное",
     emptyList: "Ваш список пуст",
-    emptyHistory: "История просмотров пуста"
+    emptyHistory: "История просмотров пуста",
+    // More Menu & Admin
+    settings: "Настройки",
+    about: "О приложении",
+    support: "Поддержка",
+    adminPanel: "Админ Панель",
+    adminAccess: "Доступ администратора",
+    users: "Пользователи",
+    totalViews: "Просмотров",
+    systemStatus: "Статус системы",
+    close: "Закрыть"
   }
 };
 

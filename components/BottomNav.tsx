@@ -8,20 +8,30 @@ interface BottomNavProps {
   lang: Language;
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  onMoreClick: () => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChange, onMoreClick }) => {
   const t = translations[lang];
 
-  const handleTabClick = (tab: TabType) => {
-    // FIX: Check if HapticFeedback is supported (version >= 6.1)
+  const triggerHaptic = () => {
+     // Check strict version for HapticFeedback support
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('light');
       }
     }
+  };
+
+  const handleTabClick = (tab: TabType) => {
+    triggerHaptic();
     onTabChange(tab);
+  };
+
+  const handleMoreClick = () => {
+    triggerHaptic();
+    onMoreClick();
   };
 
   const btnClass = "flex-1 flex flex-col items-center justify-center gap-1 py-2 cursor-pointer transition active:scale-90 select-none touch-manipulation focus:outline-none";
@@ -71,6 +81,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
       <button 
         type="button"
         className={`${btnClass} ${inactiveClass}`}
+        onClick={handleMoreClick}
       >
         <Menu className="w-6 h-6" />
         <span className="text-[10px] font-medium">{t.more}</span>

@@ -12,6 +12,8 @@ import { ComingSoonView } from './components/ComingSoonView';
 import { CategoryNav, Category } from './components/CategoryNav';
 import { MyListView } from './components/MyListView'; // New Component
 import { Player } from './components/Player';
+import { MoreMenu } from './components/MoreMenu'; // New Sidebar
+import { AdminPanel } from './components/AdminPanel'; // New Admin Panel
 import { Movie, WebAppUser, TabType } from './types';
 import { API } from './services/tmdb';
 import { syncUser, subscribeToUserData, toggleMyList, toggleLike, toggleDislike, addToHistory } from './services/firebase';
@@ -101,6 +103,10 @@ function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
   
+  // NEW STATES FOR MENU AND ADMIN
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+
   const [user, setUser] = useState<WebAppUser | null>(null);
   
   // Firebase Data States
@@ -407,6 +413,7 @@ function App() {
         lang={lang} 
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onMoreClick={() => setIsMoreMenuOpen(true)}
       />
 
       {/* Details Modal */}
@@ -432,6 +439,23 @@ function App() {
           movie={playingMovie} 
           onClose={() => setPlayingMovie(null)} 
         />
+      )}
+
+      {/* Sidebar Menu */}
+      <MoreMenu 
+          isOpen={isMoreMenuOpen}
+          onClose={() => setIsMoreMenuOpen(false)}
+          lang={lang}
+          user={user}
+          onAdminClick={() => setIsAdminPanelOpen(true)}
+      />
+
+      {/* Admin Panel Overlay */}
+      {isAdminPanelOpen && (
+          <AdminPanel 
+             onClose={() => setIsAdminPanelOpen(false)}
+             lang={lang}
+          />
       )}
     </div>
   );
