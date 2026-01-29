@@ -40,8 +40,8 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
             ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
-        {/* Header */}
-        <div className="pt-[calc(env(safe-area-inset-top)+20px)] pb-6 px-6 bg-[#1a1a1a] flex items-center justify-between border-b border-white/5">
+        {/* Header - UPDATED PADDING to safe-area + 80px */}
+        <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 bg-[#1a1a1a] flex items-center justify-between border-b border-white/5">
             <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center border border-white/10">
                     {user?.photo_url ? (

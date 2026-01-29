@@ -13,8 +13,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#000000] overflow-y-auto no-scrollbar pb-safe">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-[#141414]/90 backdrop-blur-md border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+20px)] pb-4 flex items-center justify-between">
+        {/* Header - UPDATED PADDING to safe-area + 80px */}
+        <div className="sticky top-0 z-10 bg-[#141414]/90 backdrop-blur-md border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+80px)] pb-4 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                 <span className="text-[#E50914]">{t.adminPanel}</span>
             </h2>
