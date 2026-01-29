@@ -42,7 +42,11 @@ export const translations = {
     remindMe: "Remind Me",
     reminded: "Reminded",
     coming: "Coming",
-    share: "Share"
+    share: "Share",
+    history: "History",
+    saved: "Saved",
+    emptyList: "Your list is empty",
+    emptyHistory: "No watch history yet"
   },
   uk: {
     home: "Головна",
@@ -83,7 +87,11 @@ export const translations = {
     remindMe: "Нагадати",
     reminded: "Нагадаю",
     coming: "Прем'єра",
-    share: "Поділитись"
+    share: "Поділитись",
+    history: "Історія",
+    saved: "Збережене",
+    emptyList: "Ваш список порожній",
+    emptyHistory: "Історія переглядів порожня"
   },
   ru: {
     home: "Главная",
@@ -124,7 +132,11 @@ export const translations = {
     remindMe: "Напомнить",
     reminded: "Напомню",
     coming: "Премьера",
-    share: "Поделиться"
+    share: "Поделиться",
+    history: "История",
+    saved: "Сохраненное",
+    emptyList: "Ваш список пуст",
+    emptyHistory: "История просмотров пуста"
   }
 };
 

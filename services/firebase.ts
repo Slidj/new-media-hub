@@ -39,7 +39,8 @@ export const syncUser = async (user: WebAppUser) => {
       await setDoc(userRef, {
         profile: user,
         myList: [],
-        likedMovies: [], // Store IDs of liked movies
+        likedMovies: [], 
+        watchHistory: [], // Init history
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       });
@@ -62,10 +63,6 @@ export const toggleMyList = async (userId: number, movie: Movie, isInList: boole
   const userRef = doc(db, "users", userId.toString());
   try {
     if (isInList) {
-      // We need to pass the EXACT object to arrayRemove, which is tricky.
-      // Better strategy: Read, Filter, Write.
-      // Or for simplicity in this MVP, we assume the object structure is stable, 
-      // but to be safe, let's filter by ID manually to ensure removal works perfectly.
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
           const currentList = userSnap.data().myList || [];
@@ -82,6 +79,32 @@ export const toggleMyList = async (userId: number, movie: Movie, isInList: boole
   }
 };
 
+// Add to Watch History (Max 20 items, FIFO)
+export const addToHistory = async (userId: number, movie: Movie) => {
+    const userRef = doc(db, "users", userId.toString());
+    try {
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            let currentHistory = userSnap.data().watchHistory || [];
+            
+            // 1. Remove if already exists (to move it to top)
+            currentHistory = currentHistory.filter((m: Movie) => m.id !== movie.id);
+            
+            // 2. Add to beginning
+            currentHistory.unshift(movie);
+            
+            // 3. Keep only top 20
+            if (currentHistory.length > 20) {
+                currentHistory = currentHistory.slice(0, 20);
+            }
+            
+            await updateDoc(userRef, { watchHistory: currentHistory });
+        }
+    } catch (error) {
+        console.error("Error adding to history:", error);
+    }
+};
+
 // Toggle Like
 export const toggleLike = async (userId: number, movieId: string, isLiked: boolean) => {
   const userRef = doc(db, "users", userId.toString());
@@ -94,7 +117,7 @@ export const toggleLike = async (userId: number, movieId: string, isLiked: boole
   }
 };
 
-// Real-time listener for User Data (My List & Likes)
+// Real-time listener for User Data
 export const subscribeToUserData = (userId: number, onUpdate: (data: any) => void) => {
   const userRef = doc(db, "users", userId.toString());
   return onSnapshot(userRef, (doc) => {

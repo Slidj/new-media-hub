@@ -10,10 +10,11 @@ import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
 import { ComingSoonView } from './components/ComingSoonView';
 import { CategoryNav, Category } from './components/CategoryNav';
+import { MyListView } from './components/MyListView'; // New Component
 import { Player } from './components/Player';
 import { Movie, WebAppUser, TabType } from './types';
 import { API } from './services/tmdb';
-import { syncUser, subscribeToUserData, toggleMyList, toggleLike } from './services/firebase';
+import { syncUser, subscribeToUserData, toggleMyList, toggleLike, addToHistory } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
@@ -105,6 +106,7 @@ function App() {
   // Firebase Data States
   const [myList, setMyList] = useState<Movie[]>([]);
   const [likedMovies, setLikedMovies] = useState<string[]>([]);
+  const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -173,6 +175,7 @@ function App() {
     const unsubscribe = subscribeToUserData(user.id, (data) => {
       if (data.myList) setMyList(data.myList);
       if (data.likedMovies) setLikedMovies(data.likedMovies);
+      if (data.watchHistory) setWatchHistory(data.watchHistory);
     });
 
     return () => unsubscribe();
@@ -198,14 +201,8 @@ function App() {
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
     if (isLoadingRef.current) return;
     
-    // IF Category is "My List", we don't fetch from TMDB, we use local state
-    if (category === 'my_list') {
-        setMovies(myList);
-        setHasMore(false);
-        setLoading(false);
-        return;
-    }
-
+    // IF Category is "My List" - no longer needed in Home tab logic, handled by MyListView
+    
     isLoadingRef.current = true;
     setLoading(true);
     
@@ -255,7 +252,7 @@ function App() {
         setLoading(false);
         isLoadingRef.current = false;
     }
-  }, [myList]); // Dependency on myList so switching back to it works if updated
+  }, []); 
 
   useEffect(() => {
     if (activeTab === 'home') {
@@ -265,7 +262,7 @@ function App() {
 
   // Infinite Scroll Logic (Optimized Threshold)
   useEffect(() => {
-    if (activeTab !== 'home' || activeCategory === 'my_list') return; // No infinite scroll for My List
+    if (activeTab !== 'home') return; 
 
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight;
@@ -279,16 +276,23 @@ function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, activeTab, activeCategory]);
+  }, [loading, hasMore, activeTab]);
 
   const handleMovieClick = useCallback((movie: Movie) => {
     setSelectedMovie(movie);
   }, []);
 
+  const handlePlay = (movie: Movie) => {
+      setPlayingMovie(movie);
+      // Record history when play starts
+      if (user?.id) {
+          addToHistory(user.id, movie);
+      }
+  };
+
   const handleToggleList = async (movie: Movie) => {
     if (!user?.id) return;
     const isListed = myList.some(m => m.id === movie.id);
-    // Optimistic UI update could happen here, but we rely on realtime subscription
     await toggleMyList(user.id, movie, isListed);
   };
 
@@ -326,49 +330,38 @@ function App() {
             />
 
             {/* HERO SECTION (Standard Flow) */}
-            {activeCategory !== 'my_list' && featuredMovie && (
+            {featuredMovie && (
                  <Hero 
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                    onPlay={() => {
-                        setPlayingMovie(featuredMovie);
-                    }}
+                    onPlay={() => handlePlay(featuredMovie)}
                     lang={lang}
                  />
             )}
 
             {/* MAIN CONTENT GRID */}
-            {/* Added extra padding top if Hero is hidden (My List view) */}
-            <main className={`relative z-10 w-full bg-black ${activeCategory === 'my_list' ? 'pt-40' : '-mt-1'}`}>
+            <main className={`relative z-10 w-full bg-black -mt-1`}>
                 <section className="px-2 md:px-12 pb-10 pt-2">
-                    {/* My List Empty State */}
-                    {activeCategory === 'my_list' && movies.length === 0 ? (
-                         <div className="flex flex-col items-center justify-center min-h-[40vh] text-gray-500">
-                             <p className="text-xl font-medium">{translations[lang].myList} is empty</p>
-                             <p className="text-sm mt-2 opacity-70">Add movies to watch them later</p>
-                         </div>
-                    ) : (
-                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                            {movies.map((movie, index) => (
-                                <MovieCard 
-                                    key={`${movie.id}-${index}`}
-                                    movie={movie}
-                                    index={index}
-                                    activeCategory={activeCategory}
-                                    onClick={handleMovieClick}
-                                />
-                            ))}
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                        {movies.map((movie, index) => (
+                            <MovieCard 
+                                key={`${movie.id}-${index}`}
+                                movie={movie}
+                                index={index}
+                                activeCategory={activeCategory}
+                                onClick={handleMovieClick}
+                            />
+                        ))}
 
-                            {/* Loading Skeletons (Only for API fetches, not My List) */}
-                            {loading && activeCategory !== 'my_list' && Array.from({ length: 6 }).map((_, i) => (
-                                <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                                    <SkeletonCard />
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                        {/* Loading Skeletons */}
+                        {loading && Array.from({ length: 6 }).map((_, i) => (
+                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                                <SkeletonCard />
+                            </div>
+                        ))}
+                    </div>
                     
-                    {!hasMore && movies.length > 0 && activeCategory !== 'my_list' && (
+                    {!hasMore && movies.length > 0 && (
                         <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                             <p>{translations[lang].endOfList}</p>
                         </div>
@@ -392,6 +385,16 @@ function App() {
         />
       )}
 
+      {/* NEW: MY LIST TAB */}
+      {activeTab === 'my_list' && (
+          <MyListView 
+             myList={myList}
+             history={watchHistory}
+             onMovieSelect={setSelectedMovie}
+             lang={lang}
+          />
+      )}
+
       <BottomNav 
         lang={lang} 
         activeTab={activeTab}
@@ -403,9 +406,7 @@ function App() {
         <Modal 
           movie={selectedMovie} 
           onClose={() => setSelectedMovie(null)} 
-          onPlay={(m) => {
-             setPlayingMovie(m);
-          }}
+          onPlay={(m) => handlePlay(m)}
           onMovieSelect={setSelectedMovie} 
           onToggleList={handleToggleList}
           onToggleLike={handleToggleLike}

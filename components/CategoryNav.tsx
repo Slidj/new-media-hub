@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, translations } from '../utils/translations';
 
-export type Category = 'trending' | 'movies' | 'tv' | 'cartoons' | 'my_list';
+export type Category = 'trending' | 'movies' | 'tv' | 'cartoons';
 
 interface CategoryNavProps {
   lang: Language;
@@ -34,7 +34,6 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
     { id: 'movies', label: t.movies },
     { id: 'tv', label: t.tvShows },
     { id: 'cartoons', label: t.cartoons },
-    { id: 'my_list', label: t.myList },
   ];
 
   return (

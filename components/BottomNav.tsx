@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Search, MonitorPlay, Download, Menu } from 'lucide-react';
+import { Home, Search, MonitorPlay, Plus, Menu } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { TabType } from '../types';
 
@@ -61,10 +61,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
 
       <button 
         type="button"
-        className={`${btnClass} ${inactiveClass}`}
+        className={`${btnClass} ${activeTab === 'my_list' ? activeClass : inactiveClass}`}
+        onClick={() => handleTabClick('my_list')}
       >
-        <Download className="w-6 h-6" />
-        <span className="text-[10px] font-medium">{t.downloads}</span>
+        <Plus className={`w-6 h-6 ${activeTab === 'my_list' ? 'stroke-white' : ''}`} />
+        <span className="text-[10px] font-medium">{t.myList}</span>
       </button>
       
       <button 

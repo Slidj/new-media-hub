@@ -55,7 +55,7 @@ export interface WebAppUser {
   photo_url?: string;
 }
 
-export type TabType = 'home' | 'search' | 'coming_soon';
+export type TabType = 'home' | 'search' | 'coming_soon' | 'my_list';
 
 // Telegram WebApp Types
 declare global {
