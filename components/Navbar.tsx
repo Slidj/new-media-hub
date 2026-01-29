@@ -56,18 +56,11 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             onClick={onHomeClick}
           >
             <h1 
-                className="text-3xl md:text-5xl font-bebas tracking-normal text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
+                className="text-3xl md:text-5xl font-bebas font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
+                style={{ WebkitTextStroke: '0.5px #B20710' }} 
             >
               MEDIA HUB
             </h1>
-            {/* VERSION INDICATOR v9.0 */}
-            <button 
-                onClick={(e) => { e.stopPropagation(); handleForceReload(); }}
-                className="text-[10px] font-bold text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors animate-pulse"
-                title="v9.0 Clean & Sync"
-            >
-                v9.0
-            </button>
           </div>
         </div>
 

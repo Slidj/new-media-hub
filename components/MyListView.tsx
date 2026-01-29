@@ -21,8 +21,12 @@ export const MyListView: React.FC<MyListViewProps> = ({ myList, history, onMovie
   const isEmpty = movies.length === 0;
 
   const handleTabChange = (tab: 'saved' | 'history') => {
-      if (window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+      // FIX: Added strict version check (>= 6.1) to prevent warnings on older Telegram clients
+      if (window.Telegram?.WebApp) {
+          const tg = window.Telegram.WebApp;
+          if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
+              tg.HapticFeedback.impactOccurred('light');
+          }
       }
       setActiveTab(tab);
   };

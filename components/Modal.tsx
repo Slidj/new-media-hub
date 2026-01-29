@@ -13,8 +13,10 @@ interface ModalProps {
   // New props for interaction
   onToggleList?: (movie: Movie) => void;
   onToggleLike?: (movie: Movie) => void;
+  onToggleDislike?: (movie: Movie) => void;
   isInList?: boolean;
-  isLiked?: boolean; 
+  isLiked?: boolean;
+  isDisliked?: boolean; 
   lang: Language;
 }
 
@@ -27,8 +29,10 @@ export const Modal: React.FC<ModalProps> = ({
     onMovieSelect, 
     onToggleList, 
     onToggleLike, 
+    onToggleDislike,
     isInList = false, 
     isLiked = false, 
+    isDisliked = false,
     lang 
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -377,8 +381,14 @@ export const Modal: React.FC<ModalProps> = ({
                                 <ThumbsUp className={`w-5 h-5 ${isLiked ? 'text-white fill-white' : ''}`} />
                             </button>
                             
-                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
-                                <ThumbsDown className="w-5 h-5" />
+                            <button 
+                                onClick={() => {
+                                    triggerHaptic();
+                                    onToggleDislike?.(movie);
+                                }}
+                                className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            >
+                                <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'text-white fill-white' : ''}`} />
                             </button>
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <Share2 className="w-5 h-5" />

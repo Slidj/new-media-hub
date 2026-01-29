@@ -40,7 +40,8 @@ export const syncUser = async (user: WebAppUser) => {
         profile: user,
         myList: [],
         likedMovies: [], 
-        watchHistory: [], // Init history
+        dislikedMovies: [], // Init dislikes
+        watchHistory: [], 
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       });
@@ -105,15 +106,45 @@ export const addToHistory = async (userId: number, movie: Movie) => {
     }
 };
 
-// Toggle Like
+// Toggle Like (Mutually exclusive with Dislike)
 export const toggleLike = async (userId: number, movieId: string, isLiked: boolean) => {
   const userRef = doc(db, "users", userId.toString());
   try {
-    await updateDoc(userRef, {
-      likedMovies: isLiked ? arrayRemove(movieId) : arrayUnion(movieId)
-    });
+    if (isLiked) {
+        // Just remove like
+        await updateDoc(userRef, {
+            likedMovies: arrayRemove(movieId)
+        });
+    } else {
+        // Add like AND remove dislike if exists
+        await updateDoc(userRef, {
+            likedMovies: arrayUnion(movieId),
+            dislikedMovies: arrayRemove(movieId)
+        });
+    }
   } catch (error) {
     console.error("Error toggling like:", error);
+  }
+};
+
+// Toggle Dislike (Mutually exclusive with Like)
+export const toggleDislike = async (userId: number, movieId: string, isDisliked: boolean) => {
+  const userRef = doc(db, "users", userId.toString());
+  try {
+    if (isDisliked) {
+        // Just remove dislike
+        await updateDoc(userRef, {
+            dislikedMovies: arrayRemove(movieId)
+        });
+    } else {
+        // Add dislike AND remove like if exists
+        await updateDoc(userRef, {
+            dislikedMovies: arrayUnion(movieId),
+            likedMovies: arrayRemove(movieId)
+        });
+    }
+  } catch (error) {
+    console.error("Error toggling dislike:", error);
   }
 };
 

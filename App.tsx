@@ -14,7 +14,7 @@ import { MyListView } from './components/MyListView'; // New Component
 import { Player } from './components/Player';
 import { Movie, WebAppUser, TabType } from './types';
 import { API } from './services/tmdb';
-import { syncUser, subscribeToUserData, toggleMyList, toggleLike, addToHistory } from './services/firebase';
+import { syncUser, subscribeToUserData, toggleMyList, toggleLike, toggleDislike, addToHistory } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
@@ -106,6 +106,7 @@ function App() {
   // Firebase Data States
   const [myList, setMyList] = useState<Movie[]>([]);
   const [likedMovies, setLikedMovies] = useState<string[]>([]);
+  const [dislikedMovies, setDislikedMovies] = useState<string[]>([]);
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
 
   const [lang, setLang] = useState<Language>(() => {
@@ -175,6 +176,7 @@ function App() {
     const unsubscribe = subscribeToUserData(user.id, (data) => {
       if (data.myList) setMyList(data.myList);
       if (data.likedMovies) setLikedMovies(data.likedMovies);
+      if (data.dislikedMovies) setDislikedMovies(data.dislikedMovies);
       if (data.watchHistory) setWatchHistory(data.watchHistory);
     });
 
@@ -302,6 +304,12 @@ function App() {
     await toggleLike(user.id, movie.id, isLiked);
   };
 
+  const handleToggleDislike = async (movie: Movie) => {
+    if (!user?.id) return;
+    const isDisliked = dislikedMovies.includes(movie.id);
+    await toggleDislike(user.id, movie.id, isDisliked);
+  };
+
   if (showSplash) {
     return <Preloader />;
   }
@@ -410,8 +418,10 @@ function App() {
           onMovieSelect={setSelectedMovie} 
           onToggleList={handleToggleList}
           onToggleLike={handleToggleLike}
+          onToggleDislike={handleToggleDislike}
           isInList={myList.some(m => m.id === selectedMovie.id)}
           isLiked={likedMovies.includes(selectedMovie.id)}
+          isDisliked={dislikedMovies.includes(selectedMovie.id)}
           lang={lang}
         />
       )}
