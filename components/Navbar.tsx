@@ -56,8 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, lang, onSearchClick, onHom
             onClick={onHomeClick}
           >
             <h1 
-                className="text-3xl md:text-5xl font-bebas font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
-                style={{ WebkitTextStroke: '0.5px #B20710' }} 
+                className="text-3xl md:text-5xl font-bebas text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
             >
               MEDIA HUB
             </h1>
