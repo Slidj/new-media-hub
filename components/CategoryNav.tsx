@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, translations } from '../utils/translations';
 
-export type Category = 'trending' | 'movies' | 'tv' | 'cartoons';
+export type Category = 'trending' | 'movies' | 'tv' | 'cartoons' | 'my_list';
 
 interface CategoryNavProps {
   lang: Language;
@@ -34,6 +34,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
     { id: 'movies', label: t.movies },
     { id: 'tv', label: t.tvShows },
     { id: 'cartoons', label: t.cartoons },
+    { id: 'my_list', label: t.myList },
   ];
 
   return (
@@ -43,9 +44,6 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
         transition-all duration-500 ease-in-out
         ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}
       `}
-      /* 
-         Fix: Reverted top offset to 135px + safe-area (Previous State).
-      */
       style={{ top: 'calc(135px + env(safe-area-inset-top))' }}
     >
         {/* Зовнішній контейнер для центрування */}

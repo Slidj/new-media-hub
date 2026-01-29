@@ -13,6 +13,7 @@ import { CategoryNav, Category } from './components/CategoryNav';
 import { Player } from './components/Player';
 import { Movie, WebAppUser, TabType } from './types';
 import { API } from './services/tmdb';
+import { syncUser, subscribeToUserData, toggleMyList, toggleLike } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
@@ -100,6 +101,10 @@ function App() {
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
   
   const [user, setUser] = useState<WebAppUser | null>(null);
+  
+  // Firebase Data States
+  const [myList, setMyList] = useState<Movie[]>([]);
+  const [likedMovies, setLikedMovies] = useState<string[]>([]);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -137,6 +142,9 @@ function App() {
       const tgUser = tg.initDataUnsafe?.user;
       if (tgUser) {
         setUser(tgUser);
+        // Sync user with Firebase immediately on load
+        syncUser(tgUser);
+
         if (tgUser.language_code) {
            const detectedLang = getLanguage(tgUser.language_code);
            if (detectedLang !== lang) {
@@ -144,16 +152,31 @@ function App() {
            }
         }
       } else {
-        setUser({
+        // Dev fallback
+        const devUser = {
             id: 123456,
             first_name: "Guest",
             last_name: "User",
             username: "guest",
             photo_url: ""
-        });
+        };
+        setUser(devUser);
+        syncUser(devUser);
       }
     }
   }, []);
+
+  // Subscribe to Firebase Updates
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const unsubscribe = subscribeToUserData(user.id, (data) => {
+      if (data.myList) setMyList(data.myList);
+      if (data.likedMovies) setLikedMovies(data.likedMovies);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -175,6 +198,14 @@ function App() {
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
     if (isLoadingRef.current) return;
     
+    // IF Category is "My List", we don't fetch from TMDB, we use local state
+    if (category === 'my_list') {
+        setMovies(myList);
+        setHasMore(false);
+        setLoading(false);
+        return;
+    }
+
     isLoadingRef.current = true;
     setLoading(true);
     
@@ -224,7 +255,7 @@ function App() {
         setLoading(false);
         isLoadingRef.current = false;
     }
-  }, []);
+  }, [myList]); // Dependency on myList so switching back to it works if updated
 
   useEffect(() => {
     if (activeTab === 'home') {
@@ -234,7 +265,7 @@ function App() {
 
   // Infinite Scroll Logic (Optimized Threshold)
   useEffect(() => {
-    if (activeTab !== 'home') return;
+    if (activeTab !== 'home' || activeCategory === 'my_list') return; // No infinite scroll for My List
 
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight;
@@ -248,11 +279,24 @@ function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, activeTab]);
+  }, [loading, hasMore, activeTab, activeCategory]);
 
   const handleMovieClick = useCallback((movie: Movie) => {
     setSelectedMovie(movie);
   }, []);
+
+  const handleToggleList = async (movie: Movie) => {
+    if (!user?.id) return;
+    const isListed = myList.some(m => m.id === movie.id);
+    // Optimistic UI update could happen here, but we rely on realtime subscription
+    await toggleMyList(user.id, movie, isListed);
+  };
+
+  const handleToggleLike = async (movie: Movie) => {
+    if (!user?.id) return;
+    const isLiked = likedMovies.includes(movie.id);
+    await toggleLike(user.id, movie.id, isLiked);
+  };
 
   if (showSplash) {
     return <Preloader />;
@@ -282,7 +326,7 @@ function App() {
             />
 
             {/* HERO SECTION (Standard Flow) */}
-            {featuredMovie && (
+            {activeCategory !== 'my_list' && featuredMovie && (
                  <Hero 
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
@@ -294,28 +338,37 @@ function App() {
             )}
 
             {/* MAIN CONTENT GRID */}
-            <main className="relative z-10 w-full bg-black -mt-1">
+            {/* Added extra padding top if Hero is hidden (My List view) */}
+            <main className={`relative z-10 w-full bg-black ${activeCategory === 'my_list' ? 'pt-40' : '-mt-1'}`}>
                 <section className="px-2 md:px-12 pb-10 pt-2">
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                        {movies.map((movie, index) => (
-                            <MovieCard 
-                                key={`${movie.id}-${index}`}
-                                movie={movie}
-                                index={index}
-                                activeCategory={activeCategory}
-                                onClick={handleMovieClick}
-                            />
-                        ))}
+                    {/* My List Empty State */}
+                    {activeCategory === 'my_list' && movies.length === 0 ? (
+                         <div className="flex flex-col items-center justify-center min-h-[40vh] text-gray-500">
+                             <p className="text-xl font-medium">{translations[lang].myList} is empty</p>
+                             <p className="text-sm mt-2 opacity-70">Add movies to watch them later</p>
+                         </div>
+                    ) : (
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                            {movies.map((movie, index) => (
+                                <MovieCard 
+                                    key={`${movie.id}-${index}`}
+                                    movie={movie}
+                                    index={index}
+                                    activeCategory={activeCategory}
+                                    onClick={handleMovieClick}
+                                />
+                            ))}
 
-                        {/* Loading Skeletons */}
-                        {loading && Array.from({ length: 6 }).map((_, i) => (
-                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                                <SkeletonCard />
-                            </div>
-                        ))}
-                    </div>
+                            {/* Loading Skeletons (Only for API fetches, not My List) */}
+                            {loading && activeCategory !== 'my_list' && Array.from({ length: 6 }).map((_, i) => (
+                                <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                                    <SkeletonCard />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     
-                    {!hasMore && movies.length > 0 && (
+                    {!hasMore && movies.length > 0 && activeCategory !== 'my_list' && (
                         <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                             <p>{translations[lang].endOfList}</p>
                         </div>
@@ -354,6 +407,10 @@ function App() {
              setPlayingMovie(m);
           }}
           onMovieSelect={setSelectedMovie} 
+          onToggleList={handleToggleList}
+          onToggleLike={handleToggleLike}
+          isInList={myList.some(m => m.id === selectedMovie.id)}
+          isLiked={likedMovies.includes(selectedMovie.id)}
           lang={lang}
         />
       )}

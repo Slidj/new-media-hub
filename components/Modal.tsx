@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Plus, ThumbsUp, ThumbsDown, Share2, Youtube } from 'lucide-react';
+import { X, Play, Plus, Check, ThumbsUp, ThumbsDown, Share2, Youtube } from 'lucide-react';
 import { Movie, Cast, Video } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
@@ -9,13 +9,28 @@ interface ModalProps {
   movie: Movie | null;
   onClose: () => void;
   onPlay: (movie: Movie) => void;
-  onMovieSelect?: (movie: Movie) => void; 
+  onMovieSelect?: (movie: Movie) => void;
+  // New props for interaction
+  onToggleList?: (movie: Movie) => void;
+  onToggleLike?: (movie: Movie) => void;
+  isInList?: boolean;
+  isLiked?: boolean; 
   lang: Language;
 }
 
 type TabType = 'overview' | 'trailers' | 'more_like_this';
 
-export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSelect, lang }) => {
+export const Modal: React.FC<ModalProps> = ({ 
+    movie, 
+    onClose, 
+    onPlay, 
+    onMovieSelect, 
+    onToggleList, 
+    onToggleLike, 
+    isInList = false, 
+    isLiked = false, 
+    lang 
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   
@@ -31,7 +46,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   // IMAGE STATES v9.0
-  // Start with NULL. We do NOT want to show the dirty standard image ever.
   const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
   const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
   
@@ -68,7 +82,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
       const startModalSequence = async () => {
           try {
               // 2. Fetch Clean Images FIRST
-              // We do not show anything yet.
               const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
               
               // 3. Determine Final URLs (Prefer Clean, Fallback to Standard)
@@ -76,8 +89,6 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
               const finalBanner = cleanImages.banner || movie.bannerUrl;
 
               // 4. PRELOAD CRITICAL IMAGE
-              // We force the browser to download the image into cache BEFORE we start animation.
-              // This ensures "synchronous" appearance.
               const isMobile = window.innerWidth < 768;
               const imageToPreload = isMobile ? finalPoster : finalBanner;
 
@@ -93,11 +104,9 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
               if (!isMounted) return;
 
               // 5. Set Images & TRIGGER ANIMATION
-              // Now the image is in memory, so it will appear instantly without swap.
               setActivePosterSrc(finalPoster);
               setActiveBannerSrc(finalBanner);
               
-              // Double RAF ensures the state update is painted before we add the animation class
               requestAnimationFrame(() => {
                   requestAnimationFrame(() => {
                       if (isMounted) setIsVisible(true);
@@ -129,7 +138,7 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
 
           } catch (e) {
               console.error("Modal sequence error", e);
-              // Fallback: show standard immediately if something fails
+              // Fallback
               if (isMounted) {
                   setActivePosterSrc(movie.posterUrl);
                   setActiveBannerSrc(movie.bannerUrl);
@@ -185,6 +194,12 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
   const handleTrailerClick = (videoKey: string) => {
       setPlayingTrailerKey(videoKey);
   };
+
+  const triggerHaptic = () => {
+      if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+      }
+  }
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
@@ -337,12 +352,26 @@ export const Modal: React.FC<ModalProps> = ({ movie, onClose, onPlay, onMovieSel
                         </button>
 
                         <div className="grid grid-cols-4 gap-3">
-                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
-                                <Plus className="w-5 h-5" />
+                            <button 
+                                onClick={() => {
+                                    triggerHaptic();
+                                    onToggleList?.(movie);
+                                }}
+                                className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            >
+                                {isInList ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
                             </button>
-                            <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
-                                <ThumbsUp className="w-5 h-5" />
+                            
+                            <button 
+                                onClick={() => {
+                                    triggerHaptic();
+                                    onToggleLike?.(movie);
+                                }}
+                                className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            >
+                                <ThumbsUp className={`w-5 h-5 ${isLiked ? 'text-white fill-white' : ''}`} />
                             </button>
+                            
                             <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
                                 <ThumbsDown className="w-5 h-5" />
                             </button>
