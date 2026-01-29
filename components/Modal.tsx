@@ -195,9 +195,14 @@ export const Modal: React.FC<ModalProps> = ({
       setPlayingTrailerKey(videoKey);
   };
 
+  // FIX: Added version check to prevent warnings on older clients
   const triggerHaptic = () => {
       if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+          const tg = window.Telegram.WebApp;
+          // HapticFeedback is only available in version 6.1+
+          if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
+             tg.HapticFeedback.impactOccurred('medium');
+          }
       }
   }
 
