@@ -48,10 +48,14 @@ export const Modal: React.FC<ModalProps> = ({
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // IMAGE STATES v9.0 FIX
-  // Initialize directly with props to prevent layout trashing/blinking on mount
-  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(movie?.posterUrl || null);
-  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(movie?.bannerUrl || null);
+  // --- CROSSFADE IMAGE SYSTEM v10 ---
+  // We do NOT swap sources anymore. We layer them.
+  // 1. Base props images (Always visible immediately)
+  // 2. Clean images (Loaded in background, faded in on top)
+  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
+  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
+  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
+  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
   
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -61,9 +65,9 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Initial Setup (Reset secondary states, but KEEP images to prevent blink)
+      // 1. Reset ONLY interactive/fetched states. 
+      // Do NOT reset base image display to avoid UI thrashing.
       setIsVisible(false);
-      // NOTE: Do NOT set activePosterSrc to null here. That causes the ghost blink.
       
       setLogoUrl(null);
       setDuration(null);
@@ -74,9 +78,11 @@ export const Modal: React.FC<ModalProps> = ({
       setActiveTab('overview');
       setPlayingTrailerKey(null);
       
-      // Update local state if prop changed (vital for switching movies inside modal)
-      setActivePosterSrc(movie.posterUrl);
-      setActiveBannerSrc(movie.bannerUrl);
+      // Reset Clean Images State
+      setCleanPosterUrl(null);
+      setCleanBannerUrl(null);
+      setIsCleanPosterLoaded(false);
+      setIsCleanBannerLoaded(false);
 
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
@@ -87,7 +93,7 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       const startModalSequence = async () => {
-          // Open immediately to prevent UI lag perception, animation will handle smoothness
+          // Open immediately. The base image (prop) is guaranteed to be there.
           requestAnimationFrame(() => {
              requestAnimationFrame(() => {
                  if (isMounted) setIsVisible(true);
@@ -95,16 +101,16 @@ export const Modal: React.FC<ModalProps> = ({
           });
 
           try {
-              // 2. Fetch Clean Images (Progressive enhancement)
+              // 2. Fetch Clean Images (Background)
               const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
               
               if (!isMounted) return;
 
-              // 3. Swap to clean images if available (invisible update)
-              if (cleanImages.poster) setActivePosterSrc(cleanImages.poster);
-              if (cleanImages.banner) setActiveBannerSrc(cleanImages.banner);
+              // Set URLs. The <img onLoad> handler will trigger the fade-in.
+              if (cleanImages.poster) setCleanPosterUrl(cleanImages.poster);
+              if (cleanImages.banner) setCleanBannerUrl(cleanImages.banner);
 
-              // 4. Load Secondary Data (Background)
+              // 3. Load Secondary Data (Background)
               const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
@@ -252,29 +258,57 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA */}
+            {/* 1. HERO IMAGE AREA (NO FLICKER LOGIC) */}
             <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818] overflow-hidden">
                 
                 {/* Background placeholder */}
                 <div className="absolute inset-0 z-0 bg-[#181818]" />
 
-                {/* Mobile Poster */}
-                {activePosterSrc && (
+                {/* --- MOBILE POSTERS --- */}
+                {/* Layer 1: Base Prop Image (Always visible immediately) */}
+                <img 
+                    src={movie.posterUrl} 
+                    alt={movie.title} 
+                    decoding="sync"
+                    className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
+                />
+                
+                {/* Layer 2: Clean Image (Fades in over Layer 1) */}
+                {cleanPosterUrl && (
                     <img 
-                      src={activePosterSrc} 
-                      alt={movie.title} 
-                      decoding="sync"
-                      className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
+                        src={cleanPosterUrl} 
+                        alt={movie.title} 
+                        decoding="async"
+                        onLoad={() => setIsCleanPosterLoaded(true)}
+                        className={`
+                            block md:hidden w-full h-full object-cover object-center absolute inset-0 z-11
+                            transition-opacity duration-1000 ease-in-out
+                            ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
                     />
                 )}
 
-                {/* Desktop Banner */}
-                {activeBannerSrc && (
-                    <img 
-                      src={activeBannerSrc} 
-                      alt={movie.title} 
-                      decoding="sync"
-                      className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
+                {/* --- DESKTOP BANNERS --- */}
+                {/* Layer 1: Base Prop Image */}
+                <img 
+                    src={movie.bannerUrl} 
+                    alt={movie.title} 
+                    decoding="sync"
+                    className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
+                />
+
+                {/* Layer 2: Clean Image */}
+                {cleanBannerUrl && (
+                     <img 
+                        src={cleanBannerUrl} 
+                        alt={movie.title} 
+                        decoding="async"
+                        onLoad={() => setIsCleanBannerLoaded(true)}
+                        className={`
+                            hidden md:block w-full h-full object-cover object-top absolute inset-0 z-11
+                            transition-opacity duration-1000 ease-in-out
+                            ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
                     />
                 )}
                 
