@@ -51,13 +51,12 @@ export const Modal: React.FC<ModalProps> = ({
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null); // New Ref for the animation container
+  const containerRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
   useEffect(() => {
     if (movie) {
       // 1. Initial State Reset
-      // Important: We start with isVisible = false to ensure the DOM renders in the "closed" state first.
       setIsVisible(false);
       
       setDuration(null);
@@ -75,22 +74,19 @@ export const Modal: React.FC<ModalProps> = ({
       }
       
       let isMounted = true;
+      let timer: ReturnType<typeof setTimeout>;
 
-      // 2. FORCE REFLOW & ANIMATION TRIGGER (THE FIX)
-      // Standard setTimeout is not enough for the very first render.
-      // We need requestAnimationFrame to wait for the paint cycle.
-      requestAnimationFrame(() => {
-          // Double rAF ensures we are in the next frame buffer
-          requestAnimationFrame(() => {
-              if (containerRef.current) {
-                  // CRITICAL: Force Reflow. 
-                  // Accessing offsetHeight forces the browser to calculate layout 
-                  // BEFORE applying the new class. This makes the "start" position real.
-                  void containerRef.current.offsetHeight; 
-              }
-              if (isMounted) setIsVisible(true);
-          });
-      });
+      // 2. FIXED ANIMATION TRIGGER
+      // We increased the delay to 100ms. This ensures the browser has definitively 
+      // painted the "off-screen" state (translate-y-[100vh]) before we trigger the transition.
+      // This eliminates the "pop-in" effect on first render.
+      timer = setTimeout(() => {
+          if (containerRef.current) {
+              // Force Reflow just in case
+              void containerRef.current.offsetHeight;
+          }
+          if (isMounted) setIsVisible(true);
+      }, 100);
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -132,6 +128,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       return () => {
         isMounted = false;
+        clearTimeout(timer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -149,8 +146,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
-    // Match this timeout with the CSS duration (500ms)
-    setTimeout(onClose, 500); 
+    // Match this timeout with the CSS duration
+    setTimeout(onClose, 600); 
   };
 
   const handlePlayClick = () => {
@@ -181,9 +178,8 @@ export const Modal: React.FC<ModalProps> = ({
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
   
-  // Custom Cubic Bezier for "Premium" feel (Ease Out Expo-ish)
-  // This curve starts fast and slows down smoothly
-  const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
+  // UPDATED: Slower duration (700ms) to make the slide more perceptible
+  const premiumTransition = "transition-all duration-700 ease-[cubic-bezier(0.19,1,0.22,1)]";
   
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
@@ -202,7 +198,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div 
         className={`
           absolute inset-0 bg-black/90 backdrop-blur-md
-          transition-opacity duration-500 ease-in-out
+          transition-opacity duration-700 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
@@ -223,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
             : 'translate-y-[100vh] opacity-100 md:translate-y-12 md:opacity-0 md:scale-95' 
-            /* translate-y-[100vh] ensures it is fully offscreen at start */
+            /* translate-y-[100vh] pushes it completely off screen. opacity-100 ensures we see it moving. */
           }
         `}
       >
@@ -236,7 +232,7 @@ export const Modal: React.FC<ModalProps> = ({
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-            transition-all duration-500 delay-100
+            transition-all duration-500 delay-200
             ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
