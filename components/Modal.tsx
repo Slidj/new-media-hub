@@ -227,13 +227,13 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#0f0f0f]">
             
-            {/* 1. HERO IMAGE AREA - ASPECT RATIO FIX */}
+            {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full bg-[#0f0f0f]">
                 
                 {/* 
                    MOBILE STRATEGY: aspect-[2/3]
                    - Full poster visibility.
-                   - No bottom gradient covering the text.
+                   - Subtle gradient added back (h-24) to smooth the transition to black content.
                 */}
                 <div className="block md:hidden relative w-full aspect-[2/3]">
                     <img 
@@ -242,13 +242,18 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover"
                         decoding="sync"
                     />
-                    {/* Gradient removed on mobile to prevent obscuring bottom logo/text */}
+                    {/* 
+                        GRADIENT FIX: 
+                        h-24 (approx 96px) - enough to soften the edge, but short enough to keep logos visible.
+                        from-[#0f0f0f] ensures perfect blend with the background.
+                    */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
                 {/* 
                    DESKTOP STRATEGY: 
                    - Landscape banner.
-                   - Bottom gradient kept for smooth text overlap.
+                   - Standard large gradient.
                 */}
                 <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
                     <img 
@@ -265,10 +270,10 @@ export const Modal: React.FC<ModalProps> = ({
             {/* 2. CONTENT AREA */}
             {/* 
                UPDATED MARGINS:
-               - Mobile (default): 'pt-4'. Adds space BELOW the poster. No overlap.
-               - Desktop (md): '-mt-32'. Keeps the banner overlap style.
+               - Mobile: pt-0. Merges directly with the bottom of the poster gradient.
+               - Desktop: -mt-32. Overlaps banner.
             */}
-            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-4 md:-mt-32">
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32">
 
                 {/* Metadata & Buttons */}
                 <div className={`
