@@ -37,8 +37,7 @@ export const Modal: React.FC<ModalProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   
-  // Content States
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // Content States (Simpler now, no Logo/CleanImage fetching)
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   
@@ -47,15 +46,6 @@ export const Modal: React.FC<ModalProps> = ({
   const [videos, setVideos] = useState<Video[]>([]);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-
-  // --- CROSSFADE IMAGE SYSTEM v10 ---
-  // We do NOT swap sources anymore. We layer them.
-  // 1. Base props images (Always visible immediately)
-  // 2. Clean images (Loaded in background, faded in on top)
-  const [cleanPosterUrl, setCleanPosterUrl] = useState<string | null>(null);
-  const [cleanBannerUrl, setCleanBannerUrl] = useState<string | null>(null);
-  const [isCleanPosterLoaded, setIsCleanPosterLoaded] = useState(false);
-  const [isCleanBannerLoaded, setIsCleanBannerLoaded] = useState(false);
   
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -65,11 +55,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Reset ONLY interactive/fetched states. 
-      // Do NOT reset base image display to avoid UI thrashing.
+      // 1. Reset Interaction States
       setIsVisible(false);
-      
-      setLogoUrl(null);
       setDuration(null);
       setTagline(null);
       setCast([]);
@@ -77,12 +64,6 @@ export const Modal: React.FC<ModalProps> = ({
       setRecommendations([]);
       setActiveTab('overview');
       setPlayingTrailerKey(null);
-      
-      // Reset Clean Images State
-      setCleanPosterUrl(null);
-      setCleanBannerUrl(null);
-      setIsCleanPosterLoaded(false);
-      setIsCleanBannerLoaded(false);
 
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
@@ -92,27 +73,17 @@ export const Modal: React.FC<ModalProps> = ({
       
       let isMounted = true;
 
-      const startModalSequence = async () => {
-          // Open immediately. The base image (prop) is guaranteed to be there.
-          requestAnimationFrame(() => {
-             requestAnimationFrame(() => {
-                 if (isMounted) setIsVisible(true);
-             });
-          });
+      // 2. Open Animation
+      requestAnimationFrame(() => {
+         requestAnimationFrame(() => {
+             if (isMounted) setIsVisible(true);
+         });
+      });
 
+      // 3. Load Background Data (No images, just text/arrays)
+      const loadData = async () => {
           try {
-              // 2. Fetch Clean Images (Background)
-              const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
-              
-              if (!isMounted) return;
-
-              // Set URLs. The <img onLoad> handler will trigger the fade-in.
-              if (cleanImages.poster) setCleanPosterUrl(cleanImages.poster);
-              if (cleanImages.banner) setCleanBannerUrl(cleanImages.banner);
-
-              // 3. Load Secondary Data (Background)
-              const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
-                  !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
+              const [detailsData, castData, videoData, recData] = await Promise.all([
                   API.fetchMovieDetails(movie.id, movie.mediaType),
                   API.fetchCredits(movie.id, movie.mediaType),
                   API.fetchVideos(movie.id, movie.mediaType),
@@ -120,9 +91,6 @@ export const Modal: React.FC<ModalProps> = ({
               ]);
 
               if (!isMounted) return;
-
-              if (movie.logoUrl) setLogoUrl(movie.logoUrl);
-              else if (logoData) setLogoUrl(logoData);
 
               if (movie.duration && movie.duration !== 'N/A') setDuration(movie.duration);
               else if (detailsData.duration) setDuration(detailsData.duration);
@@ -134,12 +102,13 @@ export const Modal: React.FC<ModalProps> = ({
               setRecommendations(recData);
 
           } catch (e) {
-              console.error("Modal sequence error", e);
+              console.error("Modal data error", e);
           }
       };
 
-      startModalSequence();
+      loadData();
 
+      // Telegram Back Button Integration
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -178,7 +147,6 @@ export const Modal: React.FC<ModalProps> = ({
   const handleRecommendationClick = (recMovie: Movie) => {
       if (onMovieSelect) {
           setIsVisible(false);
-          // Small delay to allow fade out effect before swapping content
           setTimeout(() => onMovieSelect(recMovie), 300);
       }
   };
@@ -209,23 +177,23 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    // Z-INDEX 100: Above Navbar (50), Below Player (200)
+    // Z-INDEX 100: Above Navbar
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto">
       {/* Overlay */}
       <div 
         className={`
-          absolute inset-0 bg-black/80 backdrop-blur-sm
+          absolute inset-0 bg-black/90 backdrop-blur-md
           transition-opacity duration-700 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
       />
 
-      {/* Modal Content */}
+      {/* Modal Card */}
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#0f0f0f] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
           transform-gpu 
           transition-transform duration-500 
@@ -246,115 +214,74 @@ export const Modal: React.FC<ModalProps> = ({
              handleClose();
           }}
           className={`
-            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#181818]/50 backdrop-blur-md
-            grid place-items-center hover:bg-[#2a2a2a]
+            absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
+            grid place-items-center hover:bg-[#2a2a2a] border border-white/10
             transition-all duration-500 delay-100
-            ${isMobile ? 'top-20 right-4' : 'top-4 right-4'} 
+            ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
           <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </button>
 
-        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
+        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#0f0f0f]">
             
-            {/* 1. HERO IMAGE AREA (NO FLICKER LOGIC) */}
-            <div className="relative w-full h-[55vh] md:h-[55vh] bg-[#181818] overflow-hidden">
+            {/* 1. HERO IMAGE AREA - "NO CROP" STRATEGY */}
+            <div className="relative w-full h-[60vh] md:h-[55vh] bg-[#0f0f0f] overflow-hidden">
                 
-                {/* Background placeholder */}
-                <div className="absolute inset-0 z-0 bg-[#181818]" />
-
-                {/* --- MOBILE POSTERS --- */}
-                {/* Layer 1: Base Prop Image (Always visible immediately) */}
-                <img 
-                    src={movie.posterUrl} 
-                    alt={movie.title} 
-                    decoding="sync"
-                    className="block md:hidden w-full h-full object-cover object-center absolute inset-0 z-10"
-                />
-                
-                {/* Layer 2: Clean Image (Fades in over Layer 1) */}
-                {cleanPosterUrl && (
+                {/* A. Background Blur Layer (Fills the space) */}
+                <div className="absolute inset-0 z-0">
                     <img 
-                        src={cleanPosterUrl} 
-                        alt={movie.title} 
-                        decoding="async"
-                        onLoad={() => setIsCleanPosterLoaded(true)}
-                        className={`
-                            block md:hidden w-full h-full object-cover object-center absolute inset-0 z-11
-                            transition-opacity duration-1000 ease-in-out
-                            ${isCleanPosterLoaded ? 'opacity-100' : 'opacity-0'}
-                        `}
+                        src={movie.posterUrl} 
+                        className="w-full h-full object-cover blur-3xl opacity-40 scale-110"
+                        alt="" 
+                        aria-hidden="true"
                     />
-                )}
-
-                {/* --- DESKTOP BANNERS --- */}
-                {/* Layer 1: Base Prop Image */}
-                <img 
-                    src={movie.bannerUrl} 
-                    alt={movie.title} 
-                    decoding="sync"
-                    className="hidden md:block w-full h-full object-cover object-top absolute inset-0 z-10"
-                />
-
-                {/* Layer 2: Clean Image */}
-                {cleanBannerUrl && (
-                     <img 
-                        src={cleanBannerUrl} 
-                        alt={movie.title} 
-                        decoding="async"
-                        onLoad={() => setIsCleanBannerLoaded(true)}
-                        className={`
-                            hidden md:block w-full h-full object-cover object-top absolute inset-0 z-11
-                            transition-opacity duration-1000 ease-in-out
-                            ${isCleanBannerLoaded ? 'opacity-100' : 'opacity-0'}
-                        `}
-                    />
-                )}
-                
-                {/* Gradients */}
-                <div className="absolute inset-0 z-20 pointer-events-none">
-                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#181818]/60 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[80%] bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#181818] via-[#181818]/90 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#181818]"></div>
+                    <div className="absolute inset-0 bg-black/20" /> {/* Slight dimming */}
                 </div>
+
+                {/* B. Main Image Layer (Fully Visible - Object Contain) */}
+                <div className="absolute inset-0 z-10 flex items-center justify-center p-6 md:p-8 pb-12">
+                     {/* Mobile: Use Poster Vertical */}
+                     <img 
+                        src={movie.posterUrl}
+                        alt={movie.title}
+                        className="block md:hidden h-full w-auto max-w-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] rounded-md"
+                     />
+                     {/* Desktop: Use Banner Horizontal (or poster if prefer) */}
+                     <img 
+                        src={movie.bannerUrl || movie.posterUrl}
+                        alt={movie.title}
+                        className="hidden md:block h-full w-auto max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] rounded-lg"
+                     />
+                </div>
+
+                {/* C. Bottom Gradient Fade */}
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
             </div>
 
-            {/* 2. CONTENT AREA (Staggered Animations) */}
-            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-32 md:-mt-40">
+            {/* 2. CONTENT AREA */}
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-10">
                 
-                {/* A. Logo & Tagline */}
+                {/* Title (Text Only - Backup if poster text is hard to read, but styled nicely) */}
                 <div className={`
-                    flex flex-col items-center justify-end gap-3 mb-2
+                    text-center mb-4
                     ${baseTransition} ${isVisible ? 'delay-300' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
-                    <div className="w-full h-24 md:h-32 flex items-end justify-center">
-                        <div className="w-full flex justify-center">
-                            {logoUrl ? (
-                                <img 
-                                    src={logoUrl} 
-                                    alt={movie.title} 
-                                    className="w-2/3 md:w-1/3 max-h-24 md:max-h-32 object-contain drop-shadow-xl"
-                                />
-                            ) : (
-                                <h2 className="text-3xl md:text-5xl font-black text-white text-center drop-shadow-lg uppercase tracking-tighter leading-none">
-                                    {movie.title}
-                                </h2>
-                            )}
-                        </div>
-                    </div>
+                     <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-lg">
+                        {movie.title}
+                     </h2>
                 </div>
 
-                {/* B. Metadata & Buttons */}
+                {/* Metadata & Buttons */}
                 <div className={`
                      space-y-4
                     ${baseTransition} ${isVisible ? 'delay-[400ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
                     {/* Metadata Row */}
-                    <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300">
                         <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                         <span>{movie.year}</span>
                         <span className="bg-[#404040] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
@@ -411,7 +338,7 @@ export const Modal: React.FC<ModalProps> = ({
                     </div>
                 </div>
 
-                {/* C. TABS */}
+                {/* TABS (Standard Content) */}
                 <div className={`
                     ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
@@ -551,7 +478,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
         </div>
 
-        {/* --- TRAILER PLAYER OVERLAY (INTERNAL) --- */}
+        {/* --- TRAILER PLAYER OVERLAY --- */}
         {playingTrailerKey && (
             <div className="fixed inset-0 z-[120] bg-black flex flex-col items-center justify-center animate-fade-in-up">
                 <button 
