@@ -72,13 +72,16 @@ export const Modal: React.FC<ModalProps> = ({
       }
       
       let isMounted = true;
+      let animationTimer: ReturnType<typeof setTimeout>;
 
       // 2. ROBUST ANIMATION TRIGGER
-      // Using setTimeout ensures the browser paints the "closed" state (opacity 0, translate 100%)
-      // BEFORE applying the "open" state. This fixes the instant-pop issue.
-      const animationTimer = setTimeout(() => {
-         if (isMounted) setIsVisible(true);
-      }, 50); // 50ms delay is imperceptible but guarantees a frame paint
+      // We wait for the next frame to ensure the DOM has painted the "closed" state (translate-y-full)
+      // before applying the "open" state. A small timeout + rAF is the most reliable cross-browser method.
+      animationTimer = setTimeout(() => {
+         requestAnimationFrame(() => {
+             if (isMounted) setIsVisible(true);
+         });
+      }, 50);
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -171,6 +174,7 @@ export const Modal: React.FC<ModalProps> = ({
   const baseTransition = "transition-all duration-700 ease-out transform";
   
   // Custom Cubic Bezier for "Premium" feel (Ease Out Expo-ish)
+  // This curve starts fast and slows down smoothly
   const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
   
   const hiddenState = "opacity-0 translate-y-8";
@@ -209,7 +213,7 @@ export const Modal: React.FC<ModalProps> = ({
           
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-[100%] opacity-0 md:translate-y-12 md:opacity-0 md:scale-95'
+            : 'translate-y-full opacity-0 md:translate-y-12 md:opacity-0 md:scale-95'
           }
         `}
       >
@@ -244,6 +248,7 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover"
                         decoding="sync"
                     />
+                    {/* Gradient to smooth edge between poster and black content */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
