@@ -232,8 +232,8 @@ export const Modal: React.FC<ModalProps> = ({
                 
                 {/* 
                    MOBILE STRATEGY: aspect-[2/3]
-                   This forces the container to be the exact shape of a standard movie poster.
-                   The poster will fill it edge-to-edge without cropping or empty space.
+                   - Full poster visibility.
+                   - No bottom gradient covering the text.
                 */}
                 <div className="block md:hidden relative w-full aspect-[2/3]">
                     <img 
@@ -242,14 +242,13 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover"
                         decoding="sync"
                     />
-                    
-                    {/* Bottom Gradient for smooth transition to text */}
-                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
+                    {/* Gradient removed on mobile to prevent obscuring bottom logo/text */}
                 </div>
 
                 {/* 
                    DESKTOP STRATEGY: 
-                   Keep the landscape look for larger screens.
+                   - Landscape banner.
+                   - Bottom gradient kept for smooth text overlap.
                 */}
                 <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
                     <img 
@@ -264,22 +263,12 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
 
             {/* 2. CONTENT AREA */}
-            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-20 md:-mt-32">
-                
-                {/* 
-                   Title is hidden on Mobile IF the poster usually contains the title.
-                   However, since we can't guarantee the poster has a readable title, 
-                   we show it styled nicely at the bottom.
-                */}
-                <div className={`
-                    text-center mb-4
-                    ${baseTransition} ${isVisible ? 'delay-300' : 'delay-0'}
-                    ${isVisible ? visibleState : hiddenState}
-                `}>
-                     <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">
-                        {movie.title}
-                     </h2>
-                </div>
+            {/* 
+               UPDATED MARGINS:
+               - Mobile (default): 'pt-4'. Adds space BELOW the poster. No overlap.
+               - Desktop (md): '-mt-32'. Keeps the banner overlap style.
+            */}
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-4 md:-mt-32">
 
                 {/* Metadata & Buttons */}
                 <div className={`
