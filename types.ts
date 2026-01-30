@@ -45,6 +45,17 @@ export interface RowProps {
   isLargeRow?: boolean;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  date: string; // ISO string
+  type: 'system' | 'reminder' | 'admin';
+  isRead: boolean;
+  movieId?: string;
+  posterUrl?: string;
+}
+
 export interface WebAppUser {
   id: number;
   is_bot?: boolean;

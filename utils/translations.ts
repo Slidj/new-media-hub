@@ -56,7 +56,18 @@ export const translations = {
     users: "Users",
     totalViews: "Total Views",
     systemStatus: "System Status",
-    close: "Close"
+    close: "Close",
+    // Notifications
+    notifications: "Notifications",
+    emptyNotifications: "No notifications yet",
+    markAllRead: "Mark all as read",
+    sendMessage: "Send Message",
+    sendToAll: "Send to Everyone",
+    sendToUser: "Send to User ID",
+    title: "Title",
+    message: "Message",
+    send: "Send",
+    successSent: "Sent successfully!"
   },
   uk: {
     home: "Головна",
@@ -111,7 +122,18 @@ export const translations = {
     users: "Користувачі",
     totalViews: "Переглядів",
     systemStatus: "Статус системи",
-    close: "Закрити"
+    close: "Закрити",
+    // Notifications
+    notifications: "Повідомлення",
+    emptyNotifications: "Немає повідомлень",
+    markAllRead: "Прочитати все",
+    sendMessage: "Надіслати повідомлення",
+    sendToAll: "Надіслати всім",
+    sendToUser: "Надіслати по User ID",
+    title: "Заголовок",
+    message: "Повідомлення",
+    send: "Надіслати",
+    successSent: "Успішно надіслано!"
   },
   ru: {
     home: "Главная",
@@ -166,7 +188,18 @@ export const translations = {
     users: "Пользователи",
     totalViews: "Просмотров",
     systemStatus: "Статус системы",
-    close: "Закрыть"
+    close: "Закрыть",
+    // Notifications
+    notifications: "Уведомления",
+    emptyNotifications: "Нет уведомлений",
+    markAllRead: "Прочитать все",
+    sendMessage: "Отправить сообщение",
+    sendToAll: "Отправить всем",
+    sendToUser: "Отправить по User ID",
+    title: "Заголовок",
+    message: "Сообщение",
+    send: "Отправить",
+    successSent: "Успешно отправлено!"
   }
 };
 

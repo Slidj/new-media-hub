@@ -10,13 +10,23 @@ import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
 import { ComingSoonView } from './components/ComingSoonView';
 import { CategoryNav, Category } from './components/CategoryNav';
-import { MyListView } from './components/MyListView'; // New Component
+import { MyListView } from './components/MyListView'; 
 import { Player } from './components/Player';
-import { MoreMenu } from './components/MoreMenu'; // New Sidebar
-import { AdminPanel } from './components/AdminPanel'; // New Admin Panel
-import { Movie, WebAppUser, TabType } from './types';
+import { MoreMenu } from './components/MoreMenu'; 
+import { AdminPanel } from './components/AdminPanel'; 
+import { NotificationsView } from './components/NotificationsView'; // New
+import { Movie, WebAppUser, TabType, AppNotification } from './types';
 import { API } from './services/tmdb';
-import { syncUser, subscribeToUserData, toggleMyList, toggleLike, toggleDislike, addToHistory } from './services/firebase';
+import { 
+    syncUser, 
+    subscribeToUserData, 
+    toggleMyList, 
+    toggleLike, 
+    toggleDislike, 
+    addToHistory,
+    subscribeToPersonalNotifications,
+    subscribeToGlobalNotifications
+} from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 
@@ -106,6 +116,7 @@ function App() {
   // NEW STATES FOR MENU AND ADMIN
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const [user, setUser] = useState<WebAppUser | null>(null);
   
@@ -114,6 +125,10 @@ function App() {
   const [likedMovies, setLikedMovies] = useState<string[]>([]);
   const [dislikedMovies, setDislikedMovies] = useState<string[]>([]);
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
+
+  // Notifications State
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -175,19 +190,49 @@ function App() {
     }
   }, []);
 
-  // Subscribe to Firebase Updates
+  // Subscribe to Firebase Updates (Profile + Notifications)
   useEffect(() => {
     if (!user?.id) return;
     
-    const unsubscribe = subscribeToUserData(user.id, (data) => {
+    // 1. User Data
+    const unsubscribeUser = subscribeToUserData(user.id, (data) => {
       if (data.myList) setMyList(data.myList);
       if (data.likedMovies) setLikedMovies(data.likedMovies);
       if (data.dislikedMovies) setDislikedMovies(data.dislikedMovies);
       if (data.watchHistory) setWatchHistory(data.watchHistory);
     });
 
-    return () => unsubscribe();
+    // 2. Personal Notifications
+    const unsubscribePersonalNotifs = subscribeToPersonalNotifications(user.id, (personalNotifs) => {
+        setNotifications(prev => {
+             // Basic merge strategy: keep global ones, replace personal ones
+             const globalOnly = prev.filter(n => n.type === 'admin' && !n.id.startsWith('personal_'));
+             const merged = [...globalOnly, ...personalNotifs];
+             return merged.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
+    });
+
+    // 3. Global Notifications
+    const unsubscribeGlobalNotifs = subscribeToGlobalNotifications((globalNotifs) => {
+        setNotifications(prev => {
+            const personalOnly = prev.filter(n => n.type !== 'admin');
+            const merged = [...personalOnly, ...globalNotifs];
+            return merged.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        });
+    });
+
+    return () => {
+        unsubscribeUser();
+        unsubscribePersonalNotifs();
+        unsubscribeGlobalNotifs();
+    };
   }, [user]);
+
+  // Calculate Unread Count
+  useEffect(() => {
+      const unread = notifications.filter(n => !n.isRead).length;
+      setUnreadCount(unread);
+  }, [notifications]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -208,8 +253,6 @@ function App() {
 
   const loadMovies = useCallback(async (pageNum: number, language: string, category: Category) => {
     if (isLoadingRef.current) return;
-    
-    // IF Category is "My List" - no longer needed in Home tab logic, handled by MyListView
     
     isLoadingRef.current = true;
     setLoading(true);
@@ -332,18 +375,18 @@ function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         activeTab={activeTab}
+        unreadCount={unreadCount}
+        onBellClick={() => setIsNotificationsOpen(true)}
       />
       
       {activeTab === 'home' && (
         <>
-            {/* FIXED CATEGORY NAV (Z-40) - Sits on top of Hero */}
             <CategoryNav 
                 lang={lang} 
                 activeCategory={activeCategory} 
                 onSelectCategory={handleCategoryChange} 
             />
 
-            {/* HERO SECTION (Standard Flow) */}
             {featuredMovie && (
                  <Hero 
                     movie={featuredMovie} 
@@ -353,7 +396,6 @@ function App() {
                  />
             )}
 
-            {/* MAIN CONTENT GRID */}
             <main className={`relative z-10 w-full bg-black -mt-1`}>
                 <section className="px-2 md:px-12 pb-10 pt-2">
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
@@ -367,7 +409,6 @@ function App() {
                             />
                         ))}
 
-                        {/* Loading Skeletons */}
                         {loading && Array.from({ length: 6 }).map((_, i) => (
                             <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                                 <SkeletonCard />
@@ -396,10 +437,10 @@ function App() {
         <ComingSoonView
             lang={lang}
             onMovieSelect={setSelectedMovie}
+            user={user}
         />
       )}
 
-      {/* NEW: MY LIST TAB */}
       {activeTab === 'my_list' && (
           <MyListView 
              myList={myList}
@@ -416,7 +457,6 @@ function App() {
         onMoreClick={() => setIsMoreMenuOpen(true)}
       />
 
-      {/* Details Modal */}
       {selectedMovie && (
         <Modal 
           movie={selectedMovie} 
@@ -433,7 +473,6 @@ function App() {
         />
       )}
 
-      {/* Video Player */}
       {playingMovie && (
         <Player 
           movie={playingMovie} 
@@ -441,7 +480,6 @@ function App() {
         />
       )}
 
-      {/* Sidebar Menu */}
       <MoreMenu 
           isOpen={isMoreMenuOpen}
           onClose={() => setIsMoreMenuOpen(false)}
@@ -455,6 +493,16 @@ function App() {
           <AdminPanel 
              onClose={() => setIsAdminPanelOpen(false)}
              lang={lang}
+          />
+      )}
+
+      {/* Notifications View Overlay */}
+      {isNotificationsOpen && (
+          <NotificationsView 
+            notifications={notifications}
+            onClose={() => setIsNotificationsOpen(false)}
+            lang={lang}
+            userId={user?.id}
           />
       )}
     </div>

@@ -1,16 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, Info, Play, MonitorPlay } from 'lucide-react';
-import { Movie } from '../types';
+import { Movie, WebAppUser } from '../types';
 import { API } from '../services/tmdb';
 import { Language, translations } from '../utils/translations';
+import { sendPersonalNotification } from '../services/firebase';
 
 interface ComingSoonViewProps {
   onMovieSelect: (movie: Movie) => void;
   lang: Language;
+  user: WebAppUser | null;
 }
 
-export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, lang }) => {
+export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, lang, user }) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [remindedMovies, setRemindedMovies] = useState<Set<string>>(new Set());
@@ -24,7 +26,6 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
         const locale = lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US';
         
         try {
-            // FIX: Load 3 pages concurrently to fill the list, as filtering removes many items
             const [page1, page2, page3] = await Promise.all([
                 API.fetchUpcoming(1, locale),
                 API.fetchUpcoming(2, locale),
@@ -32,11 +33,9 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
             ]);
 
             if (isMounted) {
-                // Merge and deduplicate by ID
                 const allMovies = [...page1, ...page2, ...page3];
                 const uniqueMovies = Array.from(new Map(allMovies.map(m => [m.id, m])).values());
                 
-                // Final sort by date just in case
                 const sortedMovies = uniqueMovies.sort((a, b) => {
                     const dateA = new Date(a.releaseDate || '9999-12-31').getTime();
                     const dateB = new Date(b.releaseDate || '9999-12-31').getTime();
@@ -55,18 +54,26 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
     return () => { isMounted = false; };
   }, [lang]);
 
-  const toggleReminder = (e: React.MouseEvent, movieId: string) => {
+  const toggleReminder = async (e: React.MouseEvent, movie: Movie) => {
       e.stopPropagation();
       const newSet = new Set(remindedMovies);
-      if (newSet.has(movieId)) {
-          newSet.delete(movieId);
+      if (newSet.has(movie.id)) {
+          newSet.delete(movie.id);
       } else {
-          newSet.add(movieId);
+          newSet.add(movie.id);
+          // Trigger Haptic
           if (window.Telegram?.WebApp) {
              const tg = window.Telegram.WebApp;
              if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
                  tg.HapticFeedback.impactOccurred('medium');
              }
+          }
+
+          // SEND NOTIFICATION TO NOTIFICATION CENTER
+          if (user?.id) {
+              const title = t.reminded + ": " + movie.title;
+              const msg = `Reminder set for ${movie.title}. Release: ${movie.releaseDate}`;
+              await sendPersonalNotification(user.id, title, msg, 'reminder', movie);
           }
       }
       setRemindedMovies(newSet);
@@ -75,7 +82,6 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   const formatDate = (dateString?: string) => {
       if (!dateString) return { day: '', month: '' };
       const date = new Date(dateString);
-      // Valid date check
       if (isNaN(date.getTime())) return { day: '', month: '' };
 
       const day = date.getDate();
@@ -112,8 +118,6 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    // FIX: Changed from relative container to FIXED overlay (z-30) with independent scrolling
-    // This prevents scrolling "Coming Soon" from affecting the main window scroll position
     <div className="fixed inset-0 z-30 w-full bg-black pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-y-auto overflow-x-hidden overscroll-contain no-scrollbar">
       
       {/* Header */}
@@ -142,17 +146,13 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                         className="flex w-full group opacity-0 animate-fade-in-up"
                         style={{ animationDelay: `${index * 100}ms` }}
                     >
-                        {/* Left Column: Date */}
-                        {/* sticky top value aligns with the padding-top of the container (170px) so it sticks below navbar */}
                         <div className="w-[60px] md:w-[100px] shrink-0 flex flex-col items-center pt-2 sticky top-[10px] h-fit z-10">
                             <span className="text-gray-400 text-sm md:text-lg font-bold tracking-wider drop-shadow-md">{month}</span>
                             <span className="text-white text-3xl md:text-5xl font-black drop-shadow-lg">{day}</span>
                         </div>
 
-                        {/* Right Column: Content */}
                         <div className="flex-1 pr-2 md:pr-12 cursor-pointer" onClick={() => onMovieSelect(movie)}>
                             
-                            {/* Image Block */}
                             <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-[#181818] mb-4 shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300">
                                 <img 
                                     src={movie.bannerUrl || movie.posterUrl} 
@@ -161,14 +161,12 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                     loading="lazy"
                                 />
                                 
-                                {/* Play Icon Overlay */}
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 scale-50 group-hover:scale-100 shadow-xl">
                                         <Play className="w-6 h-6 text-white fill-white ml-1" />
                                     </div>
                                 </div>
 
-                                {/* Logo Overlay */}
                                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/60 to-transparent">
                                     <h3 className="text-xl md:text-3xl font-bebas text-white uppercase drop-shadow-lg leading-none tracking-wide">
                                         {movie.title}
@@ -176,7 +174,6 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 </div>
                             </div>
 
-                            {/* Action Bar */}
                             <div className="flex items-center justify-between mb-3 px-1">
                                 <div className="flex items-center gap-2">
                                     <div className="h-px w-4 bg-red-600/50"></div>
@@ -186,7 +183,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 </div>
                                 
                                 <div className="flex gap-5">
-                                    <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition" onClick={(e) => toggleReminder(e, movie.id)}>
+                                    <div className="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition" onClick={(e) => toggleReminder(e, movie)}>
                                         <Bell className={`w-5 h-5 md:w-6 md:h-6 transition-all duration-300 ${isReminded ? 'text-[#E50914] fill-[#E50914]' : 'text-white'}`} />
                                         <span className={`text-[9px] md:text-[10px] uppercase font-bold tracking-wider ${isReminded ? 'text-[#E50914]' : 'text-gray-400'}`}>
                                             {isReminded ? t.reminded : t.remindMe}
@@ -199,7 +196,6 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 </div>
                             </div>
 
-                            {/* Text Content */}
                             <div className="space-y-3 px-1">
                                 <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
                                     {movie.description}

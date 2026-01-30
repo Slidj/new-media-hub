@@ -8,9 +8,15 @@ import {
   arrayUnion, 
   arrayRemove, 
   onSnapshot, 
-  getDoc 
+  getDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  limit
 } from "firebase/firestore";
-import { Movie, WebAppUser } from "../types";
+import { Movie, WebAppUser, AppNotification } from "../types";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBCD-bmsR1mDdmtEcRHDMg_kgJf5vF4EIo",
@@ -45,6 +51,8 @@ export const syncUser = async (user: WebAppUser) => {
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       });
+      // Send welcome notification
+      await sendPersonalNotification(user.id, "Welcome to Media Hub!", "Explore the best movies and TV shows.", "system");
     } else {
       // Update last active
       await updateDoc(userRef, {
@@ -87,18 +95,11 @@ export const addToHistory = async (userId: number, movie: Movie) => {
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
             let currentHistory = userSnap.data().watchHistory || [];
-            
-            // 1. Remove if already exists (to move it to top)
             currentHistory = currentHistory.filter((m: Movie) => m.id !== movie.id);
-            
-            // 2. Add to beginning
             currentHistory.unshift(movie);
-            
-            // 3. Keep only top 20
             if (currentHistory.length > 20) {
                 currentHistory = currentHistory.slice(0, 20);
             }
-            
             await updateDoc(userRef, { watchHistory: currentHistory });
         }
     } catch (error) {
@@ -106,17 +107,12 @@ export const addToHistory = async (userId: number, movie: Movie) => {
     }
 };
 
-// Toggle Like (Mutually exclusive with Dislike)
 export const toggleLike = async (userId: number, movieId: string, isLiked: boolean) => {
   const userRef = doc(db, "users", userId.toString());
   try {
     if (isLiked) {
-        // Just remove like
-        await updateDoc(userRef, {
-            likedMovies: arrayRemove(movieId)
-        });
+        await updateDoc(userRef, { likedMovies: arrayRemove(movieId) });
     } else {
-        // Add like AND remove dislike if exists
         await updateDoc(userRef, {
             likedMovies: arrayUnion(movieId),
             dislikedMovies: arrayRemove(movieId)
@@ -127,17 +123,12 @@ export const toggleLike = async (userId: number, movieId: string, isLiked: boole
   }
 };
 
-// Toggle Dislike (Mutually exclusive with Like)
 export const toggleDislike = async (userId: number, movieId: string, isDisliked: boolean) => {
   const userRef = doc(db, "users", userId.toString());
   try {
     if (isDisliked) {
-        // Just remove dislike
-        await updateDoc(userRef, {
-            dislikedMovies: arrayRemove(movieId)
-        });
+        await updateDoc(userRef, { dislikedMovies: arrayRemove(movieId) });
     } else {
-        // Add dislike AND remove like if exists
         await updateDoc(userRef, {
             dislikedMovies: arrayUnion(movieId),
             likedMovies: arrayRemove(movieId)
@@ -148,7 +139,6 @@ export const toggleDislike = async (userId: number, movieId: string, isDisliked:
   }
 };
 
-// Real-time listener for User Data
 export const subscribeToUserData = (userId: number, onUpdate: (data: any) => void) => {
   const userRef = doc(db, "users", userId.toString());
   return onSnapshot(userRef, (doc) => {
@@ -156,4 +146,84 @@ export const subscribeToUserData = (userId: number, onUpdate: (data: any) => voi
       onUpdate(doc.data());
     }
   });
+};
+
+// --- NOTIFICATIONS SYSTEM ---
+
+// 1. Send Personal Notification
+export const sendPersonalNotification = async (
+    userId: number, 
+    title: string, 
+    message: string, 
+    type: 'system' | 'reminder' | 'admin' = 'system',
+    movie?: Movie
+) => {
+    try {
+        const notifsRef = collection(db, "users", userId.toString(), "notifications");
+        await addDoc(notifsRef, {
+            title,
+            message,
+            date: new Date().toISOString(),
+            type,
+            isRead: false,
+            movieId: movie?.id || null,
+            posterUrl: movie?.posterUrl || null
+        });
+    } catch (e) {
+        console.error("Failed to send personal notification", e);
+    }
+};
+
+// 2. Send Global Notification
+export const sendGlobalNotification = async (title: string, message: string) => {
+    try {
+        const globalRef = collection(db, "global_notifications");
+        await addDoc(globalRef, {
+            title,
+            message,
+            date: new Date().toISOString(),
+            type: 'admin'
+        });
+    } catch (e) {
+        console.error("Failed to send global notification", e);
+    }
+};
+
+// 3. Subscribe to Personal Notifications
+export const subscribeToPersonalNotifications = (userId: number, onUpdate: (notifs: AppNotification[]) => void) => {
+    const notifsRef = collection(db, "users", userId.toString(), "notifications");
+    const q = query(notifsRef, orderBy("date", "desc"), limit(50));
+    
+    return onSnapshot(q, (snapshot) => {
+        const notifs: AppNotification[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as AppNotification));
+        onUpdate(notifs);
+    });
+};
+
+// 4. Subscribe to Global Notifications
+export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotification[]) => void) => {
+    const globalRef = collection(db, "global_notifications");
+    const q = query(globalRef, orderBy("date", "desc"), limit(10));
+
+    return onSnapshot(q, (snapshot) => {
+        const notifs: AppNotification[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            isRead: false // Global messages are handled in local state for read status usually, but for simplicity we assume unread or handle in component
+        } as AppNotification));
+        onUpdate(notifs);
+    });
+};
+
+// 5. Mark as Read (Personal)
+export const markNotificationRead = async (userId: number, notifId: string) => {
+    try {
+        const ref = doc(db, "users", userId.toString(), "notifications", notifId);
+        await updateDoc(ref, { isRead: true });
+    } catch (e) {
+        console.error("Error marking read", e);
+    }
 };
