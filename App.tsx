@@ -127,7 +127,17 @@ function App() {
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
 
   // Notifications State
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); // Raw mix
+  const [notifications, setNotifications] = useState<AppNotification[]>([]); // Processed with read state
+  const [readGlobalIds, setReadGlobalIds] = useState<string[]>(() => {
+      // Init from local storage
+      try {
+          return JSON.parse(localStorage.getItem('read_global_ids') || '[]');
+      } catch {
+          return [];
+      }
+  });
+
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [lang, setLang] = useState<Language>(() => {
@@ -204,20 +214,18 @@ function App() {
 
     // 2. Personal Notifications
     const unsubscribePersonalNotifs = subscribeToPersonalNotifications(user.id, (personalNotifs) => {
-        setNotifications(prev => {
-             // Basic merge strategy: keep global ones, replace personal ones
-             const globalOnly = prev.filter(n => n.type === 'admin' && !n.id.startsWith('personal_'));
-             const merged = [...globalOnly, ...personalNotifs];
-             return merged.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRawNotifications(prev => {
+             const globalOnly = prev.filter(n => n.type === 'admin');
+             // Personal notifs are already cleaned/limited by the subscription logic
+             return [...globalOnly, ...personalNotifs];
         });
     });
 
     // 3. Global Notifications
     const unsubscribeGlobalNotifs = subscribeToGlobalNotifications((globalNotifs) => {
-        setNotifications(prev => {
+        setRawNotifications(prev => {
             const personalOnly = prev.filter(n => n.type !== 'admin');
-            const merged = [...personalOnly, ...globalNotifs];
-            return merged.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            return [...personalOnly, ...globalNotifs];
         });
     });
 
@@ -228,11 +236,30 @@ function App() {
     };
   }, [user]);
 
-  // Calculate Unread Count
+  // Process Notifications (Merge with Local Read State) & Calculate Unread
   useEffect(() => {
-      const unread = notifications.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
-  }, [notifications]);
+      const processed = rawNotifications.map(n => {
+          // If it's a global admin message, check local storage state
+          if (n.type === 'admin' && readGlobalIds.includes(n.id)) {
+              return { ...n, isRead: true };
+          }
+          return n;
+      }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      // Limit display to 5 items in total view as requested (visual limit)
+      // Note: Backend deletes extras for personal, but globals might push it over momentarily
+      const finalDisplay = processed.slice(0, 5);
+      
+      setNotifications(finalDisplay);
+      setUnreadCount(finalDisplay.filter(n => !n.isRead).length);
+
+  }, [rawNotifications, readGlobalIds]);
+
+  const handleMarkGlobalRead = (ids: string[]) => {
+      const newReadIds = Array.from(new Set([...readGlobalIds, ...ids]));
+      setReadGlobalIds(newReadIds);
+      localStorage.setItem('read_global_ids', JSON.stringify(newReadIds));
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -503,6 +530,7 @@ function App() {
             onClose={() => setIsNotificationsOpen(false)}
             lang={lang}
             userId={user?.id}
+            onMarkGlobalRead={handleMarkGlobalRead}
           />
       )}
     </div>

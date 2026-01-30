@@ -14,7 +14,9 @@ import {
   query,
   where,
   orderBy,
-  limit
+  limit,
+  deleteDoc,
+  writeBatch
 } from "firebase/firestore";
 import { Movie, WebAppUser, AppNotification } from "../types";
 
@@ -150,6 +152,53 @@ export const subscribeToUserData = (userId: number, onUpdate: (data: any) => voi
 
 // --- NOTIFICATIONS SYSTEM ---
 
+// Helper: Clean up old notifications (Max 5 items, Max 5 days old)
+const cleanUpNotifications = async (userId: number, notifications: AppNotification[]) => {
+    if (!notifications || notifications.length === 0) return;
+
+    const MAX_ITEMS = 5;
+    const MAX_DAYS = 5;
+    const now = new Date();
+    const batch = writeBatch(db);
+    let hasChanges = false;
+
+    // 1. Identify Expired Items
+    const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
+    const expiredIds = notifications
+        .filter(n => new Date(n.date).getTime() < validTime)
+        .map(n => n.id);
+
+    // 2. Identify Excess Items (FIFO - delete oldest)
+    // We assume 'notifications' is already sorted by date desc from the query
+    const excessIds: string[] = [];
+    if (notifications.length > MAX_ITEMS) {
+        // Take everything after index 4 (the 6th item onwards)
+        const itemsToRemove = notifications.slice(MAX_ITEMS);
+        itemsToRemove.forEach(n => excessIds.push(n.id));
+    }
+
+    const idsToDelete = new Set([...expiredIds, ...excessIds]);
+
+    idsToDelete.forEach(id => {
+        // Only delete real docs (not admin/global ones handled locally)
+        // Check if ID looks like a firestore ID (usually 20 chars)
+        if (id && id.length > 5) {
+             const ref = doc(db, "users", userId.toString(), "notifications", id);
+             batch.delete(ref);
+             hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        try {
+            await batch.commit();
+            console.log("Cleanup: Deleted old notifications");
+        } catch (e) {
+            console.error("Cleanup failed", e);
+        }
+    }
+};
+
 // 1. Send Personal Notification
 export const sendPersonalNotification = async (
     userId: number, 
@@ -189,16 +238,22 @@ export const sendGlobalNotification = async (title: string, message: string) => 
     }
 };
 
-// 3. Subscribe to Personal Notifications
+// 3. Subscribe to Personal Notifications with Auto-Cleanup
 export const subscribeToPersonalNotifications = (userId: number, onUpdate: (notifs: AppNotification[]) => void) => {
     const notifsRef = collection(db, "users", userId.toString(), "notifications");
-    const q = query(notifsRef, orderBy("date", "desc"), limit(50));
+    // Limit to 20 initially to check for overflow, then we cleanup down to 5
+    const q = query(notifsRef, orderBy("date", "desc"), limit(20)); 
     
     return onSnapshot(q, (snapshot) => {
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         } as AppNotification));
+        
+        // Trigger cleanup in background
+        cleanUpNotifications(userId, notifs);
+
+        // Return current state (UI will update automatically when delete happens and snapshot fires again)
         onUpdate(notifs);
     });
 };
@@ -206,13 +261,14 @@ export const subscribeToPersonalNotifications = (userId: number, onUpdate: (noti
 // 4. Subscribe to Global Notifications
 export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotification[]) => void) => {
     const globalRef = collection(db, "global_notifications");
-    const q = query(globalRef, orderBy("date", "desc"), limit(10));
+    // Only fetch last 5 globals to keep it light
+    const q = query(globalRef, orderBy("date", "desc"), limit(5));
 
     return onSnapshot(q, (snapshot) => {
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            isRead: false // Global messages are handled in local state for read status usually, but for simplicity we assume unread or handle in component
+            isRead: false 
         } as AppNotification));
         onUpdate(notifs);
     });

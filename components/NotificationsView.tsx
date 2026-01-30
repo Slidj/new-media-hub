@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { X, Bell, Check, Clock } from 'lucide-react';
+import { X, Bell, Clock } from 'lucide-react';
 import { AppNotification } from '../types';
 import { Language, translations } from '../utils/translations';
 import { markNotificationRead } from '../services/firebase';
@@ -10,22 +10,48 @@ interface NotificationsViewProps {
   onClose: () => void;
   lang: Language;
   userId?: number;
+  onMarkGlobalRead?: (ids: string[]) => void;
 }
 
-export const NotificationsView: React.FC<NotificationsViewProps> = ({ notifications, onClose, lang, userId }) => {
+export const NotificationsView: React.FC<NotificationsViewProps> = ({ 
+    notifications, 
+    onClose, 
+    lang, 
+    userId,
+    onMarkGlobalRead 
+}) => {
   const t = translations[lang];
 
   useEffect(() => {
-    // Mark all personal as read when opening (simple UX)
-    // Or we could let user click "Mark Read"
-    if (userId) {
-        notifications.forEach(n => {
-            if (!n.isRead && n.type !== 'admin') { // Admin/Global types handle read state differently in full apps
-                 markNotificationRead(userId, n.id);
-            }
-        });
+    // 1. Lock Body Scroll
+    document.body.style.overflow = 'hidden';
+
+    // 2. Mark as Read Logic (Personal & Global)
+    if (notifications.length > 0) {
+        
+        // A. Handle Personal (Firebase)
+        if (userId) {
+            notifications.forEach(n => {
+                if (!n.isRead && n.type !== 'admin') {
+                    markNotificationRead(userId, n.id);
+                }
+            });
+        }
+
+        // B. Handle Global (Local Storage)
+        const globalUnread = notifications
+            .filter(n => n.type === 'admin' && !n.isRead)
+            .map(n => n.id);
+        
+        if (globalUnread.length > 0 && onMarkGlobalRead) {
+            onMarkGlobalRead(globalUnread);
+        }
     }
-  }, []);
+
+    return () => {
+        document.body.style.overflow = 'unset';
+    };
+  }, [notifications, userId]); // Re-run if notifications change while open (realtime)
 
   const formatDate = (isoString: string) => {
       const date = new Date(isoString);
@@ -36,8 +62,8 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ notificati
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col">
-        {/* Header */}
-        <div className="pt-[calc(env(safe-area-inset-top)+20px)] pb-4 px-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
+        {/* Header - Pushed down to avoid system bar overlap */}
+        <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-4 px-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <Bell className="w-5 h-5 text-[#E50914] fill-[#E50914]" />
                 {t.notifications}
@@ -63,15 +89,18 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ notificati
                         key={notif.id} 
                         className={`
                             relative flex gap-4 p-4 rounded-lg border transition-all duration-300
-                            ${notif.isRead 
-                                ? 'bg-[#1a1a1a] border-white/5 opacity-80' 
-                                : 'bg-[#222] border-white/20 shadow-lg shadow-black/50'
-                            }
+                            bg-[#1a1a1a] border-white/5 opacity-80
+                            ${!notif.isRead ? 'border-l-4 border-l-[#E50914] bg-[#222] opacity-100' : ''}
                         `}
                     >
-                        {!notif.isRead && (
-                            <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#E50914]" />
-                        )}
+                        {/* 
+                           VISUAL TRICK: 
+                           Even though we trigger "mark read" on mount, the UI might render initially as unread.
+                           For better UX, we could force them to look read, but keeping the 'dot' or border
+                           until closed is fine, OR we assume they are reading them now.
+                           The request asks for them to "display as read", so the border-l above handles emphasis,
+                           but we remove the "red dot" inside the card if it was there.
+                        */}
 
                         {/* Icon/Image */}
                         <div className="shrink-0">
