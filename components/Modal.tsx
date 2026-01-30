@@ -78,13 +78,19 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       // 2. FORCE ANIMATION START
-      // Using requestAnimationFrame inside a setTimeout ensures the browser
-      // has fully painted the "closed" state (translateY(100%)) before we open it.
+      // Increased delay to 80ms and added forced reflow to ensure browser 
+      // paints the initial "bottom" state before animating up.
       const timer = setTimeout(() => {
+          if (containerRef.current) {
+              // FORCE REFLOW: Accessing offsetHeight forces the browser to calculate 
+              // the layout immediately, ensuring the 'translateY(100%)' is applied 
+              // before we switch it to '0'.
+              void containerRef.current.offsetHeight;
+          }
           requestAnimationFrame(() => {
               if (isMounted) setIsVisible(true);
           });
-      }, 50);
+      }, 80);
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -211,6 +217,10 @@ export const Modal: React.FC<ModalProps> = ({
         `}
       >
         {/* Close Button */}
+        {/* 
+            UPDATED: top-12 (3rem / 48px) for mobile to avoid system status bar/island.
+            Using Tailwind md: prefix instead of JS logic for cleaner responsiveness.
+        */}
         <button 
           onClick={(e) => {
              e.stopPropagation();
@@ -219,8 +229,8 @@ export const Modal: React.FC<ModalProps> = ({
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-            transition-all duration-500 delay-[400ms]
-            ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
+            transition-all duration-500 delay-[500ms]
+            top-12 right-4 md:top-4 md:right-4
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
@@ -298,12 +308,12 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* Metadata & Buttons */}
                 {/* 
-                   UPDATED: delay-[400ms]
-                   Wait until modal is almost fully open before showing buttons.
-                   Increased translateY to 8 (2rem) for a more dramatic slide-up effect.
+                   UPDATED: delay-[550ms]
+                   Significantly increased delay. The content will now start appearing
+                   only AFTER the modal has fully settled (500ms slide animation).
                 */}
                 <div className={`
-                     space-y-4 transition-all duration-700 delay-[400ms]
+                     space-y-4 transition-all duration-700 delay-[550ms]
                      ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}>
                     {/* Metadata Row */}
@@ -366,11 +376,11 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* TABS (Standard Content) */}
                 {/* 
-                   UPDATED: delay-[500ms]
-                   Starts just after the metadata appears.
+                   UPDATED: delay-[750ms]
+                   Secondary content appears even later, creating a nice "cascade" effect.
                 */}
                 <div className={`
-                    transition-all duration-700 delay-[500ms]
+                    transition-all duration-700 delay-[750ms]
                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}>
                     
