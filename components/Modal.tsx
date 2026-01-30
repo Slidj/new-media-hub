@@ -51,12 +51,15 @@ export const Modal: React.FC<ModalProps> = ({
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // New Ref for the animation container
   const t = translations[lang];
 
   useEffect(() => {
     if (movie) {
       // 1. Initial State Reset
+      // Important: We start with isVisible = false to ensure the DOM renders in the "closed" state first.
       setIsVisible(false);
+      
       setDuration(null);
       setTagline(null);
       setCast([]);
@@ -72,16 +75,22 @@ export const Modal: React.FC<ModalProps> = ({
       }
       
       let isMounted = true;
-      let animationTimer: ReturnType<typeof setTimeout>;
 
-      // 2. ROBUST ANIMATION TRIGGER
-      // We wait for the next frame to ensure the DOM has painted the "closed" state (translate-y-full)
-      // before applying the "open" state. A small timeout + rAF is the most reliable cross-browser method.
-      animationTimer = setTimeout(() => {
-         requestAnimationFrame(() => {
-             if (isMounted) setIsVisible(true);
-         });
-      }, 50);
+      // 2. FORCE REFLOW & ANIMATION TRIGGER (THE FIX)
+      // Standard setTimeout is not enough for the very first render.
+      // We need requestAnimationFrame to wait for the paint cycle.
+      requestAnimationFrame(() => {
+          // Double rAF ensures we are in the next frame buffer
+          requestAnimationFrame(() => {
+              if (containerRef.current) {
+                  // CRITICAL: Force Reflow. 
+                  // Accessing offsetHeight forces the browser to calculate layout 
+                  // BEFORE applying the new class. This makes the "start" position real.
+                  void containerRef.current.offsetHeight; 
+              }
+              if (isMounted) setIsVisible(true);
+          });
+      });
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -123,7 +132,6 @@ export const Modal: React.FC<ModalProps> = ({
 
       return () => {
         isMounted = false;
-        clearTimeout(animationTimer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -202,6 +210,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Card - Slide Up Animation */}
       <div 
+        ref={containerRef}
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
@@ -213,7 +222,8 @@ export const Modal: React.FC<ModalProps> = ({
           
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-full opacity-0 md:translate-y-12 md:opacity-0 md:scale-95'
+            : 'translate-y-[100vh] opacity-100 md:translate-y-12 md:opacity-0 md:scale-95' 
+            /* translate-y-[100vh] ensures it is fully offscreen at start */
           }
         `}
       >
