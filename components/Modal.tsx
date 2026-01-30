@@ -219,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-            transition-all duration-500 delay-200
+            transition-all duration-500 delay-[400ms]
             ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
@@ -297,9 +297,14 @@ export const Modal: React.FC<ModalProps> = ({
             <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32">
 
                 {/* Metadata & Buttons */}
+                {/* 
+                   UPDATED: delay-[400ms]
+                   Wait until modal is almost fully open before showing buttons.
+                   Increased translateY to 8 (2rem) for a more dramatic slide-up effect.
+                */}
                 <div className={`
-                     space-y-4 transition-all duration-700 delay-100
-                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                     space-y-4 transition-all duration-700 delay-[400ms]
+                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}>
                     {/* Metadata Row */}
                     <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
@@ -360,9 +365,13 @@ export const Modal: React.FC<ModalProps> = ({
                 </div>
 
                 {/* TABS (Standard Content) */}
+                {/* 
+                   UPDATED: delay-[500ms]
+                   Starts just after the metadata appears.
+                */}
                 <div className={`
-                    transition-all duration-700 delay-200
-                    ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                    transition-all duration-700 delay-[500ms]
+                    ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}>
                     
                     <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
