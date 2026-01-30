@@ -190,11 +190,11 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={handleClose}
       />
 
-      {/* Modal Card */}
+      {/* Modal Card - CHANGED BACKGROUND TO #181818 (Netflix Gray) */}
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-          bg-[#0f0f0f] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
+          bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
           transform-gpu 
           transition-transform duration-500 
@@ -225,15 +225,14 @@ export const Modal: React.FC<ModalProps> = ({
           <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </button>
 
-        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#0f0f0f]">
+        {/* Scroll Container - CHANGED BACKGROUND TO #181818 */}
+        <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
             {/* 1. HERO IMAGE AREA */}
-            <div className="relative w-full bg-[#0f0f0f]">
+            <div className="relative w-full bg-[#181818]">
                 
                 {/* 
                    MOBILE STRATEGY: aspect-[2/3]
-                   - Full poster visibility.
-                   - Subtle gradient added back (h-24) to smooth the transition to black content.
                 */}
                 <div className="block md:hidden relative w-full aspect-[2/3]">
                     <img 
@@ -244,16 +243,13 @@ export const Modal: React.FC<ModalProps> = ({
                     />
                     {/* 
                         GRADIENT FIX: 
-                        h-24 (approx 96px) - enough to soften the edge, but short enough to keep logos visible.
-                        from-[#0f0f0f] ensures perfect blend with the background.
+                        Updated to match #181818 background
                     */}
-                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/60 to-transparent z-20 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
                 {/* 
                    DESKTOP STRATEGY: 
-                   - Landscape banner.
-                   - Standard large gradient.
                 */}
                 <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
                     <img 
@@ -262,17 +258,13 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover object-top"
                         decoding="sync"
                     />
-                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
+                    {/* Updated gradient to match #181818 */}
+                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
             </div>
 
             {/* 2. CONTENT AREA */}
-            {/* 
-               UPDATED MARGINS:
-               - Mobile: pt-0. Merges directly with the bottom of the poster gradient.
-               - Desktop: -mt-32. Overlaps banner.
-            */}
             <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32">
 
                 {/* Metadata & Buttons */}
