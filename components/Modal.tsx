@@ -10,7 +10,6 @@ interface ModalProps {
   onClose: () => void;
   onPlay: (movie: Movie) => void;
   onMovieSelect?: (movie: Movie) => void;
-  // New props for interaction
   onToggleList?: (movie: Movie) => void;
   onToggleLike?: (movie: Movie) => void;
   onToggleDislike?: (movie: Movie) => void;
@@ -49,9 +48,10 @@ export const Modal: React.FC<ModalProps> = ({
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // IMAGE STATES v9.0
-  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(null);
-  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(null);
+  // IMAGE STATES v9.0 FIX
+  // Initialize directly with props to prevent layout trashing/blinking on mount
+  const [activePosterSrc, setActivePosterSrc] = useState<string | null>(movie?.posterUrl || null);
+  const [activeBannerSrc, setActiveBannerSrc] = useState<string | null>(movie?.bannerUrl || null);
   
   // Trailer Player State
   const [playingTrailerKey, setPlayingTrailerKey] = useState<string | null>(null);
@@ -61,10 +61,9 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Reset everything
+      // 1. Initial Setup (Reset secondary states, but KEEP images to prevent blink)
       setIsVisible(false);
-      setActivePosterSrc(null); // Clear previous images immediately
-      setActiveBannerSrc(null);
+      // NOTE: Do NOT set activePosterSrc to null here. That causes the ghost blink.
       
       setLogoUrl(null);
       setDuration(null);
@@ -75,6 +74,10 @@ export const Modal: React.FC<ModalProps> = ({
       setActiveTab('overview');
       setPlayingTrailerKey(null);
       
+      // Update local state if prop changed (vital for switching movies inside modal)
+      setActivePosterSrc(movie.posterUrl);
+      setActiveBannerSrc(movie.bannerUrl);
+
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
       if (window.Telegram?.WebApp) {
@@ -84,40 +87,24 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       const startModalSequence = async () => {
+          // Open immediately to prevent UI lag perception, animation will handle smoothness
+          requestAnimationFrame(() => {
+             requestAnimationFrame(() => {
+                 if (isMounted) setIsVisible(true);
+             });
+          });
+
           try {
-              // 2. Fetch Clean Images FIRST
+              // 2. Fetch Clean Images (Progressive enhancement)
               const cleanImages = await API.fetchCleanImages(movie.id, movie.mediaType);
               
-              // 3. Determine Final URLs (Prefer Clean, Fallback to Standard)
-              const finalPoster = cleanImages.poster || movie.posterUrl;
-              const finalBanner = cleanImages.banner || movie.bannerUrl;
-
-              // 4. PRELOAD CRITICAL IMAGE
-              const isMobile = window.innerWidth < 768;
-              const imageToPreload = isMobile ? finalPoster : finalBanner;
-
-              if (imageToPreload) {
-                  await new Promise<void>((resolve) => {
-                      const img = new Image();
-                      img.src = imageToPreload;
-                      img.onload = () => resolve();
-                      img.onerror = () => resolve(); // Don't block forever on error
-                  });
-              }
-
               if (!isMounted) return;
 
-              // 5. Set Images & TRIGGER ANIMATION
-              setActivePosterSrc(finalPoster);
-              setActiveBannerSrc(finalBanner);
-              
-              requestAnimationFrame(() => {
-                  requestAnimationFrame(() => {
-                      if (isMounted) setIsVisible(true);
-                  });
-              });
+              // 3. Swap to clean images if available (invisible update)
+              if (cleanImages.poster) setActivePosterSrc(cleanImages.poster);
+              if (cleanImages.banner) setActiveBannerSrc(cleanImages.banner);
 
-              // 6. Load Secondary Data (Background)
+              // 4. Load Secondary Data (Background)
               const [logoData, detailsData, castData, videoData, recData] = await Promise.all([
                   !movie.logoUrl ? API.fetchMovieLogo(movie.id, movie.mediaType === 'tv') : Promise.resolve(null),
                   API.fetchMovieDetails(movie.id, movie.mediaType),
@@ -142,12 +129,6 @@ export const Modal: React.FC<ModalProps> = ({
 
           } catch (e) {
               console.error("Modal sequence error", e);
-              // Fallback
-              if (isMounted) {
-                  setActivePosterSrc(movie.posterUrl);
-                  setActiveBannerSrc(movie.bannerUrl);
-                  setIsVisible(true);
-              }
           }
       };
 
@@ -191,6 +172,7 @@ export const Modal: React.FC<ModalProps> = ({
   const handleRecommendationClick = (recMovie: Movie) => {
       if (onMovieSelect) {
           setIsVisible(false);
+          // Small delay to allow fade out effect before swapping content
           setTimeout(() => onMovieSelect(recMovie), 300);
       }
   };
@@ -199,11 +181,9 @@ export const Modal: React.FC<ModalProps> = ({
       setPlayingTrailerKey(videoKey);
   };
 
-  // FIX: Added version check to prevent warnings on older clients
   const triggerHaptic = () => {
       if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
-          // HapticFeedback is only available in version 6.1+
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
              tg.HapticFeedback.impactOccurred('medium');
           }
