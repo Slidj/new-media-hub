@@ -55,8 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Reset ONLY textual/secondary states. 
-      // Do NOT reset anything visual related to the main poster to prevent blinking.
+      // 1. Initial State Reset
       setIsVisible(false);
       setDuration(null);
       setTagline(null);
@@ -74,13 +73,12 @@ export const Modal: React.FC<ModalProps> = ({
       
       let isMounted = true;
 
-      // 2. Open Animation
-      // Use double requestAnimationFrame to ensure the DOM has painted the initial state
-      requestAnimationFrame(() => {
-         requestAnimationFrame(() => {
-             if (isMounted) setIsVisible(true);
-         });
-      });
+      // 2. ROBUST ANIMATION TRIGGER
+      // Using setTimeout ensures the browser paints the "closed" state (opacity 0, translate 100%)
+      // BEFORE applying the "open" state. This fixes the instant-pop issue.
+      const animationTimer = setTimeout(() => {
+         if (isMounted) setIsVisible(true);
+      }, 50); // 50ms delay is imperceptible but guarantees a frame paint
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -110,6 +108,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       loadData();
 
+      // Telegram Back Button Integration
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -121,6 +120,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       return () => {
         isMounted = false;
+        clearTimeout(animationTimer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -138,6 +138,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
+    // Match this timeout with the CSS duration (500ms)
     setTimeout(onClose, 500); 
   };
 
@@ -147,6 +148,7 @@ export const Modal: React.FC<ModalProps> = ({
   
   const handleRecommendationClick = (recMovie: Movie) => {
       if (onMovieSelect) {
+          // Animate out before switching
           setIsVisible(false);
           setTimeout(() => onMovieSelect(recMovie), 300);
       }
@@ -167,6 +169,10 @@ export const Modal: React.FC<ModalProps> = ({
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
+  
+  // Custom Cubic Bezier for "Premium" feel (Ease Out Expo-ish)
+  const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
+  
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
 
@@ -180,31 +186,30 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     // Z-INDEX 100: Above Navbar
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto">
-      {/* Overlay */}
+      {/* Overlay - Fade Animation */}
       <div 
         className={`
           absolute inset-0 bg-black/90 backdrop-blur-md
-          transition-opacity duration-700 ease-in-out
+          transition-opacity duration-500 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
       />
 
-      {/* Modal Card - CHANGED BACKGROUND TO #181818 (Netflix Gray) */}
+      {/* Modal Card - Slide Up Animation */}
       <div 
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
           
-          transform-gpu 
-          transition-transform duration-500 
-          ease-[cubic-bezier(0.32,0.72,0,1)]
+          transform-gpu will-change-transform
+          ${premiumTransition}
           
-          flex flex-col will-change-transform ring-1 ring-white/10
+          flex flex-col ring-1 ring-white/10
           
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-[110%] opacity-100 md:translate-y-12 md:opacity-0 md:scale-95'
+            : 'translate-y-[100%] opacity-0 md:translate-y-12 md:opacity-0 md:scale-95'
           }
         `}
       >
@@ -225,15 +230,13 @@ export const Modal: React.FC<ModalProps> = ({
           <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </button>
 
-        {/* Scroll Container - CHANGED BACKGROUND TO #181818 */}
+        {/* Scroll Container */}
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
             {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full bg-[#181818]">
                 
-                {/* 
-                   MOBILE STRATEGY: aspect-[2/3]
-                */}
+                {/* MOBILE STRATEGY */}
                 <div className="block md:hidden relative w-full aspect-[2/3]">
                     <img 
                         src={movie.posterUrl}
@@ -241,16 +244,10 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover"
                         decoding="sync"
                     />
-                    {/* 
-                        GRADIENT FIX: 
-                        Updated to match #181818 background
-                    */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
-                {/* 
-                   DESKTOP STRATEGY: 
-                */}
+                {/* DESKTOP STRATEGY */}
                 <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
                     <img 
                         src={movie.bannerUrl || movie.posterUrl}
@@ -258,7 +255,6 @@ export const Modal: React.FC<ModalProps> = ({
                         className="w-full h-full object-cover object-top"
                         decoding="sync"
                     />
-                    {/* Updated gradient to match #181818 */}
                     <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
@@ -270,7 +266,7 @@ export const Modal: React.FC<ModalProps> = ({
                 {/* Metadata & Buttons */}
                 <div className={`
                      space-y-4
-                    ${baseTransition} ${isVisible ? 'delay-[400ms]' : 'delay-0'}
+                    ${baseTransition} ${isVisible ? 'delay-[200ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
                     {/* Metadata Row */}
@@ -333,7 +329,7 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* TABS (Standard Content) */}
                 <div className={`
-                    ${baseTransition} ${isVisible ? 'delay-[500ms]' : 'delay-0'}
+                    ${baseTransition} ${isVisible ? 'delay-[300ms]' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
                     
