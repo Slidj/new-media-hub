@@ -35,7 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
     lang 
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState(false); // New state for smooth image transition
+  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [platform, setPlatform] = useState('');
   
   // Content States
@@ -57,9 +57,9 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Initial State Reset
+      // 1. Reset Everything
       setIsVisible(false);
-      setIsImageLoaded(false); // Reset image load state
+      setIsHighResLoaded(false);
       
       setDuration(null);
       setTagline(null);
@@ -77,15 +77,14 @@ export const Modal: React.FC<ModalProps> = ({
       
       let isMounted = true;
 
-      // 2. OPTIMIZED ANIMATION TRIGGER (Double RAF)
-      requestAnimationFrame(() => {
-          if (containerRef.current) {
-              void containerRef.current.offsetHeight;
-          }
+      // 2. FORCE ANIMATION START
+      // Using requestAnimationFrame inside a setTimeout ensures the browser
+      // has fully painted the "closed" state (translateY(100%)) before we open it.
+      const timer = setTimeout(() => {
           requestAnimationFrame(() => {
               if (isMounted) setIsVisible(true);
           });
-      });
+      }, 50);
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -127,6 +126,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       return () => {
         isMounted = false;
+        clearTimeout(timer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -144,6 +144,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
+    // Wait for animation to finish before unmounting
     setTimeout(onClose, 500); 
   };
 
@@ -172,11 +173,6 @@ export const Modal: React.FC<ModalProps> = ({
   }
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
-  const baseTransition = "transition-all duration-700 ease-out transform";
-  const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
-  
-  const hiddenState = "opacity-0 translate-y-8";
-  const visibleState = "opacity-100 translate-y-0";
 
   const getYoutubeOrigin = () => {
       if (typeof window !== 'undefined' && window.location.origin) {
@@ -201,19 +197,17 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Card - Slide Up Animation */}
       <div 
         ref={containerRef}
+        // Using inline styles for transform guarantees the state change works,
+        // preventing the "pop-in" effect by forcing the browser to respect the 100% start.
+        style={{
+            transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+            transition: 'transform 500ms cubic-bezier(0.32, 0.72, 0, 1)'
+        }}
         className={`
           relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
           bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
-          
-          transform-gpu will-change-transform
-          ${premiumTransition}
-          
           flex flex-col ring-1 ring-white/10
-          
-          ${isVisible 
-            ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-[110%] opacity-0 md:translate-y-12 md:opacity-0 md:scale-95' 
-          }
+          will-change-transform
         `}
       >
         {/* Close Button */}
@@ -225,7 +219,7 @@ export const Modal: React.FC<ModalProps> = ({
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-            transition-all duration-500 delay-100
+            transition-all duration-500 delay-200
             ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
@@ -236,65 +230,63 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Scroll Container */}
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA */}
+            {/* 1. HERO IMAGE AREA - PROGRESSIVE LOADING */}
             <div className="relative w-full bg-[#181818]">
                 
                 {/* 
-                    MOBILE STRATEGY OPTIMIZATION: 
-                    1. Use smallPosterUrl (cached) as an absolute background with blur. This appears INSTANTLY.
-                    2. Load main poster with decoding="async" to prevent UI thread blocking (jank).
-                    3. Fade in main poster once loaded.
+                   MOBILE IMAGE STRATEGY:
+                   1. Layer 1 (Bottom): "smallPosterUrl". 
+                      - Shown INSTANTLY. 
+                      - No blur (looks cleaner). 
+                      - Low res but valid visual context.
+                   2. Layer 2 (Top): "posterUrl". 
+                      - Loads asynchronously. 
+                      - Fades in (opacity 0 -> 100) once loaded.
+                      - Replaces the low-res image smoothly.
                 */}
-                <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#181818]">
+                <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#222]">
                     
-                    {/* Placeholder: Cached Small Poster (Instant) */}
-                    {movie.smallPosterUrl && (
-                        <img 
-                            src={movie.smallPosterUrl}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-60"
-                            aria-hidden="true"
-                        />
-                    )}
+                    {/* 1. Low Res (Instant) */}
+                    <img 
+                        src={movie.smallPosterUrl || movie.posterUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
 
-                    {/* Main High-Res Poster */}
+                    {/* 2. High Res (Fade In) */}
                     <img 
                         src={movie.posterUrl}
                         alt={movie.title}
                         className={`
-                            relative w-full h-full object-cover z-10
+                            absolute inset-0 w-full h-full object-cover z-10
                             transition-opacity duration-700 ease-in-out
-                            ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                            ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}
                         `}
                         loading="eager"
-                        decoding="async" // CRITICAL: prevents animation stutter on mobile
-                        onLoad={() => setIsImageLoaded(true)}
+                        decoding="async"
+                        onLoad={() => setIsHighResLoaded(true)}
                     />
                     
-                    {/* Gradient */}
+                    {/* Gradient Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
-                {/* DESKTOP STRATEGY */}
-                <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#181818]">
-                     {/* Desktop also benefits from placeholder for smoothness */}
-                    {movie.posterUrl && (
-                        <img 
-                            src={movie.posterUrl}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover object-top blur-lg scale-110 opacity-50"
-                        />
-                    )}
+                {/* DESKTOP IMAGE STRATEGY */}
+                <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
+                    <img 
+                        src={movie.smallPosterUrl}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover object-top"
+                    />
                     <img 
                         src={movie.bannerUrl || movie.posterUrl}
                         alt={movie.title}
                         className={`
-                            relative w-full h-full object-cover object-top z-10
+                            absolute inset-0 w-full h-full object-cover object-top z-10
                             transition-opacity duration-700 ease-in-out
-                            ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                            ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}
                         `}
-                        decoding="async"
-                        onLoad={() => setIsImageLoaded(true)}
+                        onLoad={() => setIsHighResLoaded(true)}
                     />
                     <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
@@ -306,9 +298,8 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* Metadata & Buttons */}
                 <div className={`
-                     space-y-4
-                    ${baseTransition} ${isVisible ? 'delay-[200ms]' : 'delay-0'}
-                    ${isVisible ? visibleState : hiddenState}
+                     space-y-4 transition-all duration-700 delay-100
+                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
                 `}>
                     {/* Metadata Row */}
                     <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
@@ -370,8 +361,8 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* TABS (Standard Content) */}
                 <div className={`
-                    ${baseTransition} ${isVisible ? 'delay-[300ms]' : 'delay-0'}
-                    ${isVisible ? visibleState : hiddenState}
+                    transition-all duration-700 delay-200
+                    ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
                 `}>
                     
                     <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
