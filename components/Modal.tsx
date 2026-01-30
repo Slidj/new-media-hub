@@ -28,7 +28,7 @@ export const Modal: React.FC<ModalProps> = ({
     onMovieSelect, 
     onToggleList, 
     onToggleLike, 
-    onToggleDislike,
+    onToggleDislike, 
     isInList = false, 
     isLiked = false, 
     isDisliked = false,
@@ -37,7 +37,7 @@ export const Modal: React.FC<ModalProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [platform, setPlatform] = useState('');
   
-  // Content States (Simpler now, no Logo/CleanImage fetching)
+  // Content States
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   
@@ -55,7 +55,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (movie) {
-      // 1. Reset Interaction States
+      // 1. Reset ONLY textual/secondary states. 
+      // Do NOT reset anything visual related to the main poster to prevent blinking.
       setIsVisible(false);
       setDuration(null);
       setTagline(null);
@@ -74,13 +75,14 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       // 2. Open Animation
+      // Use double requestAnimationFrame to ensure the DOM has painted the initial state
       requestAnimationFrame(() => {
          requestAnimationFrame(() => {
              if (isMounted) setIsVisible(true);
          });
       });
 
-      // 3. Load Background Data (No images, just text/arrays)
+      // 3. Load Secondary Data
       const loadData = async () => {
           try {
               const [detailsData, castData, videoData, recData] = await Promise.all([
@@ -108,7 +110,6 @@ export const Modal: React.FC<ModalProps> = ({
 
       loadData();
 
-      // Telegram Back Button Integration
       if (window.Telegram?.WebApp) {
         const tg = window.Telegram.WebApp;
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -226,50 +227,56 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#0f0f0f]">
             
-            {/* 1. HERO IMAGE AREA - "NO CROP" STRATEGY */}
-            <div className="relative w-full h-[60vh] md:h-[55vh] bg-[#0f0f0f] overflow-hidden">
+            {/* 1. HERO IMAGE AREA - ASPECT RATIO FIX */}
+            <div className="relative w-full bg-[#0f0f0f]">
                 
-                {/* A. Background Blur Layer (Fills the space) */}
-                <div className="absolute inset-0 z-0">
+                {/* 
+                   MOBILE STRATEGY: aspect-[2/3]
+                   This forces the container to be the exact shape of a standard movie poster.
+                   The poster will fill it edge-to-edge without cropping or empty space.
+                */}
+                <div className="block md:hidden relative w-full aspect-[2/3]">
                     <img 
-                        src={movie.posterUrl} 
-                        className="w-full h-full object-cover blur-3xl opacity-40 scale-110"
-                        alt="" 
-                        aria-hidden="true"
-                    />
-                    <div className="absolute inset-0 bg-black/20" /> {/* Slight dimming */}
-                </div>
-
-                {/* B. Main Image Layer (Fully Visible - Object Contain) */}
-                <div className="absolute inset-0 z-10 flex items-center justify-center p-6 md:p-8 pb-12">
-                     {/* Mobile: Use Poster Vertical */}
-                     <img 
                         src={movie.posterUrl}
                         alt={movie.title}
-                        className="block md:hidden h-full w-auto max-w-full object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] rounded-md"
-                     />
-                     {/* Desktop: Use Banner Horizontal (or poster if prefer) */}
-                     <img 
-                        src={movie.bannerUrl || movie.posterUrl}
-                        alt={movie.title}
-                        className="hidden md:block h-full w-auto max-w-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] rounded-lg"
-                     />
+                        className="w-full h-full object-cover"
+                        decoding="sync"
+                    />
+                    
+                    {/* Bottom Gradient for smooth transition to text */}
+                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
-                {/* C. Bottom Gradient Fade */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
+                {/* 
+                   DESKTOP STRATEGY: 
+                   Keep the landscape look for larger screens.
+                */}
+                <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
+                    <img 
+                        src={movie.bannerUrl || movie.posterUrl}
+                        alt={movie.title}
+                        className="w-full h-full object-cover object-top"
+                        decoding="sync"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/80 to-transparent z-20 pointer-events-none"></div>
+                </div>
+
             </div>
 
             {/* 2. CONTENT AREA */}
-            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-10">
+            <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 -mt-20 md:-mt-32">
                 
-                {/* Title (Text Only - Backup if poster text is hard to read, but styled nicely) */}
+                {/* 
+                   Title is hidden on Mobile IF the poster usually contains the title.
+                   However, since we can't guarantee the poster has a readable title, 
+                   we show it styled nicely at the bottom.
+                */}
                 <div className={`
                     text-center mb-4
                     ${baseTransition} ${isVisible ? 'delay-300' : 'delay-0'}
                     ${isVisible ? visibleState : hiddenState}
                 `}>
-                     <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-lg">
+                     <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">
                         {movie.title}
                      </h2>
                 </div>
@@ -281,7 +288,7 @@ export const Modal: React.FC<ModalProps> = ({
                     ${isVisible ? visibleState : hiddenState}
                 `}>
                     {/* Metadata Row */}
-                    <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300">
+                    <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
                         <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
                         <span>{movie.year}</span>
                         <span className="bg-[#404040] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
