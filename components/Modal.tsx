@@ -57,6 +57,7 @@ export const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (movie) {
       // 1. Initial State Reset
+      // Start hidden immediately
       setIsVisible(false);
       
       setDuration(null);
@@ -74,19 +75,21 @@ export const Modal: React.FC<ModalProps> = ({
       }
       
       let isMounted = true;
-      let timer: ReturnType<typeof setTimeout>;
 
-      // 2. FIXED ANIMATION TRIGGER
-      // We increased the delay to 100ms. This ensures the browser has definitively 
-      // painted the "off-screen" state (translate-y-[100vh]) before we trigger the transition.
-      // This eliminates the "pop-in" effect on first render.
-      timer = setTimeout(() => {
+      // 2. OPTIMIZED ANIMATION TRIGGER (Double RAF)
+      // We removed the setTimeout(100) to stop the "blinking".
+      // Instead, we use double requestAnimationFrame. This ensures the browser 
+      // paints the initial "translate-y-full" state BEFORE we switch to "translate-y-0".
+      requestAnimationFrame(() => {
           if (containerRef.current) {
-              // Force Reflow just in case
+              // Force Reflow: This reads the layout, forcing the browser to accept the 'start' position
               void containerRef.current.offsetHeight;
           }
-          if (isMounted) setIsVisible(true);
-      }, 100);
+          // The second RAF waits for the next paint cycle to start the transition
+          requestAnimationFrame(() => {
+              if (isMounted) setIsVisible(true);
+          });
+      });
 
       // 3. Load Secondary Data
       const loadData = async () => {
@@ -128,7 +131,6 @@ export const Modal: React.FC<ModalProps> = ({
 
       return () => {
         isMounted = false;
-        clearTimeout(timer);
         if (window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
@@ -146,8 +148,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
-    // Match this timeout with the CSS duration
-    setTimeout(onClose, 600); 
+    // Match this timeout with the CSS duration (500ms is snappy enough)
+    setTimeout(onClose, 500); 
   };
 
   const handlePlayClick = () => {
@@ -178,8 +180,8 @@ export const Modal: React.FC<ModalProps> = ({
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
   
-  // UPDATED: Slower duration (700ms) to make the slide more perceptible
-  const premiumTransition = "transition-all duration-700 ease-[cubic-bezier(0.19,1,0.22,1)]";
+  // Reverted to 500ms for snappier feel now that blink is gone
+  const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
   
   const hiddenState = "opacity-0 translate-y-8";
   const visibleState = "opacity-100 translate-y-0";
@@ -198,7 +200,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div 
         className={`
           absolute inset-0 bg-black/90 backdrop-blur-md
-          transition-opacity duration-700 ease-in-out
+          transition-opacity duration-500 ease-in-out
           ${isVisible ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleClose}
@@ -218,8 +220,11 @@ export const Modal: React.FC<ModalProps> = ({
           
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
-            : 'translate-y-[100vh] opacity-100 md:translate-y-12 md:opacity-0 md:scale-95' 
-            /* translate-y-[100vh] pushes it completely off screen. opacity-100 ensures we see it moving. */
+            : 'translate-y-[110%] opacity-0 md:translate-y-12 md:opacity-0 md:scale-95' 
+            /* 
+               translate-y-[110%]: Pushes it slightly further down to ensure shadow is hidden.
+               opacity-0: Ensures no "black block" flash if browser lags.
+            */
           }
         `}
       >
@@ -232,7 +237,7 @@ export const Modal: React.FC<ModalProps> = ({
           className={`
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-            transition-all duration-500 delay-200
+            transition-all duration-500 delay-100
             ${isMobile ? 'top-4 right-4' : 'top-4 right-4'} 
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
