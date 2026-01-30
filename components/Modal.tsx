@@ -35,6 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
     lang 
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false); // New state for smooth image transition
   const [platform, setPlatform] = useState('');
   
   // Content States
@@ -57,8 +58,8 @@ export const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (movie) {
       // 1. Initial State Reset
-      // Start hidden immediately
       setIsVisible(false);
+      setIsImageLoaded(false); // Reset image load state
       
       setDuration(null);
       setTagline(null);
@@ -77,15 +78,10 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       // 2. OPTIMIZED ANIMATION TRIGGER (Double RAF)
-      // We removed the setTimeout(100) to stop the "blinking".
-      // Instead, we use double requestAnimationFrame. This ensures the browser 
-      // paints the initial "translate-y-full" state BEFORE we switch to "translate-y-0".
       requestAnimationFrame(() => {
           if (containerRef.current) {
-              // Force Reflow: This reads the layout, forcing the browser to accept the 'start' position
               void containerRef.current.offsetHeight;
           }
-          // The second RAF waits for the next paint cycle to start the transition
           requestAnimationFrame(() => {
               if (isMounted) setIsVisible(true);
           });
@@ -148,7 +144,6 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleClose = () => {
     setIsVisible(false);
-    // Match this timeout with the CSS duration (500ms is snappy enough)
     setTimeout(onClose, 500); 
   };
 
@@ -158,7 +153,6 @@ export const Modal: React.FC<ModalProps> = ({
   
   const handleRecommendationClick = (recMovie: Movie) => {
       if (onMovieSelect) {
-          // Animate out before switching
           setIsVisible(false);
           setTimeout(() => onMovieSelect(recMovie), 300);
       }
@@ -179,8 +173,6 @@ export const Modal: React.FC<ModalProps> = ({
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
   const baseTransition = "transition-all duration-700 ease-out transform";
-  
-  // Reverted to 500ms for snappier feel now that blink is gone
   const premiumTransition = "transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]";
   
   const hiddenState = "opacity-0 translate-y-8";
@@ -221,10 +213,6 @@ export const Modal: React.FC<ModalProps> = ({
           ${isVisible 
             ? 'translate-y-0 opacity-100 scale-100' 
             : 'translate-y-[110%] opacity-0 md:translate-y-12 md:opacity-0 md:scale-95' 
-            /* 
-               translate-y-[110%]: Pushes it slightly further down to ensure shadow is hidden.
-               opacity-0: Ensures no "black block" flash if browser lags.
-            */
           }
         `}
       >
@@ -251,25 +239,62 @@ export const Modal: React.FC<ModalProps> = ({
             {/* 1. HERO IMAGE AREA */}
             <div className="relative w-full bg-[#181818]">
                 
-                {/* MOBILE STRATEGY */}
-                <div className="block md:hidden relative w-full aspect-[2/3]">
+                {/* 
+                    MOBILE STRATEGY OPTIMIZATION: 
+                    1. Use smallPosterUrl (cached) as an absolute background with blur. This appears INSTANTLY.
+                    2. Load main poster with decoding="async" to prevent UI thread blocking (jank).
+                    3. Fade in main poster once loaded.
+                */}
+                <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#181818]">
+                    
+                    {/* Placeholder: Cached Small Poster (Instant) */}
+                    {movie.smallPosterUrl && (
+                        <img 
+                            src={movie.smallPosterUrl}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-60"
+                            aria-hidden="true"
+                        />
+                    )}
+
+                    {/* Main High-Res Poster */}
                     <img 
                         src={movie.posterUrl}
                         alt={movie.title}
-                        className="w-full h-full object-cover"
-                        decoding="sync"
+                        className={`
+                            relative w-full h-full object-cover z-10
+                            transition-opacity duration-700 ease-in-out
+                            ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
+                        loading="eager"
+                        decoding="async" // CRITICAL: prevents animation stutter on mobile
+                        onLoad={() => setIsImageLoaded(true)}
                     />
-                    {/* Gradient to smooth edge between poster and black content */}
+                    
+                    {/* Gradient */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
                 {/* DESKTOP STRATEGY */}
-                <div className="hidden md:block relative w-full h-[55vh] overflow-hidden">
+                <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#181818]">
+                     {/* Desktop also benefits from placeholder for smoothness */}
+                    {movie.posterUrl && (
+                        <img 
+                            src={movie.posterUrl}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover object-top blur-lg scale-110 opacity-50"
+                        />
+                    )}
                     <img 
                         src={movie.bannerUrl || movie.posterUrl}
                         alt={movie.title}
-                        className="w-full h-full object-cover object-top"
-                        decoding="sync"
+                        className={`
+                            relative w-full h-full object-cover object-top z-10
+                            transition-opacity duration-700 ease-in-out
+                            ${isImageLoaded ? 'opacity-100' : 'opacity-0'}
+                        `}
+                        decoding="async"
+                        onLoad={() => setIsImageLoaded(true)}
                     />
                     <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
