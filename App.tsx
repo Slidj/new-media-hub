@@ -462,13 +462,23 @@ function App() {
                 onSelectCategory={handleCategoryChange} 
             />
 
-            {featuredMovie && (
+            {featuredMovie ? (
                  <Hero 
                     movie={featuredMovie} 
                     onMoreInfo={() => setSelectedMovie(featuredMovie)}
                     onPlay={() => handlePlay(featuredMovie)}
                     lang={lang}
                  />
+            ) : (
+                // --- FIX: Skeleton Hero Placeholder ---
+                // Keeps the layout height reserved while Featured Movie is loading (or transitioning).
+                // Prevents the "cards jumping up" glitch.
+                <div className="relative h-[75vh] md:h-[90vh] w-full bg-black z-0">
+                   {/* Background placeholder */}
+                   <div className="absolute inset-0 bg-[#0a0a0a]"></div>
+                   {/* Gradient matching Hero to blend smoothly */}
+                   <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                </div>
             )}
 
             <main className={`relative z-10 w-full bg-black -mt-1`}>
