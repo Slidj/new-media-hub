@@ -350,8 +350,22 @@ function App() {
             const randomIndex = Math.floor(Math.random() * Math.min(newMovies.length, 10));
             const randomHero = newMovies[randomIndex]; 
             const isTv = randomHero.mediaType === 'tv';
-            const logoUrl = await API.fetchMovieLogo(randomHero.id, isTv);
-            setFeaturedMovie({ ...randomHero, logoUrl });
+            
+            // CONCURRENT FETCH: Logo + Clean Background Image
+            // We fetch the clean textless background to improve the look of the hero section
+            const [logoUrl, cleanImages] = await Promise.all([
+                API.fetchMovieLogo(randomHero.id, isTv),
+                API.fetchCleanImages(randomHero.id, isTv ? 'tv' : 'movie')
+            ]);
+            
+            setFeaturedMovie({ 
+                ...randomHero, 
+                logoUrl,
+                // If clean banner exists, use it. Otherwise fallback to standard.
+                bannerUrl: cleanImages.banner || randomHero.bannerUrl,
+                // We can also swap the poster if a clean one exists (for mobile view)
+                posterUrl: cleanImages.poster || randomHero.posterUrl
+            });
           }
         }
     } catch (error) {

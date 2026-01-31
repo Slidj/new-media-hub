@@ -248,14 +248,21 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
 export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ poster?: string; banner?: string }> => {
     try {
         const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+        // We include 'null' (standard for textless) and 'en' as fallback
         const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}&include_image_language=null,en`);
         
         if (!request.ok) return {};
 
         const data = await request.json();
         
-        const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || data.posters?.[0];
-        const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || data.backdrops?.[0];
+        // Priority: Strictly textless (iso_639_1 === null) -> English (en) -> First available
+        const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || 
+                               data.posters?.find((p: any) => p.iso_639_1 === 'en') || 
+                               data.posters?.[0];
+
+        const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || 
+                               data.backdrops?.find((b: any) => b.iso_639_1 === 'en') || 
+                               data.backdrops?.[0];
 
         return {
             poster: cleanPosterObj ? `${POSTER_BASE_URL}${cleanPosterObj.file_path}` : undefined,
