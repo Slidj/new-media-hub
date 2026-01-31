@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Plus, Check, ThumbsUp, ThumbsDown, Share2, Youtube } from 'lucide-react';
 import { Movie, Cast, Video } from '../types';
@@ -218,8 +217,8 @@ export const Modal: React.FC<ModalProps> = ({
       >
         {/* Close Button */}
         {/* 
-            UPDATED: top-12 (3rem / 48px) for mobile to avoid system status bar/island.
-            Using Tailwind md: prefix instead of JS logic for cleaner responsiveness.
+            UPDATED: top-16 (4rem / 64px) for mobile. 
+            Increased distance from top to ensure it doesn't touch system buttons (island/status bar).
         */}
         <button 
           onClick={(e) => {
@@ -230,7 +229,7 @@ export const Modal: React.FC<ModalProps> = ({
             absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
             grid place-items-center hover:bg-[#2a2a2a] border border-white/10
             transition-all duration-500 delay-[500ms]
-            top-12 right-4 md:top-4 md:right-4
+            top-16 right-4 md:top-4 md:right-4
             ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}
           `}
         >
