@@ -239,10 +239,22 @@ function App() {
 
   // Process Notifications (Merge with Local Read & Deleted State)
   useEffect(() => {
+      const now = new Date();
+      
       const processed = rawNotifications
-          // 1. Filter out locally "deleted" globals
+          // 1. Filter out locally "deleted" globals AND FUTURE Reminders
           .filter(n => {
-              if (n.type === 'admin') return !deletedGlobalIds.includes(n.id);
+              // Hide deleted global/admin notifications
+              if (n.type === 'admin' && deletedGlobalIds.includes(n.id)) return false;
+              
+              // Hide future reminders (e.g. movie release dates that haven't happened yet)
+              if (n.type === 'reminder') {
+                  const notificationDate = new Date(n.date);
+                  // We check if the release date is in the future relative to now.
+                  // If release date > now, we hide it.
+                  if (notificationDate > now) return false;
+              }
+              
               return true;
           })
           // 2. Map "read" state for globals

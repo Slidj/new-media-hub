@@ -57,7 +57,9 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   const toggleReminder = async (e: React.MouseEvent, movie: Movie) => {
       e.stopPropagation();
       const newSet = new Set(remindedMovies);
+      
       if (newSet.has(movie.id)) {
+          // If already set, just untoggle visually (we don't delete notification from DB to avoid complex query)
           newSet.delete(movie.id);
       } else {
           newSet.add(movie.id);
@@ -69,11 +71,23 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
              }
           }
 
-          // SEND NOTIFICATION TO NOTIFICATION CENTER
+          // SEND NOTIFICATION TO NOTIFICATION CENTER (SCHEDULED)
           if (user?.id) {
-              const title = t.reminded + ": " + movie.title;
-              const msg = `Reminder set for ${movie.title}. Release: ${movie.releaseDate}`;
-              await sendPersonalNotification(user.id, title, msg, 'reminder', movie);
+              // Logic: The notification date is set to the Release Date.
+              // App.tsx will filter it out until that date arrives.
+              
+              // Text for when it actually appears:
+              const title = `${t.coming}: ${movie.title}`; 
+              const msg = movie.description || t.play;
+
+              await sendPersonalNotification(
+                  user.id, 
+                  title, 
+                  msg, 
+                  'reminder', 
+                  movie,
+                  movie.releaseDate // PASSING FUTURE DATE
+              );
           }
       }
       setRemindedMovies(newSet);

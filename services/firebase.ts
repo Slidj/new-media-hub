@@ -205,14 +205,16 @@ export const sendPersonalNotification = async (
     title: string, 
     message: string, 
     type: 'system' | 'reminder' | 'admin' = 'system',
-    movie?: Movie
+    movie?: Movie,
+    customDate?: string // Optional parameter to schedule for future
 ) => {
     try {
         const notifsRef = collection(db, "users", userId.toString(), "notifications");
         await addDoc(notifsRef, {
             title,
             message,
-            date: new Date().toISOString(),
+            // If customDate is provided (e.g., release date), use it. Otherwise use now.
+            date: customDate ? new Date(customDate).toISOString() : new Date().toISOString(),
             type,
             isRead: false,
             movieId: movie?.id || null,
