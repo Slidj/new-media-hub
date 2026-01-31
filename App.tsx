@@ -25,7 +25,8 @@ import {
     toggleDislike, 
     addToHistory,
     subscribeToPersonalNotifications,
-    subscribeToGlobalNotifications
+    subscribeToGlobalNotifications,
+    deletePersonalNotification
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -130,12 +131,11 @@ function App() {
   const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); // Raw mix
   const [notifications, setNotifications] = useState<AppNotification[]>([]); // Processed with read state
   const [readGlobalIds, setReadGlobalIds] = useState<string[]>(() => {
-      // Init from local storage
-      try {
-          return JSON.parse(localStorage.getItem('read_global_ids') || '[]');
-      } catch {
-          return [];
-      }
+      try { return JSON.parse(localStorage.getItem('read_global_ids') || '[]'); } catch { return []; }
+  });
+  // New: Deleted Global IDs (Local Storage)
+  const [deletedGlobalIds, setDeletedGlobalIds] = useState<string[]>(() => {
+      try { return JSON.parse(localStorage.getItem('deleted_global_ids') || '[]'); } catch { return []; }
   });
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -215,8 +215,8 @@ function App() {
     // 2. Personal Notifications
     const unsubscribePersonalNotifs = subscribeToPersonalNotifications(user.id, (personalNotifs) => {
         setRawNotifications(prev => {
+             // Keep existing globals, replace personals
              const globalOnly = prev.filter(n => n.type === 'admin');
-             // Personal notifs are already cleaned/limited by the subscription logic
              return [...globalOnly, ...personalNotifs];
         });
     });
@@ -224,6 +224,7 @@ function App() {
     // 3. Global Notifications
     const unsubscribeGlobalNotifs = subscribeToGlobalNotifications((globalNotifs) => {
         setRawNotifications(prev => {
+            // Keep existing personals, replace globals
             const personalOnly = prev.filter(n => n.type !== 'admin');
             return [...personalOnly, ...globalNotifs];
         });
@@ -236,29 +237,46 @@ function App() {
     };
   }, [user]);
 
-  // Process Notifications (Merge with Local Read State) & Calculate Unread
+  // Process Notifications (Merge with Local Read & Deleted State)
   useEffect(() => {
-      const processed = rawNotifications.map(n => {
-          // If it's a global admin message, check local storage state
-          if (n.type === 'admin' && readGlobalIds.includes(n.id)) {
-              return { ...n, isRead: true };
-          }
-          return n;
-      }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const processed = rawNotifications
+          // 1. Filter out locally "deleted" globals
+          .filter(n => {
+              if (n.type === 'admin') return !deletedGlobalIds.includes(n.id);
+              return true;
+          })
+          // 2. Map "read" state for globals
+          .map(n => {
+              if (n.type === 'admin' && readGlobalIds.includes(n.id)) {
+                  return { ...n, isRead: true };
+              }
+              return n;
+          })
+          .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      // Limit display to 5 items in total view as requested (visual limit)
-      // Note: Backend deletes extras for personal, but globals might push it over momentarily
       const finalDisplay = processed.slice(0, 5);
       
       setNotifications(finalDisplay);
       setUnreadCount(finalDisplay.filter(n => !n.isRead).length);
 
-  }, [rawNotifications, readGlobalIds]);
+  }, [rawNotifications, readGlobalIds, deletedGlobalIds]);
 
   const handleMarkGlobalRead = (ids: string[]) => {
       const newReadIds = Array.from(new Set([...readGlobalIds, ...ids]));
       setReadGlobalIds(newReadIds);
       localStorage.setItem('read_global_ids', JSON.stringify(newReadIds));
+  };
+
+  const handleDeleteNotification = async (notification: AppNotification) => {
+      if (notification.type === 'admin') {
+          // Local Hide
+          const newDeletedIds = [...deletedGlobalIds, notification.id];
+          setDeletedGlobalIds(newDeletedIds);
+          localStorage.setItem('deleted_global_ids', JSON.stringify(newDeletedIds));
+      } else if (user?.id) {
+          // Firebase Delete
+          await deletePersonalNotification(user.id, notification.id);
+      }
   };
 
   useEffect(() => {
@@ -531,6 +549,7 @@ function App() {
             lang={lang}
             userId={user?.id}
             onMarkGlobalRead={handleMarkGlobalRead}
+            onDelete={handleDeleteNotification}
           />
       )}
     </div>

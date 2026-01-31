@@ -11,6 +11,7 @@ interface NotificationsViewProps {
   lang: Language;
   userId?: number;
   onMarkGlobalRead?: (ids: string[]) => void;
+  onDelete?: (notification: AppNotification) => void;
 }
 
 export const NotificationsView: React.FC<NotificationsViewProps> = ({ 
@@ -18,7 +19,8 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
     onClose, 
     lang, 
     userId,
-    onMarkGlobalRead 
+    onMarkGlobalRead,
+    onDelete
 }) => {
   const t = translations[lang];
 
@@ -60,6 +62,20 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
       });
   };
 
+  const handleDelete = (e: React.MouseEvent, notif: AppNotification) => {
+      e.stopPropagation();
+      // Haptic feedback
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+      }
+      if (onDelete) {
+          onDelete(notif);
+      }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col">
         {/* Header - Pushed down to avoid system bar overlap */}
@@ -88,19 +104,19 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                     <div 
                         key={notif.id} 
                         className={`
-                            relative flex gap-4 p-4 rounded-lg border transition-all duration-300
+                            group relative flex gap-4 p-4 rounded-lg border transition-all duration-300
                             bg-[#1a1a1a] border-white/5 opacity-80
                             ${!notif.isRead ? 'border-l-4 border-l-[#E50914] bg-[#222] opacity-100' : ''}
                         `}
                     >
-                        {/* 
-                           VISUAL TRICK: 
-                           Even though we trigger "mark read" on mount, the UI might render initially as unread.
-                           For better UX, we could force them to look read, but keeping the 'dot' or border
-                           until closed is fine, OR we assume they are reading them now.
-                           The request asks for them to "display as read", so the border-l above handles emphasis,
-                           but we remove the "red dot" inside the card if it was there.
-                        */}
+                        {/* Delete Button (X) */}
+                        <button 
+                            onClick={(e) => handleDelete(e, notif)}
+                            className="absolute top-2 right-2 p-1 text-gray-500 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
+                            aria-label="Delete"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
 
                         {/* Icon/Image */}
                         <div className="shrink-0">
@@ -114,7 +130,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1">
+                        <div className="flex-1 pr-6">
                             <h4 className="text-white font-bold text-sm mb-1 pr-4">{notif.title}</h4>
                             <p className="text-gray-300 text-xs leading-relaxed">{notif.message}</p>
                             <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-500 font-medium uppercase">

@@ -283,3 +283,13 @@ export const markNotificationRead = async (userId: number, notifId: string) => {
         console.error("Error marking read", e);
     }
 };
+
+// 6. Delete Personal Notification
+export const deletePersonalNotification = async (userId: number, notifId: string) => {
+    try {
+        const ref = doc(db, "users", userId.toString(), "notifications", notifId);
+        await deleteDoc(ref);
+    } catch (e) {
+        console.error("Error deleting notification", e);
+    }
+};
