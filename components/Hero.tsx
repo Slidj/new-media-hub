@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Info } from 'lucide-react';
 import { Movie } from '../types';
 import { Language, translations } from '../utils/translations';
@@ -13,6 +13,12 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) => {
   const t = translations[lang];
+  const [logoLoaded, setLogoLoaded] = useState(false);
+
+  // Reset animation state when movie changes
+  useEffect(() => {
+    setLogoLoaded(false);
+  }, [movie.id]);
 
   return (
     <div className="relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden bg-black">
@@ -48,34 +54,30 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
       </div>
 
       {/* Content Layer - Z-20 (Above Gradient) */}
-      {/* 
-          UPDATED: pb-8 (було pb-12). Зменшено відступ знизу, щоб кнопки були ближче до карток.
-          Для Desktop залишаємо pb-12, там місця достатньо.
-      */}
       <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-12 w-full">
             
             {/* Title / Logo */}
-            {/* 
-                UPDATED: mb-8 (було mb-6). Трохи відсунули заголовок від кнопок, 
-                щоб при опусканні кнопок заголовок візуально залишився вище.
-            */}
-            <div className="mb-8 px-6 flex justify-center md:justify-start w-full">
+            <div className="mb-8 px-6 flex justify-center md:justify-start w-full min-h-[100px] md:min-h-[160px] items-end">
                 {movie.logoUrl ? (
                     <img 
                         src={movie.logoUrl} 
                         alt={movie.title} 
-                        className="w-64 md:w-[500px] max-h-40 md:max-h-64 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]"
+                        onLoad={() => setLogoLoaded(true)}
+                        className={`
+                            w-64 md:w-[500px] max-h-40 md:max-h-64 object-contain drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]
+                            transition-all duration-1000 ease-out
+                            ${logoLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-90 blur-sm'}
+                        `}
                     />
                 ) : (
-                    <h1 className="text-4xl md:text-7xl font-black text-center md:text-left drop-shadow-2xl uppercase tracking-tighter leading-none px-4">
+                    <h1 className="text-4xl md:text-7xl font-black text-center md:text-left drop-shadow-2xl uppercase tracking-tighter leading-none px-4 animate-fade-in-up">
                       {movie.title}
                     </h1>
                 )}
             </div>
             
             {/* Buttons Container */}
-            {/* Added 'px-6' to prevent touching screen edges */}
-            <div className="w-full px-6 md:px-12 flex items-center justify-center md:justify-start gap-3 md:gap-4">
+            <div className="w-full px-6 md:px-12 flex items-center justify-center md:justify-start gap-3 md:gap-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <button 
                 onClick={onPlay}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)] max-w-[200px] md:max-w-none"

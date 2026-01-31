@@ -303,6 +303,8 @@ function App() {
     if (activeCategory === newCategory) return;
     setActiveCategory(newCategory);
     setMovies([]); 
+    // Clear featured movie immediately to prevent showing old hero on new category (removes mismatch lag)
+    setFeaturedMovie(null); 
     setPage(1); 
     setHasMore(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -351,19 +353,21 @@ function App() {
             const randomHero = newMovies[randomIndex]; 
             const isTv = randomHero.mediaType === 'tv';
             
-            // CONCURRENT FETCH: Logo + Clean Background Image
-            // We fetch the clean textless background to improve the look of the hero section
+            // CRITICAL FIX: Removed the "Optimistic Update" (setFeaturedMovie(randomHero))
+            // We now wait for the clean assets to be fully ready before setting the Hero.
+            // This prevents the flicker where the text version shows up before the clean version.
+
+            // BACKGROUND FETCH: Logo + Clean Background Image
             const [logoUrl, cleanImages] = await Promise.all([
                 API.fetchMovieLogo(randomHero.id, isTv),
                 API.fetchCleanImages(randomHero.id, isTv ? 'tv' : 'movie')
             ]);
             
+            // Update hero ONCE with the final clean assets
             setFeaturedMovie({ 
                 ...randomHero, 
                 logoUrl,
-                // If clean banner exists, use it. Otherwise fallback to standard.
                 bannerUrl: cleanImages.banner || randomHero.bannerUrl,
-                // We can also swap the poster if a clean one exists (for mobile view)
                 posterUrl: cleanImages.poster || randomHero.posterUrl
             });
           }
