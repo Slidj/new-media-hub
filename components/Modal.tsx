@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Plus, Check, ThumbsUp, ThumbsDown, Share2, Youtube } from 'lucide-react';
 import { Movie, Cast, Video } from '../types';
@@ -344,7 +345,12 @@ export const Modal: React.FC<ModalProps> = ({
                                 }}
                                 className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
                             >
-                                {isInList ? <Check className="w-5 h-5 text-green-400" /> : <Plus className="w-5 h-5" />}
+                                {isInList ? (
+                                    // UPDATED: Red, Bold, and Animated Checkmark
+                                    <Check className="w-5 h-5 text-[#E50914] scale-110 transition-transform duration-200" strokeWidth={3} />
+                                ) : (
+                                    <Plus className="w-5 h-5" />
+                                )}
                             </button>
                             
                             <button 
