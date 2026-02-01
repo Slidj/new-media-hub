@@ -343,14 +343,31 @@ export const Modal: React.FC<ModalProps> = ({
                                     triggerHaptic();
                                     onToggleList?.(movie);
                                 }}
-                                className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                                className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
                             >
-                                {isInList ? (
-                                    // UPDATED: Red, Bold, and Animated Checkmark
-                                    <Check className="w-5 h-5 text-[#E50914] scale-110 transition-transform duration-200" strokeWidth={3} />
-                                ) : (
-                                    <Plus className="w-5 h-5" />
-                                )}
+                                {/* 
+                                   ANIMATION LOGIC:
+                                   Two absolute divs centered on top of each other.
+                                   We animate opacity, scale, and rotation to create a smooth morph.
+                                */}
+                                
+                                {/* 1. PLUS ICON (Visible when NOT in list) */}
+                                <div className={`
+                                    absolute inset-0 flex items-center justify-center 
+                                    transition-all duration-300 ease-in-out
+                                    ${isInList ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}
+                                `}>
+                                    <Plus className="w-6 h-6" />
+                                </div>
+
+                                {/* 2. CHECK ICON (Visible when IN list) */}
+                                <div className={`
+                                    absolute inset-0 flex items-center justify-center 
+                                    transition-all duration-300 ease-in-out
+                                    ${isInList ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}
+                                `}>
+                                    <Check className="w-6 h-6 text-[#E50914]" strokeWidth={3} />
+                                </div>
                             </button>
                             
                             <button 
