@@ -14,7 +14,8 @@ import { MyListView } from './components/MyListView';
 import { Player } from './components/Player';
 import { MoreMenu } from './components/MoreMenu'; 
 import { AdminPanel } from './components/AdminPanel'; 
-import { NotificationsView } from './components/NotificationsView'; // New
+import { NotificationsView } from './components/NotificationsView'; 
+import { BannedView } from './components/BannedView'; // New
 import { Movie, WebAppUser, TabType, AppNotification } from './types';
 import { API } from './services/tmdb';
 import { 
@@ -26,7 +27,8 @@ import {
     addToHistory,
     subscribeToPersonalNotifications,
     subscribeToGlobalNotifications,
-    deletePersonalNotification
+    deletePersonalNotification,
+    subscribeToUserBanStatus // New
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -119,7 +121,9 @@ function App() {
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
+  // AUTH & BAN STATUS
   const [user, setUser] = useState<WebAppUser | null>(null);
+  const [isBanned, setIsBanned] = useState(false);
   
   // Firebase Data States
   const [myList, setMyList] = useState<Movie[]>([]);
@@ -200,10 +204,15 @@ function App() {
     }
   }, []);
 
-  // Subscribe to Firebase Updates (Profile + Notifications)
+  // Subscribe to Firebase Updates (Profile + Notifications + BAN STATUS)
   useEffect(() => {
     if (!user?.id) return;
     
+    // 0. Ban Status (Real-time security)
+    const unsubscribeBan = subscribeToUserBanStatus(user.id, (banned) => {
+        setIsBanned(banned);
+    });
+
     // 1. User Data
     const unsubscribeUser = subscribeToUserData(user.id, (data) => {
       if (data.myList) setMyList(data.myList);
@@ -231,6 +240,7 @@ function App() {
     });
 
     return () => {
+        unsubscribeBan();
         unsubscribeUser();
         unsubscribePersonalNotifs();
         unsubscribeGlobalNotifs();
@@ -434,8 +444,15 @@ function App() {
     await toggleDislike(user.id, movie.id, isDisliked);
   };
 
+  // --- RENDERING ---
+
   if (showSplash) {
     return <Preloader />;
+  }
+
+  // SECURITY CHECK: If user is banned, block entire app access
+  if (isBanned) {
+      return <BannedView lang={lang} />;
   }
 
   return (

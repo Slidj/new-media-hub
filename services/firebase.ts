@@ -16,7 +16,8 @@ import {
   orderBy,
   limit,
   deleteDoc,
-  writeBatch
+  writeBatch,
+  getDocs
 } from "firebase/firestore";
 import { Movie, WebAppUser, AppNotification } from "../types";
 
@@ -50,6 +51,7 @@ export const syncUser = async (user: WebAppUser) => {
         likedMovies: [], 
         dislikedMovies: [], // Init dislikes
         watchHistory: [], 
+        isBanned: false, // Default ban status
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       });
@@ -149,6 +151,47 @@ export const subscribeToUserData = (userId: number, onUpdate: (data: any) => voi
     }
   });
 };
+
+// --- USER MANAGEMENT (ADMIN) ---
+
+// 1. Fetch All Users (Limited to last 50 active for performance)
+export const getAllUsers = async (): Promise<any[]> => {
+    try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, orderBy("lastActive", "desc"), limit(50));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
+    }
+};
+
+// 2. Ban/Unban User
+export const toggleUserBan = async (userId: string, isBanned: boolean) => {
+    try {
+        const userRef = doc(db, "users", userId);
+        await updateDoc(userRef, { isBanned: !isBanned });
+    } catch (error) {
+        console.error("Error toggling ban:", error);
+    }
+};
+
+// 3. Real-time Listener for Ban Status (For the App)
+export const subscribeToUserBanStatus = (userId: number, onStatusChange: (isBanned: boolean) => void) => {
+    const userRef = doc(db, "users", userId.toString());
+    return onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+            // If field doesn't exist, default to false
+            const banned = doc.data().isBanned === true; 
+            onStatusChange(banned);
+        }
+    });
+};
+
 
 // --- NOTIFICATIONS SYSTEM ---
 

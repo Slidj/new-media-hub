@@ -67,7 +67,16 @@ export const translations = {
     title: "Title",
     message: "Message",
     send: "Send",
-    successSent: "Sent successfully!"
+    successSent: "Sent successfully!",
+    // Ban System
+    accessRestricted: "Access Restricted",
+    banMessage: "Your access to the application has been temporarily limited due to a received complaint.",
+    banSubMessage: "Access will be restored after the review process is complete.",
+    banAction: "Ban User",
+    unbanAction: "Unban User",
+    status: "Status",
+    active: "Active",
+    banned: "Banned"
   },
   uk: {
     home: "Головна",
@@ -133,7 +142,16 @@ export const translations = {
     title: "Заголовок",
     message: "Повідомлення",
     send: "Надіслати",
-    successSent: "Успішно надіслано!"
+    successSent: "Успішно надіслано!",
+    // Ban System
+    accessRestricted: "Доступ Обмежено",
+    banMessage: "Вам обмежений доступ до застосунку по причині подачі скарги на вас.",
+    banSubMessage: "Доступ поновиться після перегляду скарги.",
+    banAction: "Забанити",
+    unbanAction: "Розбанити",
+    status: "Статус",
+    active: "Активний",
+    banned: "Забанений"
   },
   ru: {
     home: "Главная",
@@ -199,7 +217,16 @@ export const translations = {
     title: "Заголовок",
     message: "Сообщение",
     send: "Отправить",
-    successSent: "Успешно отправлено!"
+    successSent: "Успешно отправлено!",
+    // Ban System
+    accessRestricted: "Доступ Ограничен",
+    banMessage: "Ваш доступ к приложению временно ограничен из-за поступившей жалобы.",
+    banSubMessage: "Доступ будет восстановлен после рассмотрения жалобы.",
+    banAction: "Забанить",
+    unbanAction: "Разбанить",
+    status: "Статус",
+    active: "Активен",
+    banned: "Забанен"
   }
 };
 
