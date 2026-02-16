@@ -28,7 +28,8 @@ import {
     subscribeToPersonalNotifications,
     subscribeToGlobalNotifications,
     deletePersonalNotification,
-    subscribeToUserBanStatus // New
+    subscribeToUserBanStatus, // New
+    updateUserHeartbeat // New
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -130,6 +131,7 @@ function App() {
   const [likedMovies, setLikedMovies] = useState<string[]>([]);
   const [dislikedMovies, setDislikedMovies] = useState<string[]>([]);
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
+  const [tickets, setTickets] = useState(0); // Reward Tickets
 
   // Notifications State
   const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); // Raw mix
@@ -204,6 +206,22 @@ function App() {
     }
   }, []);
 
+  // HEARTBEAT EFFECT
+  // Updates user lastActive status every 2 minutes while app is open
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    // Initial heartbeat
+    updateUserHeartbeat(user.id);
+
+    const interval = setInterval(() => {
+        updateUserHeartbeat(user.id);
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+
   // Subscribe to Firebase Updates (Profile + Notifications + BAN STATUS)
   useEffect(() => {
     if (!user?.id) return;
@@ -219,6 +237,8 @@ function App() {
       if (data.likedMovies) setLikedMovies(data.likedMovies);
       if (data.dislikedMovies) setDislikedMovies(data.dislikedMovies);
       if (data.watchHistory) setWatchHistory(data.watchHistory);
+      // Update local ticket state
+      if (data.tickets !== undefined) setTickets(data.tickets);
     });
 
     // 2. Personal Notifications
@@ -579,6 +599,7 @@ function App() {
         <Player 
           movie={playingMovie} 
           onClose={() => setPlayingMovie(null)} 
+          userId={user?.id} // Pass UserID for tracking
         />
       )}
 
@@ -587,6 +608,8 @@ function App() {
           onClose={() => setIsMoreMenuOpen(false)}
           lang={lang}
           user={user}
+          // Merge user ticket state into the object passed to menu if syncUser hasn't updated the reference fully yet
+          userTickets={tickets} 
           onAdminClick={() => setIsAdminPanelOpen(true)}
       />
 

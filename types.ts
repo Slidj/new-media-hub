@@ -64,6 +64,7 @@ export interface WebAppUser {
   username?: string;
   language_code?: string;
   photo_url?: string;
+  tickets?: number; // New Reward System
 }
 
 export type TabType = 'home' | 'search' | 'coming_soon' | 'my_list';

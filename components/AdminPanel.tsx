@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Users, Activity, Database, Server, Send, MessageSquare, Ban, CheckCircle, Search, User } from 'lucide-react';
+import { X, Users, Activity, Database, Server, Send, MessageSquare, Ban, CheckCircle, Search, User, Ticket } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan } from '../services/firebase';
 
@@ -79,6 +79,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       return name.includes(search) || username.includes(search) || id.includes(search);
   });
 
+  // HELPER: Format Last Seen Date
+  const formatLastSeen = (isoString?: string) => {
+      if (!isoString) return { text: "Never", color: "text-gray-500", isOnline: false };
+      
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      // Check if Online (Activity within last 3 minutes)
+      const isOnline = diffMs < 3 * 60 * 1000;
+      if (isOnline) return { text: "Online now", color: "text-green-500", isOnline: true };
+
+      if (diffDays === 0) {
+          // Check if it's "today" by calendar day
+          if (date.getDate() === now.getDate()) {
+              return { 
+                  text: `Today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 
+                  color: "text-gray-400", isOnline: false 
+              };
+          }
+          return { text: "Yesterday", color: "text-gray-400", isOnline: false };
+      }
+      
+      if (diffDays === 1) return { text: "Yesterday", color: "text-gray-400", isOnline: false };
+      if (diffDays < 7) return { text: `${diffDays} days ago`, color: "text-gray-500", isOnline: false };
+      if (diffDays < 30) return { text: "A few weeks ago", color: "text-gray-500", isOnline: false };
+      if (diffDays < 60) return { text: "1 month ago", color: "text-gray-600", isOnline: false };
+      
+      return { text: "Long time ago", color: "text-gray-700", isOnline: false };
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-[#000000] overflow-y-auto no-scrollbar pb-safe">
         {/* Header */}
@@ -123,18 +155,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                         <div className="text-center py-10 text-gray-500">Loading users...</div>
                     ) : (
                         <div className="space-y-3">
-                            {filteredUsers.map((u) => (
+                            {filteredUsers.map((u) => {
+                                const lastSeen = formatLastSeen(u.lastActive);
+                                
+                                return (
                                 <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-lg p-3 flex items-center justify-between">
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                        <div className="w-10 h-10 rounded-full bg-[#333] flex-shrink-0 overflow-hidden">
-                                            {u.profile?.photo_url ? (
-                                                <img src={u.profile.photo_url} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-white/50">
-                                                    <User className="w-5 h-5" />
-                                                </div>
-                                            )}
+                                        {/* Avatar with Status Dot */}
+                                        <div className="relative w-10 h-10 flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-[#333] overflow-hidden">
+                                                {u.profile?.photo_url ? (
+                                                    <img src={u.profile.photo_url} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-white/50">
+                                                        <User className="w-5 h-5" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {/* Status Dot */}
+                                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1a1a1a] ${lastSeen.isOnline ? 'bg-green-500' : 'bg-gray-600'}`}></div>
                                         </div>
+
                                         <div className="flex flex-col min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-white font-bold text-sm truncate">{u.profile?.first_name} {u.profile?.last_name}</span>
@@ -142,8 +183,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                                     <span className="px-1.5 py-0.5 bg-red-900/50 text-red-500 text-[10px] font-bold rounded uppercase border border-red-900">BANNED</span>
                                                 )}
                                             </div>
-                                            <span className="text-gray-500 text-xs font-mono">ID: {u.id}</span>
-                                            {u.profile?.username && <span className="text-blue-400/70 text-xs truncate">@{u.profile.username}</span>}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-medium ${lastSeen.color}`}>
+                                                    {lastSeen.text}
+                                                </span>
+                                                {u.tickets > 0 && (
+                                                    <span className="text-[10px] text-yellow-500 flex items-center gap-0.5">
+                                                        <Ticket className="w-3 h-3" />
+                                                        {u.tickets.toFixed(1)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-gray-600 text-[10px] font-mono">ID: {u.id}</span>
                                         </div>
                                     </div>
                                     
@@ -160,7 +211,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                         {u.isBanned ? <CheckCircle className="w-5 h-5" /> : <Ban className="w-5 h-5" />}
                                     </button>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
                 </div>

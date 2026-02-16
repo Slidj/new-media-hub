@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight } from 'lucide-react';
+import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { WebAppUser } from '../types';
 import { isAdmin } from '../utils/adminIds';
@@ -10,10 +10,11 @@ interface MoreMenuProps {
   onClose: () => void;
   lang: Language;
   user: WebAppUser | null;
+  userTickets?: number; // New prop
   onAdminClick: () => void;
 }
 
-export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, onAdminClick }) => {
+export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, userTickets = 0, onAdminClick }) => {
   const t = translations[lang];
   const isUserAdmin = isAdmin(user?.id);
 
@@ -43,16 +44,25 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
         {/* Header - UPDATED PADDING to safe-area + 80px */}
         <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 bg-[#1a1a1a] flex items-center justify-between border-b border-white/5">
             <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center border border-white/10">
+                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center border border-white/10 shrink-0">
                     {user?.photo_url ? (
                         <img src={user.photo_url} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                         <span className="font-bold text-white">{user?.first_name?.[0] || <User className="w-5 h-5" />}</span>
                     )}
                  </div>
-                 <div className="flex flex-col">
+                 <div className="flex flex-col min-w-0">
                      <span className="text-white font-bold text-sm truncate max-w-[150px]">{user?.first_name} {user?.last_name}</span>
-                     {isUserAdmin && <span className="text-[10px] text-[#E50914] font-bold tracking-widest uppercase">ADMIN</span>}
+                     
+                     {/* TICKETS DISPLAY */}
+                     <div className="flex items-center gap-1.5 mt-1">
+                        <div className="w-4 h-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                            <Ticket className="w-2.5 h-2.5 text-yellow-500" />
+                        </div>
+                        <span className="text-xs font-bold text-yellow-500">{userTickets.toFixed(1)} Tickets</span>
+                     </div>
+
+                     {isUserAdmin && <span className="text-[10px] text-[#E50914] font-bold tracking-widest uppercase mt-0.5">ADMIN</span>}
                  </div>
             </div>
             <button onClick={onClose} className="p-2 bg-[#333] rounded-full text-white hover:bg-white hover:text-black transition">
@@ -99,7 +109,7 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
         {/* Footer Info */}
         <div className="p-6 border-t border-white/5 text-center">
              <h3 className="text-lg font-bebas text-gray-600 tracking-wider">MEDIA HUB</h3>
-             <p className="text-[10px] text-gray-700 mt-1">Version 9.1 (BETA)</p>
+             <p className="text-[10px] text-gray-700 mt-1">Version 9.2 (BETA)</p>
         </div>
       </div>
     </>

@@ -1,18 +1,26 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Movie } from '../types';
 import { API } from '../services/tmdb';
+import { addWatchTimeReward } from '../services/firebase';
 
 interface PlayerProps {
   movie: Movie;
   onClose: () => void;
+  userId?: number;
 }
 
-export const Player: React.FC<PlayerProps> = ({ movie, onClose }) => {
+export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
+
+  // Watch Time Tracking Refs
+  const accumulatedTimeRef = useRef(0); // Seconds watched since last sync
+  const lastSyncTimeRef = useRef(Date.now());
+  const timerRef = useRef<any>(null); // Use any to avoid NodeJS.Timeout namespace issues in browser
+  const isTabActiveRef = useRef(true); // Track visibility/focus
 
   // Базовий URL CDN
   const BASE_PLAYER_URL = 'https://68865.svetacdn.in/lQRlkhufNdas';
@@ -43,7 +51,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose }) => {
     preparePlayer();
 
     // Таймер для затемнення контролів (кнопки закриття)
-    // Через 3 секунди кнопка стане напівпрозорою
     const dimTimer = setTimeout(() => {
       setIsControlsDimmed(true);
     }, 3000);
@@ -53,12 +60,57 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose }) => {
       setIsLoading(false);
     }, 4000);
 
+    // --- REWARD SYSTEM & ANTI-CHEAT ---
+    
+    // 1. Visibility Handler (Tab switching, Minimize)
+    const handleVisibilityChange = () => {
+        if (document.hidden) {
+            isTabActiveRef.current = false;
+        } else {
+            isTabActiveRef.current = true;
+        }
+    };
+
+    // 2. Window Blur Handler (Alternative focus loss check)
+    const handleWindowBlur = () => { isTabActiveRef.current = false; };
+    const handleWindowFocus = () => { isTabActiveRef.current = true; };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", handleWindowFocus);
+
+    // 3. Main Tracking Loop
+    if (userId) {
+        timerRef.current = setInterval(() => {
+            // Only count if tab is active
+            if (isTabActiveRef.current) {
+                accumulatedTimeRef.current += 1; // +1 second
+                
+                // Debug log (optional)
+                // console.log(`Watch time: ${accumulatedTimeRef.current}s`);
+
+                // Check if we reached 5 minutes (300 seconds)
+                if (accumulatedTimeRef.current >= 300) {
+                    // Send Reward!
+                    addWatchTimeReward(userId);
+                    // Reset accumulator
+                    accumulatedTimeRef.current = 0;
+                }
+            }
+        }, 1000);
+    }
+
     return () => {
       document.body.style.overflow = 'unset';
       clearTimeout(dimTimer);
       clearTimeout(loadTimer);
+      if (timerRef.current) clearInterval(timerRef.current);
+      
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", handleWindowFocus);
     };
-  }, [movie]);
+  }, [movie, userId]);
 
   return (
     <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center">

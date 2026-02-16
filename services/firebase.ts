@@ -17,7 +17,8 @@ import {
   limit,
   deleteDoc,
   writeBatch,
-  getDocs
+  getDocs,
+  increment
 } from "firebase/firestore";
 import { Movie, WebAppUser, AppNotification } from "../types";
 
@@ -51,7 +52,8 @@ export const syncUser = async (user: WebAppUser) => {
         likedMovies: [], 
         dislikedMovies: [], // Init dislikes
         watchHistory: [], 
-        isBanned: false, // Default ban status
+        tickets: 0, // Init tickets
+        isBanned: false, 
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       });
@@ -70,6 +72,33 @@ export const syncUser = async (user: WebAppUser) => {
     console.error("Error syncing user:", error);
   }
 };
+
+// HEARTBEAT: Call this periodically to show user is "Online"
+export const updateUserHeartbeat = async (userId: number) => {
+    try {
+        const userRef = doc(db, "users", userId.toString());
+        await updateDoc(userRef, {
+            lastActive: new Date().toISOString()
+        });
+    } catch (e) {
+        // Silent fail
+    }
+};
+
+// REWARDS: Add Ticket Progress
+// 0.5 tickets per hour = 0.0416 per 5 mins.
+export const addWatchTimeReward = async (userId: number) => {
+    try {
+        const userRef = doc(db, "users", userId.toString());
+        // Increment by approx 0.042 (5 minutes worth of 0.5/hour)
+        await updateDoc(userRef, {
+            tickets: increment(0.042)
+        });
+    } catch (e) {
+        console.error("Error adding reward", e);
+    }
+};
+
 
 // Toggle Movie in "My List"
 export const toggleMyList = async (userId: number, movie: Movie, isInList: boolean) => {
