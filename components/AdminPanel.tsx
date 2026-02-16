@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Users, Activity, Database, Server, Send, MessageSquare, Ban, CheckCircle, Search, User, Ticket } from 'lucide-react';
+import { X, Users, Activity, Database, Server, Send, MessageSquare, Ban, CheckCircle, Search, User, Ticket, Clock } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan } from '../services/firebase';
 
@@ -93,7 +93,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       if (isOnline) return { text: "Online now", color: "text-green-500", isOnline: true };
 
       if (diffDays === 0) {
-          // Check if it's "today" by calendar day
           if (date.getDate() === now.getDate()) {
               return { 
                   text: `Today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 
@@ -109,6 +108,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       if (diffDays < 60) return { text: "1 month ago", color: "text-gray-600", isOnline: false };
       
       return { text: "Long time ago", color: "text-gray-700", isOnline: false };
+  };
+
+  // HELPER: Get Daily Watch Time
+  const getDailyWatchTime = (user: any) => {
+    const today = new Date().toISOString().split('T')[0];
+    const stats = user.dailyStats;
+    
+    // If stats don't exist OR the date stored is not today, return 0
+    if (!stats || stats.date !== today) {
+        return "0m";
+    }
+    
+    const seconds = stats.watchedSeconds || 0;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
   };
 
   return (
@@ -157,10 +174,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                         <div className="space-y-3">
                             {filteredUsers.map((u) => {
                                 const lastSeen = formatLastSeen(u.lastActive);
+                                const dailyTime = getDailyWatchTime(u);
                                 
                                 return (
                                 <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-lg p-3 flex items-center justify-between">
-                                    <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         {/* Avatar with Status Dot */}
                                         <div className="relative w-10 h-10 flex-shrink-0">
                                             <div className="w-10 h-10 rounded-full bg-[#333] overflow-hidden">
@@ -176,32 +194,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                             <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1a1a1a] ${lastSeen.isOnline ? 'bg-green-500' : 'bg-gray-600'}`}></div>
                                         </div>
 
-                                        <div className="flex flex-col min-w-0">
+                                        <div className="flex flex-col min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-white font-bold text-sm truncate">{u.profile?.first_name} {u.profile?.last_name}</span>
                                                 {u.isBanned && (
                                                     <span className="px-1.5 py-0.5 bg-red-900/50 text-red-500 text-[10px] font-bold rounded uppercase border border-red-900">BANNED</span>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            
+                                            {/* Info Badges */}
+                                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                {/* Last Seen */}
                                                 <span className={`text-[10px] font-medium ${lastSeen.color}`}>
                                                     {lastSeen.text}
                                                 </span>
+                                            </div>
+                                            
+                                            {/* Tickets & Watch Time (New Row) */}
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                {/* Daily Watch Time */}
+                                                <div className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span className="font-bold">{dailyTime} today</span>
+                                                </div>
+
+                                                {/* Total Tickets */}
                                                 {u.tickets > 0 && (
-                                                    <span className="text-[10px] text-yellow-500 flex items-center gap-0.5">
+                                                    <div className="flex items-center gap-1 text-[10px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
                                                         <Ticket className="w-3 h-3" />
-                                                        {u.tickets.toFixed(1)}
-                                                    </span>
+                                                        <span className="font-bold">{u.tickets.toFixed(1)}</span>
+                                                    </div>
                                                 )}
                                             </div>
-                                            <span className="text-gray-600 text-[10px] font-mono">ID: {u.id}</span>
+
+                                            <span className="text-gray-600 text-[9px] font-mono mt-0.5 opacity-50">ID: {u.id}</span>
                                         </div>
                                     </div>
                                     
                                     <button
                                         onClick={() => handleToggleBan(u.id, u.isBanned)}
                                         className={`
-                                            p-2 rounded-lg transition-colors flex-shrink-0
+                                            ml-2 p-2 rounded-lg transition-colors flex-shrink-0
                                             ${u.isBanned 
                                                 ? 'bg-green-600/20 text-green-500 hover:bg-green-600/30' 
                                                 : 'bg-red-600/20 text-red-500 hover:bg-red-600/30'

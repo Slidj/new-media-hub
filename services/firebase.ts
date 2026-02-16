@@ -53,6 +53,7 @@ export const syncUser = async (user: WebAppUser) => {
         dislikedMovies: [], // Init dislikes
         watchHistory: [], 
         tickets: 0, // Init tickets
+        dailyStats: { date: new Date().toISOString().split('T')[0], watchedSeconds: 0 }, // Init stats
         isBanned: false, 
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
@@ -85,15 +86,33 @@ export const updateUserHeartbeat = async (userId: number) => {
     }
 };
 
-// REWARDS: Add Ticket Progress
-// 0.5 tickets per hour = 0.0416 per 5 mins.
+// REWARDS: Add Ticket Progress & Track Daily Stats
+// Called every 5 minutes (300 seconds)
 export const addWatchTimeReward = async (userId: number) => {
     try {
         const userRef = doc(db, "users", userId.toString());
-        // Increment by approx 0.042 (5 minutes worth of 0.5/hour)
-        await updateDoc(userRef, {
-            tickets: increment(0.042)
-        });
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            const today = new Date().toISOString().split('T')[0];
+            const currentStats = data.dailyStats || { date: '', watchedSeconds: 0 };
+            
+            let newSeconds = 300; // Start with 5 mins
+            
+            // If date matches, add to existing. If date mismatch (new day), it resets to 300.
+            if (currentStats.date === today) {
+                newSeconds = (currentStats.watchedSeconds || 0) + 300;
+            }
+
+            await updateDoc(userRef, {
+                tickets: increment(0.042), // 0.5 tickets per hour approx
+                dailyStats: {
+                    date: today,
+                    watchedSeconds: newSeconds
+                }
+            });
+        }
     } catch (e) {
         console.error("Error adding reward", e);
     }
