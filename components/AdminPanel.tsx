@@ -175,6 +175,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                             {filteredUsers.map((u) => {
                                 const lastSeen = formatLastSeen(u.lastActive);
                                 const dailyTime = getDailyWatchTime(u);
+                                const tickets = u.tickets !== undefined ? u.tickets : 0;
                                 
                                 return (
                                 <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-lg p-3 flex items-center justify-between">
@@ -218,13 +219,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                                     <span className="font-bold">{dailyTime} today</span>
                                                 </div>
 
-                                                {/* Total Tickets */}
-                                                {u.tickets > 0 && (
-                                                    <div className="flex items-center gap-1 text-[10px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
-                                                        <Ticket className="w-3 h-3" />
-                                                        <span className="font-bold">{u.tickets.toFixed(1)}</span>
-                                                    </div>
-                                                )}
+                                                {/* Total Tickets (Always Visible) */}
+                                                <div className="flex items-center gap-1 text-[10px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
+                                                    <Ticket className="w-3 h-3" />
+                                                    <span className="font-bold">{tickets.toFixed(2)}</span>
+                                                </div>
                                             </div>
 
                                             <span className="text-gray-600 text-[9px] font-mono mt-0.5 opacity-50">ID: {u.id}</span>
