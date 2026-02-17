@@ -306,30 +306,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="text-white font-bold text-base truncate pr-2">
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="text-white font-bold text-base truncate">
                                                     {u.profile?.first_name} {u.profile?.last_name}
                                                 </h4>
                                                 
                                                 {/* NEW: Telegram Username Display */}
                                                 {u.profile?.username && (
-                                                    <div className="text-[#3b82f6] text-xs font-medium mb-1">
+                                                    <div className="text-[#3b82f6] text-xs font-medium mb-1 truncate">
                                                         @{u.profile.username}
                                                     </div>
                                                 )}
 
                                                 {/* NEW: Explicit ID Box */}
                                                 <div className="inline-flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 mt-0.5 max-w-full">
-                                                    <span className="text-[10px] text-gray-500 font-mono">ID</span>
-                                                    <span className="text-[11px] text-gray-300 font-mono tracking-tight select-all">{u.id}</span>
+                                                    <span className="text-[10px] text-gray-500 font-mono flex-shrink-0">ID</span>
+                                                    <span className="text-[11px] text-gray-300 font-mono tracking-tight select-all truncate">{u.id}</span>
                                                 </div>
                                             </div>
 
                                             <button
                                                 onClick={() => handleToggleBan(u.id, u.isBanned)}
                                                 className={`
-                                                    p-2 rounded-lg transition-colors flex-shrink-0
+                                                    p-2 rounded-lg transition-colors flex-shrink-0 ml-1
                                                     ${u.isBanned 
                                                         ? 'bg-green-600/10 text-green-500 border border-green-600/30' 
                                                         : 'bg-red-600/10 text-red-500 border border-red-600/30'
