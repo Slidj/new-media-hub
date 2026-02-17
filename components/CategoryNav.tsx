@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Language, translations } from '../utils/translations';
+import { Haptics } from '../utils/haptics';
 
 export type Category = 'trending' | 'movies' | 'tv' | 'cartoons';
 
@@ -29,6 +30,11 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleCategoryClick = (id: Category) => {
+      Haptics.selection(); // Subtle tick
+      onSelectCategory(id);
+  };
+
   const categories: { id: Category; label: string }[] = [
     { id: 'trending', label: t.trending },
     { id: 'movies', label: t.movies },
@@ -52,7 +58,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                 {categories.map((cat, index) => (
                     <button
                         key={cat.id}
-                        onClick={() => onSelectCategory(cat.id)}
+                        onClick={() => handleCategoryClick(cat.id)}
                         className={`
                             opacity-0 animate-fade-in-up
                             whitespace-nowrap px-3 py-1.5 rounded-[4px] text-xs md:text-sm font-bold flex-shrink-0

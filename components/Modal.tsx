@@ -4,6 +4,7 @@ import { X, Play, Plus, Check, ThumbsUp, ThumbsDown, Share2, Youtube } from 'luc
 import { Movie, Cast, Video } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
+import { Haptics } from '../utils/haptics';
 
 interface ModalProps {
   movie: Movie | null;
@@ -78,13 +79,8 @@ export const Modal: React.FC<ModalProps> = ({
       let isMounted = true;
 
       // 2. FORCE ANIMATION START
-      // Increased delay to 80ms and added forced reflow to ensure browser 
-      // paints the initial "bottom" state before animating up.
       const timer = setTimeout(() => {
           if (containerRef.current) {
-              // FORCE REFLOW: Accessing offsetHeight forces the browser to calculate 
-              // the layout immediately, ensuring the 'translateY(100%)' is applied 
-              // before we switch it to '0'.
               void containerRef.current.offsetHeight;
           }
           requestAnimationFrame(() => {
@@ -126,7 +122,7 @@ export const Modal: React.FC<ModalProps> = ({
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
             tg.BackButton.show();
             tg.BackButton.onClick(handleClose);
-            tg.HapticFeedback.impactOccurred('light');
+            Haptics.light();
         }
       }
 
@@ -149,16 +145,18 @@ export const Modal: React.FC<ModalProps> = ({
   if (!movie) return null;
 
   const handleClose = () => {
+    Haptics.light(); // Light close
     setIsVisible(false);
-    // Wait for animation to finish before unmounting
     setTimeout(onClose, 500); 
   };
 
   const handlePlayClick = () => {
+    Haptics.heavy(); // Heavy Play
     onPlay(movie);
   };
   
   const handleRecommendationClick = (recMovie: Movie) => {
+      Haptics.medium(); // Medium selection
       if (onMovieSelect) {
           setIsVisible(false);
           setTimeout(() => onMovieSelect(recMovie), 300);
@@ -166,17 +164,14 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const handleTrailerClick = (videoKey: string) => {
+      Haptics.medium();
       setPlayingTrailerKey(videoKey);
   };
 
-  const triggerHaptic = () => {
-      if (window.Telegram?.WebApp) {
-          const tg = window.Telegram.WebApp;
-          if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
-             tg.HapticFeedback.impactOccurred('medium');
-          }
-      }
-  }
+  const handleTabChange = (tab: TabType) => {
+      Haptics.selection(); // Subtle selection tick
+      setActiveTab(tab);
+  };
 
   const isMobile = platform === 'ios' || platform === 'android' || platform === 'weba';
 
@@ -203,8 +198,6 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Card - Slide Up Animation */}
       <div 
         ref={containerRef}
-        // Using inline styles for transform guarantees the state change works,
-        // preventing the "pop-in" effect by forcing the browser to respect the 100% start.
         style={{
             transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
             transition: 'transform 500ms cubic-bezier(0.32, 0.72, 0, 1)'
@@ -217,10 +210,6 @@ export const Modal: React.FC<ModalProps> = ({
         `}
       >
         {/* Close Button */}
-        {/* 
-            UPDATED: top-16 (4rem / 64px) for mobile. 
-            Increased distance from top to ensure it doesn't touch system buttons (island/status bar).
-        */}
         <button 
           onClick={(e) => {
              e.stopPropagation();
@@ -240,30 +229,14 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Scroll Container */}
         <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
             
-            {/* 1. HERO IMAGE AREA - PROGRESSIVE LOADING */}
+            {/* HERO IMAGE AREA */}
             <div className="relative w-full bg-[#181818]">
-                
-                {/* 
-                   MOBILE IMAGE STRATEGY:
-                   1. Layer 1 (Bottom): "smallPosterUrl". 
-                      - Shown INSTANTLY. 
-                      - No blur (looks cleaner). 
-                      - Low res but valid visual context.
-                   2. Layer 2 (Top): "posterUrl". 
-                      - Loads asynchronously. 
-                      - Fades in (opacity 0 -> 100) once loaded.
-                      - Replaces the low-res image smoothly.
-                */}
                 <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#222]">
-                    
-                    {/* 1. Low Res (Instant) */}
                     <img 
                         src={movie.smallPosterUrl || movie.posterUrl}
                         alt=""
                         className="absolute inset-0 w-full h-full object-cover"
                     />
-
-                    {/* 2. High Res (Fade In) */}
                     <img 
                         src={movie.posterUrl}
                         alt={movie.title}
@@ -276,12 +249,9 @@ export const Modal: React.FC<ModalProps> = ({
                         decoding="async"
                         onLoad={() => setIsHighResLoaded(true)}
                     />
-                    
-                    {/* Gradient Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                 </div>
 
-                {/* DESKTOP IMAGE STRATEGY */}
                 <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
                     <img 
                         src={movie.smallPosterUrl}
@@ -300,18 +270,11 @@ export const Modal: React.FC<ModalProps> = ({
                     />
                     <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                 </div>
-
             </div>
 
-            {/* 2. CONTENT AREA */}
+            {/* CONTENT AREA */}
             <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32">
 
-                {/* Metadata & Buttons */}
-                {/* 
-                   UPDATED: delay-[550ms]
-                   Significantly increased delay. The content will now start appearing
-                   only AFTER the modal has fully settled (500ms slide animation).
-                */}
                 <div className={`
                      space-y-4 transition-all duration-700 delay-[550ms]
                      ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
@@ -340,18 +303,11 @@ export const Modal: React.FC<ModalProps> = ({
                         <div className="grid grid-cols-4 gap-3">
                             <button 
                                 onClick={() => {
-                                    triggerHaptic();
+                                    Haptics.light();
                                     onToggleList?.(movie);
                                 }}
                                 className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
                             >
-                                {/* 
-                                   ANIMATION LOGIC:
-                                   Two absolute divs centered on top of each other.
-                                   We animate opacity, scale, and rotation to create a smooth morph.
-                                */}
-                                
-                                {/* 1. PLUS ICON (Visible when NOT in list) */}
                                 <div className={`
                                     absolute inset-0 flex items-center justify-center 
                                     transition-all duration-300 ease-in-out
@@ -360,7 +316,6 @@ export const Modal: React.FC<ModalProps> = ({
                                     <Plus className="w-6 h-6" />
                                 </div>
 
-                                {/* 2. CHECK ICON (Visible when IN list) */}
                                 <div className={`
                                     absolute inset-0 flex items-center justify-center 
                                     transition-all duration-300 ease-in-out
@@ -372,7 +327,7 @@ export const Modal: React.FC<ModalProps> = ({
                             
                             <button 
                                 onClick={() => {
-                                    triggerHaptic();
+                                    Haptics.light();
                                     onToggleLike?.(movie);
                                 }}
                                 className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
@@ -382,7 +337,7 @@ export const Modal: React.FC<ModalProps> = ({
                             
                             <button 
                                 onClick={() => {
-                                    triggerHaptic();
+                                    Haptics.light();
                                     onToggleDislike?.(movie);
                                 }}
                                 className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
@@ -396,11 +351,6 @@ export const Modal: React.FC<ModalProps> = ({
                     </div>
                 </div>
 
-                {/* TABS (Standard Content) */}
-                {/* 
-                   UPDATED: delay-[750ms]
-                   Secondary content appears even later, creating a nice "cascade" effect.
-                */}
                 <div className={`
                     transition-all duration-700 delay-[750ms]
                     ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
@@ -408,19 +358,19 @@ export const Modal: React.FC<ModalProps> = ({
                     
                     <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
                         <button 
-                            onClick={() => setActiveTab('overview')}
+                            onClick={() => handleTabChange('overview')}
                             className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
                         >
                             {t.overview}
                         </button>
                         <button 
-                            onClick={() => setActiveTab('trailers')}
+                            onClick={() => handleTabChange('trailers')}
                             className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'trailers' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
                         >
                             {t.trailers}
                         </button>
                         <button 
-                            onClick={() => setActiveTab('more_like_this')}
+                            onClick={() => handleTabChange('more_like_this')}
                             className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'more_like_this' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
                         >
                             {t.moreLikeThis}
@@ -547,6 +497,7 @@ export const Modal: React.FC<ModalProps> = ({
                     onClick={(e) => {
                         e.stopPropagation();
                         setPlayingTrailerKey(null);
+                        Haptics.light();
                     }}
                     className="absolute top-20 right-6 p-2 bg-[#1a1a1a] text-white rounded-full hover:bg-[#333] transition z-50 group border border-white/10"
                 >

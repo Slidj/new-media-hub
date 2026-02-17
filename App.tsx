@@ -15,7 +15,7 @@ import { Player } from './components/Player';
 import { MoreMenu } from './components/MoreMenu'; 
 import { AdminPanel } from './components/AdminPanel'; 
 import { NotificationsView } from './components/NotificationsView'; 
-import { BannedView } from './components/BannedView'; // New
+import { BannedView } from './components/BannedView'; 
 import { Movie, WebAppUser, TabType, AppNotification } from './types';
 import { API } from './services/tmdb';
 import { 
@@ -28,11 +28,12 @@ import {
     subscribeToPersonalNotifications,
     subscribeToGlobalNotifications,
     deletePersonalNotification,
-    subscribeToUserBanStatus, // New
-    updateUserHeartbeat // New
+    subscribeToUserBanStatus, 
+    updateUserHeartbeat 
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
+import { Haptics } from './utils/haptics';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -131,15 +132,14 @@ function App() {
   const [likedMovies, setLikedMovies] = useState<string[]>([]);
   const [dislikedMovies, setDislikedMovies] = useState<string[]>([]);
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
-  const [tickets, setTickets] = useState(0); // Reward Tickets
+  const [tickets, setTickets] = useState(0); 
 
   // Notifications State
-  const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); // Raw mix
-  const [notifications, setNotifications] = useState<AppNotification[]>([]); // Processed with read state
+  const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); 
+  const [notifications, setNotifications] = useState<AppNotification[]>([]); 
   const [readGlobalIds, setReadGlobalIds] = useState<string[]>(() => {
       try { return JSON.parse(localStorage.getItem('read_global_ids') || '[]'); } catch { return []; }
   });
-  // New: Deleted Global IDs (Local Storage)
   const [deletedGlobalIds, setDeletedGlobalIds] = useState<string[]>(() => {
       try { return JSON.parse(localStorage.getItem('deleted_global_ids') || '[]'); } catch { return []; }
   });
@@ -193,8 +193,6 @@ function App() {
       }
     } else {
         // --- FALLBACK FOR BROWSER / GUEST ---
-        // If we are NOT in Telegram (or no initData), create a Guest User
-        // This ensures the database writes happen for testing.
         const guestId = parseInt(localStorage.getItem('guest_user_id') || '0') || Math.floor(Math.random() * 1000000) + 1000000;
         localStorage.setItem('guest_user_id', guestId.toString());
 
@@ -213,53 +211,40 @@ function App() {
   }, []);
 
   // HEARTBEAT EFFECT
-  // Updates user lastActive status every 2 minutes while app is open
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Initial heartbeat
     updateUserHeartbeat(user.id);
-
     const interval = setInterval(() => {
         updateUserHeartbeat(user.id);
     }, 120000); // 2 minutes
-
     return () => clearInterval(interval);
   }, [user]);
 
-
-  // Subscribe to Firebase Updates (Profile + Notifications + BAN STATUS)
+  // Subscribe to Firebase Updates
   useEffect(() => {
     if (!user?.id) return;
     
-    // 0. Ban Status (Real-time security)
     const unsubscribeBan = subscribeToUserBanStatus(user.id, (banned) => {
         setIsBanned(banned);
     });
 
-    // 1. User Data
     const unsubscribeUser = subscribeToUserData(user.id, (data) => {
       if (data.myList) setMyList(data.myList);
       if (data.likedMovies) setLikedMovies(data.likedMovies);
       if (data.dislikedMovies) setDislikedMovies(data.dislikedMovies);
       if (data.watchHistory) setWatchHistory(data.watchHistory);
-      // Update local ticket state
       if (data.tickets !== undefined) setTickets(data.tickets);
     });
 
-    // 2. Personal Notifications
     const unsubscribePersonalNotifs = subscribeToPersonalNotifications(user.id, (personalNotifs) => {
         setRawNotifications(prev => {
-             // Keep existing globals, replace personals
              const globalOnly = prev.filter(n => n.type === 'admin');
              return [...globalOnly, ...personalNotifs];
         });
     });
 
-    // 3. Global Notifications
     const unsubscribeGlobalNotifs = subscribeToGlobalNotifications((globalNotifs) => {
         setRawNotifications(prev => {
-            // Keep existing personals, replace globals
             const personalOnly = prev.filter(n => n.type !== 'admin');
             return [...personalOnly, ...globalNotifs];
         });
@@ -273,27 +258,18 @@ function App() {
     };
   }, [user]);
 
-  // Process Notifications (Merge with Local Read & Deleted State)
+  // Process Notifications
   useEffect(() => {
       const now = new Date();
-      
       const processed = rawNotifications
-          // 1. Filter out locally "deleted" globals AND FUTURE Reminders
           .filter(n => {
-              // Hide deleted global/admin notifications
               if (n.type === 'admin' && deletedGlobalIds.includes(n.id)) return false;
-              
-              // Hide future reminders (e.g. movie release dates that haven't happened yet)
               if (n.type === 'reminder') {
                   const notificationDate = new Date(n.date);
-                  // We check if the release date is in the future relative to now.
-                  // If release date > now, we hide it.
                   if (notificationDate > now) return false;
               }
-              
               return true;
           })
-          // 2. Map "read" state for globals
           .map(n => {
               if (n.type === 'admin' && readGlobalIds.includes(n.id)) {
                   return { ...n, isRead: true };
@@ -303,7 +279,6 @@ function App() {
           .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       const finalDisplay = processed.slice(0, 5);
-      
       setNotifications(finalDisplay);
       setUnreadCount(finalDisplay.filter(n => !n.isRead).length);
 
@@ -317,12 +292,10 @@ function App() {
 
   const handleDeleteNotification = async (notification: AppNotification) => {
       if (notification.type === 'admin') {
-          // Local Hide
           const newDeletedIds = [...deletedGlobalIds, notification.id];
           setDeletedGlobalIds(newDeletedIds);
           localStorage.setItem('deleted_global_ids', JSON.stringify(newDeletedIds));
       } else if (user?.id) {
-          // Firebase Delete
           await deletePersonalNotification(user.id, notification.id);
       }
   };
@@ -334,12 +307,11 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-
   const handleCategoryChange = useCallback((newCategory: Category) => {
     if (activeCategory === newCategory) return;
+    Haptics.selection(); // Selection feedback for category
     setActiveCategory(newCategory);
     setMovies([]); 
-    // Clear featured movie immediately to prevent showing old hero on new category (removes mismatch lag)
     setFeaturedMovie(null); 
     setPage(1); 
     setHasMore(true);
@@ -378,7 +350,6 @@ function App() {
         } else {
           setMovies(prev => {
             if (pageNum === 1) return newMovies;
-
             const existingIds = new Set(prev.map(m => m.id));
             const uniqueNew = newMovies.filter(m => !existingIds.has(m.id));
             return [...prev, ...uniqueNew];
@@ -389,17 +360,11 @@ function App() {
             const randomHero = newMovies[randomIndex]; 
             const isTv = randomHero.mediaType === 'tv';
             
-            // CRITICAL FIX: Removed the "Optimistic Update" (setFeaturedMovie(randomHero))
-            // We now wait for the clean assets to be fully ready before setting the Hero.
-            // This prevents the flicker where the text version shows up before the clean version.
-
-            // BACKGROUND FETCH: Logo + Clean Background Image
             const [logoUrl, cleanImages] = await Promise.all([
                 API.fetchMovieLogo(randomHero.id, isTv),
                 API.fetchCleanImages(randomHero.id, isTv ? 'tv' : 'movie')
             ]);
             
-            // Update hero ONCE with the final clean assets
             setFeaturedMovie({ 
                 ...randomHero, 
                 logoUrl,
@@ -422,31 +387,27 @@ function App() {
     }
   }, [page, lang, activeTab, activeCategory, loadMovies]);
 
-  // Infinite Scroll Logic (Optimized Threshold)
   useEffect(() => {
     if (activeTab !== 'home') return; 
-
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight;
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
-      
       if (scrollTop + clientHeight >= scrollHeight - 400 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, activeTab]);
 
   const handleMovieClick = useCallback((movie: Movie) => {
+    Haptics.medium(); // Medium feedback for movie selection
     setSelectedMovie(movie);
   }, []);
 
   const handlePlay = (movie: Movie) => {
       setPlayingMovie(movie);
-      // Record history when play starts
       if (user?.id) {
           addToHistory(user.id, movie);
       }
@@ -470,13 +431,10 @@ function App() {
     await toggleDislike(user.id, movie.id, isDisliked);
   };
 
-  // --- RENDERING ---
-
   if (showSplash) {
     return <Preloader />;
   }
 
-  // SECURITY CHECK: If user is banned, block entire app access
   if (isBanned) {
       return <BannedView lang={lang} />;
   }
@@ -513,13 +471,8 @@ function App() {
                     lang={lang}
                  />
             ) : (
-                // --- FIX: Skeleton Hero Placeholder ---
-                // Keeps the layout height reserved while Featured Movie is loading (or transitioning).
-                // Prevents the "cards jumping up" glitch.
                 <div className="relative h-[75vh] md:h-[90vh] w-full bg-black z-0">
-                   {/* Background placeholder */}
                    <div className="absolute inset-0 bg-[#0a0a0a]"></div>
-                   {/* Gradient matching Hero to blend smoothly */}
                    <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
                 </div>
             )}
@@ -614,12 +567,10 @@ function App() {
           onClose={() => setIsMoreMenuOpen(false)}
           lang={lang}
           user={user}
-          // Merge user ticket state into the object passed to menu if syncUser hasn't updated the reference fully yet
           userTickets={tickets} 
           onAdminClick={() => setIsAdminPanelOpen(true)}
       />
 
-      {/* Admin Panel Overlay */}
       {isAdminPanelOpen && (
           <AdminPanel 
              onClose={() => setIsAdminPanelOpen(false)}
@@ -627,7 +578,6 @@ function App() {
           />
       )}
 
-      {/* Notifications View Overlay */}
       {isNotificationsOpen && (
           <NotificationsView 
             notifications={notifications}

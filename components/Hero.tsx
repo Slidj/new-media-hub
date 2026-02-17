@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Info } from 'lucide-react';
 import { Movie } from '../types';
 import { Language, translations } from '../utils/translations';
+import { Haptics } from '../utils/haptics';
 
 interface HeroProps {
   movie: Movie;
@@ -19,6 +20,16 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   useEffect(() => {
     setLogoLoaded(false);
   }, [movie.id]);
+
+  const handlePlay = () => {
+      Haptics.heavy(); // Strong vibration for the main action
+      onPlay();
+  };
+
+  const handleMoreInfo = () => {
+      Haptics.medium(); // Medium vibration for opening details
+      onMoreInfo();
+  };
 
   return (
     <div className="relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden bg-black">
@@ -79,7 +90,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
             {/* Buttons Container - INCREASED Z-INDEX TO 30 TO ENSURE CLICKABILITY */}
             <div className="relative z-30 w-full px-6 md:px-12 flex items-center justify-center md:justify-start gap-3 md:gap-4 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <button 
-                onClick={onPlay}
+                onClick={handlePlay}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 transition active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.5)] max-w-[200px] md:max-w-none cursor-pointer"
               >
                 <Play className="w-6 h-6 md:w-8 md:h-8 fill-black" />
@@ -87,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
               </button>
               
               <button 
-                onClick={onMoreInfo}
+                onClick={handleMoreInfo}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition active:scale-95 backdrop-blur-md border border-white/10 max-w-[200px] md:max-w-none cursor-pointer"
               >
                 <Info className="w-6 h-6 md:w-8 md:h-8" />

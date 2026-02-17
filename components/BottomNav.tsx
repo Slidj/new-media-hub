@@ -3,6 +3,7 @@ import React from 'react';
 import { Home, Search, MonitorPlay, Plus, Menu } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { TabType } from '../types';
+import { Haptics } from '../utils/haptics';
 
 interface BottomNavProps {
   lang: Language;
@@ -14,23 +15,13 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChange, onMoreClick }) => {
   const t = translations[lang];
 
-  const triggerHaptic = () => {
-     // Check strict version for HapticFeedback support
-    if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred('light');
-      }
-    }
-  };
-
   const handleTabClick = (tab: TabType) => {
-    triggerHaptic();
+    Haptics.light(); // Light vibration for tab switching
     onTabChange(tab);
   };
 
   const handleMoreClick = () => {
-    triggerHaptic();
+    Haptics.light();
     onMoreClick();
   };
 
