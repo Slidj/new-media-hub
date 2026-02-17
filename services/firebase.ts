@@ -87,8 +87,8 @@ export const updateUserHeartbeat = async (userId: number) => {
 };
 
 // REWARDS: Add Ticket Progress & Track Daily Stats
-// Called every 5 minutes (300 seconds)
-export const addWatchTimeReward = async (userId: number) => {
+// Updated to accept variable duration (seconds)
+export const addWatchTimeReward = async (userId: number, secondsWatched: number = 60) => {
     try {
         const userRef = doc(db, "users", userId.toString());
         const userSnap = await getDoc(userRef);
@@ -98,15 +98,20 @@ export const addWatchTimeReward = async (userId: number) => {
             const today = new Date().toISOString().split('T')[0];
             const currentStats = data.dailyStats || { date: '', watchedSeconds: 0 };
             
-            let newSeconds = 300; // Start with 5 mins
+            let newSeconds = secondsWatched; 
             
-            // If date matches, add to existing. If date mismatch (new day), it resets to 300.
+            // If date matches, add to existing. If date mismatch (new day), it resets to new amount.
             if (currentStats.date === today) {
-                newSeconds = (currentStats.watchedSeconds || 0) + 300;
+                newSeconds = (currentStats.watchedSeconds || 0) + secondsWatched;
             }
 
+            // Calculation: 0.5 tickets per hour (3600s)
+            // Ticket per second = 0.5 / 3600 = 0.0001388
+            // For 60s: 0.00833
+            const ticketReward = (0.5 / 3600) * secondsWatched;
+
             await updateDoc(userRef, {
-                tickets: increment(0.042), // 0.5 tickets per hour approx
+                tickets: increment(ticketReward), 
                 dailyStats: {
                     date: today,
                     watchedSeconds: newSeconds

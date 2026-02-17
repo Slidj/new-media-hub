@@ -169,7 +169,7 @@ function App() {
   const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
+    if (window.Telegram?.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
@@ -179,10 +179,9 @@ function App() {
         tg.setBackgroundColor('#000000');
       }
 
-      const tgUser = tg.initDataUnsafe?.user;
+      const tgUser = tg.initDataUnsafe.user;
       if (tgUser) {
         setUser(tgUser);
-        // Sync user with Firebase immediately on load
         syncUser(tgUser);
 
         if (tgUser.language_code) {
@@ -191,18 +190,25 @@ function App() {
              setLang(detectedLang);
            }
         }
-      } else {
-        // Dev fallback
-        const devUser = {
-            id: 123456,
+      }
+    } else {
+        // --- FALLBACK FOR BROWSER / GUEST ---
+        // If we are NOT in Telegram (or no initData), create a Guest User
+        // This ensures the database writes happen for testing.
+        const guestId = parseInt(localStorage.getItem('guest_user_id') || '0') || Math.floor(Math.random() * 1000000) + 1000000;
+        localStorage.setItem('guest_user_id', guestId.toString());
+
+        const guestUser: WebAppUser = {
+            id: guestId,
             first_name: "Guest",
             last_name: "User",
-            username: "guest",
+            username: "browser_guest",
             photo_url: ""
         };
-        setUser(devUser);
-        syncUser(devUser);
-      }
+        
+        console.log("Running in Guest Mode with ID:", guestId);
+        setUser(guestUser);
+        syncUser(guestUser);
     }
   }, []);
 

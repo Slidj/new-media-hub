@@ -17,10 +17,9 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
 
   // Watch Time Tracking Refs
-  const accumulatedTimeRef = useRef(0); // Seconds watched since last sync
-  const lastSyncTimeRef = useRef(Date.now());
-  const timerRef = useRef<any>(null); // Use any to avoid NodeJS.Timeout namespace issues in browser
-  const isTabActiveRef = useRef(true); // Track visibility/focus
+  const accumulatedTimeRef = useRef(0); 
+  const timerRef = useRef<any>(null); 
+  const isTabActiveRef = useRef(true); 
 
   // Базовий URL CDN
   const BASE_PLAYER_URL = 'https://68865.svetacdn.in/lQRlkhufNdas';
@@ -34,8 +33,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             // Отримуємо IMDB ID, оскільки він надійніший для CDN, ніж TMDB ID
             const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
             
-            // Формуємо URL
-            // Пріоритет: IMDB ID -> TMDB ID
             if (imdbId) {
                 setEmbedUrl(`${BASE_PLAYER_URL}?imdb_id=${imdbId}`);
             } else {
@@ -43,26 +40,23 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             }
         } catch (e) {
             console.error("Failed to prepare player url", e);
-            // Fallback
             setEmbedUrl(`${BASE_PLAYER_URL}?tmdb_id=${movie.id}`);
         }
     };
 
     preparePlayer();
 
-    // Таймер для затемнення контролів (кнопки закриття)
     const dimTimer = setTimeout(() => {
       setIsControlsDimmed(true);
     }, 3000);
 
-    // Fail-safe таймер для лоадера
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
     }, 4000);
 
-    // --- REWARD SYSTEM & ANTI-CHEAT ---
+    // --- REWARD SYSTEM & TRACKING ---
     
-    // 1. Visibility Handler (Tab switching, Minimize)
+    // 1. Visibility Handler (Only stop if tab is switched/minimized)
     const handleVisibilityChange = () => {
         if (document.hidden) {
             isTabActiveRef.current = false;
@@ -71,28 +65,22 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         }
     };
 
-    // 2. Window Blur Handler (Alternative focus loss check)
-    const handleWindowBlur = () => { isTabActiveRef.current = false; };
-    const handleWindowFocus = () => { isTabActiveRef.current = true; };
-
+    // REMOVED: blur/focus listeners. 
+    // Clicking the iframe triggers 'blur' on the window, which was wrongly pausing the timer.
+    
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("focus", handleWindowFocus);
 
-    // 3. Main Tracking Loop
+    // 2. Main Tracking Loop
     if (userId) {
         timerRef.current = setInterval(() => {
-            // Only count if tab is active
+            // Only count if tab is visually active
             if (isTabActiveRef.current) {
-                accumulatedTimeRef.current += 1; // +1 second
-                
-                // Debug log (optional)
-                // console.log(`Watch time: ${accumulatedTimeRef.current}s`);
+                accumulatedTimeRef.current += 1; 
 
-                // Check if we reached 5 minutes (300 seconds)
-                if (accumulatedTimeRef.current >= 300) {
-                    // Send Reward!
-                    addWatchTimeReward(userId);
+                // CHANGED: Update every 60 seconds (1 minute) instead of 5 minutes
+                if (accumulatedTimeRef.current >= 60) {
+                    // Send Reward! (60 seconds)
+                    addWatchTimeReward(userId, 60);
                     // Reset accumulator
                     accumulatedTimeRef.current = 0;
                 }
@@ -107,16 +95,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       if (timerRef.current) clearInterval(timerRef.current);
       
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
-      window.removeEventListener("focus", handleWindowFocus);
     };
   }, [movie, userId]);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
-      {/* Кнопка закриття 
-          UPDATED: dynamic top position using safe-area + 60px to avoid system bars
-      */}
       <button 
         onClick={onClose}
         className={`
@@ -132,14 +115,12 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         <X className="w-8 h-8" />
       </button>
 
-      {/* Лоадер: показуємо поки вантажиться або URL ще не сформовано */}
       {(isLoading || !embedUrl) && (
         <div className="absolute inset-0 flex items-center justify-center z-0 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin" />
         </div>
       )}
 
-      {/* Iframe з плеєром */}
       {embedUrl && (
         <div className="w-full h-full relative z-10">
             <iframe
