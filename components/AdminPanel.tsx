@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
-    Menu, LayoutDashboard, ChevronRight, Copy, Trash2, RotateCcw
+    Menu, LayoutDashboard, ChevronRight, ChevronLeft, Trash2, RotateCcw
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount } from '../services/firebase';
@@ -31,11 +31,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userSearch, setUserSearch] = useState('');
+  
+  // PAGINATION STATE
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   // Initial Load
   useEffect(() => {
       loadUsers();
   }, []);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+      setCurrentPage(1);
+  }, [userSearch]);
 
   const loadUsers = async () => {
       setLoadingUsers(true);
@@ -112,6 +121,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       }
   };
 
+  // 1. Filter Users
   const filteredUsers = users.filter(u => {
       const search = userSearch.toLowerCase();
       const name = `${u.profile?.first_name} ${u.profile?.last_name || ''}`.toLowerCase();
@@ -119,6 +129,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       const id = u.id.toString();
       return name.includes(search) || username.includes(search) || id.includes(search);
   });
+
+  // 2. Paginate Logic
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const goToPage = (pageNum: number) => {
+      if (pageNum >= 1 && pageNum <= totalPages) {
+          setCurrentPage(pageNum);
+          // Optional: Scroll to top of list
+          const listTop = document.getElementById('user-list-top');
+          if (listTop) listTop.scrollIntoView({ behavior: 'smooth' });
+      }
+  };
 
   // HELPER: Format Last Seen Logic
   const formatLastSeen = (isoString?: string) => {
@@ -134,13 +158,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       if (isOnline) return { text: t.online, color: "text-green-500", isOnline: true };
 
       const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      // Logic:
-      // 0 days -> Today, HH:MM
-      // 1 day -> Yesterday, HH:MM
-      // 2-5 days -> X days ago
-      // 6-30 days -> Long ago
-      // > 30 days -> Month ago
 
       if (diffDays === 0) {
           return { text: `${t.today}, ${timeStr}`, color: "text-gray-300", isOnline: false };
@@ -321,7 +338,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
             {activeView === 'users' && (
                 <div className="space-y-4 animate-fade-in-up">
                     {/* Header with Search and Actions */}
-                    <div className="sticky top-0 z-10 bg-black pt-2 pb-4 space-y-3">
+                    <div className="sticky top-0 z-10 bg-black pt-2 pb-4 space-y-3" id="user-list-top">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <input 
@@ -364,14 +381,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                          </div>
                     ) : (
                         <div className="space-y-3 pb-20">
-                            {filteredUsers.map((u) => {
+                            {paginatedUsers.map((u) => {
                                 const lastSeen = formatLastSeen(u.lastActive);
                                 const dailyTime = getDailyWatchTime(u);
                                 const tickets = u.tickets !== undefined ? u.tickets : 0;
                                 const isGuest = u.profile?.username === 'browser_guest';
                                 
                                 return (
-                                <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-xl p-4 flex items-start gap-4 shadow-sm relative overflow-hidden">
+                                <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-xl p-4 flex items-start gap-4 shadow-sm relative overflow-hidden animate-fade-in-up">
                                     {/* Status Line */}
                                     <div className={`absolute left-0 top-0 bottom-0 w-1 ${u.isBanned ? 'bg-red-600' : 'bg-transparent'}`}></div>
 
@@ -456,6 +473,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                     </div>
                                 </div>
                             )})}
+
+                            {/* --- PAGINATION CONTROLS --- */}
+                            {filteredUsers.length > ITEMS_PER_PAGE && (
+                                <div className="flex justify-center items-center gap-4 mt-6 pt-4 border-t border-white/5">
+                                    <button 
+                                        onClick={() => goToPage(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className={`
+                                            p-2 rounded-lg border transition-all
+                                            ${currentPage === 1 
+                                                ? 'bg-[#1a1a1a] text-gray-600 border-white/5 cursor-not-allowed' 
+                                                : 'bg-[#222] text-white border-white/10 hover:bg-[#333]'
+                                            }
+                                        `}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+
+                                    <div className="text-sm font-bold text-gray-400">
+                                        <span className="text-white">{currentPage}</span>
+                                        <span className="mx-2 opacity-50">/</span>
+                                        <span>{totalPages}</span>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => goToPage(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className={`
+                                            p-2 rounded-lg border transition-all
+                                            ${currentPage === totalPages 
+                                                ? 'bg-[#1a1a1a] text-gray-600 border-white/5 cursor-not-allowed' 
+                                                : 'bg-[#222] text-white border-white/10 hover:bg-[#333]'
+                                            }
+                                        `}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            )}
+
                         </div>
                     )}
                 </div>
