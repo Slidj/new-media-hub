@@ -169,21 +169,27 @@ function App() {
   
   const isLoadingRef = useRef(false);
 
-  // AUDIO UNLOCK FOR MOBILE BROWSERS
+  // AUDIO UNLOCK FOR MOBILE BROWSERS - IMPROVED
   useEffect(() => {
       const unlockAudio = () => {
-          Audio.unlock();
-          // Remove listeners once unlocked
-          window.removeEventListener('click', unlockAudio);
-          window.removeEventListener('touchstart', unlockAudio);
+          // Attempt to unlock
+          Audio.unlock().then(() => {
+              // We only remove listeners if we are fairly sure interaction happened,
+              // but for safety in WebViews, we might keep them for a bit or rely on Audio.ts internals
+              // to handle repeated calls gracefully.
+              // For now, let's keep it simple: calling unlock multiple times is safe.
+          });
       };
 
-      window.addEventListener('click', unlockAudio);
-      window.addEventListener('touchstart', unlockAudio);
+      // Add listeners to 'mousedown' and 'touchstart' which are standard interaction events
+      document.addEventListener('click', unlockAudio);
+      document.addEventListener('touchstart', unlockAudio);
+      document.addEventListener('keydown', unlockAudio);
 
       return () => {
-          window.removeEventListener('click', unlockAudio);
-          window.removeEventListener('touchstart', unlockAudio);
+          document.removeEventListener('click', unlockAudio);
+          document.removeEventListener('touchstart', unlockAudio);
+          document.removeEventListener('keydown', unlockAudio);
       };
   }, []);
 
@@ -212,8 +218,6 @@ function App() {
       }
     } else {
         // --- FALLBACK FOR BROWSER / GUEST (STATIC DEV USER) ---
-        // Використовуємо фіксований ID 999999 для розробки.
-        // Це запобігає створенню дублікатів при кожному перезавантаженні.
         const STATIC_TEST_ID = 999999;
 
         const guestUser: WebAppUser = {
