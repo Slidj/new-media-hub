@@ -233,7 +233,19 @@ export const toggleUserBan = async (userId: string, isBanned: boolean) => {
     }
 };
 
-// 3. Real-time Listener for Ban Status (For the App)
+// 3. Delete User (Hard Delete)
+export const deleteUserAccount = async (userId: string) => {
+    try {
+        const userRef = doc(db, "users", userId);
+        await deleteDoc(userRef);
+        console.log(`User ${userId} deleted successfully.`);
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        throw error;
+    }
+};
+
+// 4. Real-time Listener for Ban Status (For the App)
 export const subscribeToUserBanStatus = (userId: number, onStatusChange: (isBanned: boolean) => void) => {
     const userRef = doc(db, "users", userId.toString());
     return onSnapshot(userRef, (doc) => {

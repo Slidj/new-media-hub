@@ -68,12 +68,14 @@ export const translations = {
     message: "Message",
     send: "Send",
     successSent: "Sent successfully!",
-    // Ban System
+    // Ban & Delete System
     accessRestricted: "Access Restricted",
     banMessage: "Your access to the application has been temporarily limited due to a received complaint.",
     banSubMessage: "Access will be restored after the review process is complete.",
     banAction: "Ban User",
     unbanAction: "Unban User",
+    deleteUser: "Delete User",
+    confirmDelete: "Are you sure you want to delete this user? This cannot be undone.",
     status: "Status",
     active: "Active",
     banned: "Banned"
@@ -143,12 +145,14 @@ export const translations = {
     message: "Повідомлення",
     send: "Надіслати",
     successSent: "Успішно надіслано!",
-    // Ban System
+    // Ban & Delete System
     accessRestricted: "Доступ Обмежено",
     banMessage: "Вам обмежений доступ до застосунку по причині подачі скарги на вас.",
     banSubMessage: "Доступ поновиться після перегляду скарги.",
     banAction: "Забанити",
     unbanAction: "Розбанити",
+    deleteUser: "Видалити",
+    confirmDelete: "Ви впевнені, що хочете видалити цього користувача? Це незворотньо.",
     status: "Статус",
     active: "Активний",
     banned: "Забанений"
@@ -218,12 +222,14 @@ export const translations = {
     message: "Сообщение",
     send: "Отправить",
     successSent: "Успешно отправлено!",
-    // Ban System
+    // Ban & Delete System
     accessRestricted: "Доступ Ограничен",
     banMessage: "Ваш доступ к приложению временно ограничен из-за поступившей жалобы.",
     banSubMessage: "Доступ будет восстановлен после рассмотрения жалобы.",
     banAction: "Забанить",
     unbanAction: "Разбанить",
+    deleteUser: "Удалить",
+    confirmDelete: "Вы уверены, что хотите удалить этого пользователя? Это необратимо.",
     status: "Статус",
     active: "Активен",
     banned: "Забанен"

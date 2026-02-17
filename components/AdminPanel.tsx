@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
-    Menu, LayoutDashboard, ChevronRight, Copy
+    Menu, LayoutDashboard, ChevronRight, Copy, Trash2
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
-import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan } from '../services/firebase';
+import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount } from '../services/firebase';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -51,6 +51,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       ));
       
       await toggleUserBan(userId, currentStatus);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+      if (!window.confirm(t.confirmDelete)) return;
+
+      try {
+          await deleteUserAccount(userId);
+          // Remove from local state
+          setUsers(prev => prev.filter(u => u.id !== userId));
+      } catch (e) {
+          console.error("Failed to delete user", e);
+          alert("Failed to delete user. Check console.");
+      }
   };
 
   const handleSend = async () => {
@@ -326,18 +339,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                                 </div>
                                             </div>
 
-                                            <button
-                                                onClick={() => handleToggleBan(u.id, u.isBanned)}
-                                                className={`
-                                                    p-2 rounded-lg transition-colors flex-shrink-0 ml-1
-                                                    ${u.isBanned 
-                                                        ? 'bg-green-600/10 text-green-500 border border-green-600/30' 
-                                                        : 'bg-red-600/10 text-red-500 border border-red-600/30'
-                                                    }
-                                                `}
-                                            >
-                                                {u.isBanned ? <CheckCircle className="w-5 h-5" /> : <Ban className="w-5 h-5" />}
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleDeleteUser(u.id)}
+                                                    className="p-2 rounded-lg bg-red-600/10 text-red-500 border border-red-600/30 hover:bg-red-600/20 transition-colors flex-shrink-0"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleToggleBan(u.id, u.isBanned)}
+                                                    className={`
+                                                        p-2 rounded-lg transition-colors flex-shrink-0
+                                                        ${u.isBanned 
+                                                            ? 'bg-green-600/10 text-green-500 border border-green-600/30' 
+                                                            : 'bg-yellow-600/10 text-yellow-500 border border-yellow-600/30'
+                                                        }
+                                                    `}
+                                                >
+                                                    {u.isBanned ? <CheckCircle className="w-5 h-5" /> : <Ban className="w-5 h-5" />}
+                                                </button>
+                                            </div>
                                         </div>
                                         
                                         {/* Stats Row */}
