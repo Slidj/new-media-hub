@@ -137,7 +137,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                                 <Clock className="w-3 h-3" />
                                 <span>{formatDate(notif.date)}</span>
                                 {notif.type === 'admin' && (
-                                    <span className="px-1.5 py-0.5 rounded bg-[#E50914] text-white ml-auto">ADMIN</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-[#E50914] text-white ml-auto uppercase">{t.system}</span>
                                 )}
                             </div>
                         </div>
