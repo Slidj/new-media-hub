@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
-    Menu, LayoutDashboard, ChevronRight, Copy, Trash2
+    Menu, LayoutDashboard, ChevronRight, Copy, Trash2, RotateCcw
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount } from '../services/firebase';
@@ -63,6 +63,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       } catch (e) {
           console.error("Failed to delete user", e);
           alert("Failed to delete user. Check console.");
+      }
+  };
+
+  // NEW: Delete all Guest Users
+  const handleDeleteAllGuests = async () => {
+      const guestUsers = users.filter(u => u.profile?.username === 'browser_guest');
+      
+      if (guestUsers.length === 0) {
+          alert("No guest users found.");
+          return;
+      }
+
+      if (!window.confirm(`Are you sure you want to delete ${guestUsers.length} guest users?`)) return;
+
+      setLoadingUsers(true);
+      try {
+          // Execute all deletions in parallel
+          await Promise.all(guestUsers.map(u => deleteUserAccount(u.id)));
+          await loadUsers(); // Reload list
+      } catch (e) {
+          console.error("Bulk delete failed", e);
+      } finally {
+          setLoadingUsers(false);
       }
   };
 
@@ -137,7 +160,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   return (
     <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col h-full">
         
-        {/* HEADER - Increased Padding Top significantly to 90px + safe area */}
+        {/* HEADER */}
         <div className="bg-[#141414] border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+90px)] pb-4 flex items-center justify-between shrink-0 z-20">
             <div className="flex items-center gap-3">
                 <button 
@@ -171,7 +194,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                 fixed top-0 left-0 h-full w-[280px] bg-[#1a1a1a] z-40 border-r border-white/10 transform transition-transform duration-300 ease-out flex flex-col
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
-                {/* Sidebar Header - Increased Padding to match main header */}
+                {/* Sidebar Header */}
                 <div className="pt-[calc(env(safe-area-inset-top)+90px)] px-6 pb-6 border-b border-white/5">
                     <h3 className="text-2xl font-bebas text-white tracking-widest">MEDIA HUB <span className="text-[#E50914]">ADMIN</span></h3>
                 </div>
@@ -273,8 +296,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
             {/* --- USERS VIEW --- */}
             {activeView === 'users' && (
                 <div className="space-y-4 animate-fade-in-up">
-                    {/* Search */}
-                    <div className="sticky top-0 z-10 bg-black pt-2 pb-4">
+                    {/* Header with Search and Actions */}
+                    <div className="sticky top-0 z-10 bg-black pt-2 pb-4 space-y-3">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <input 
@@ -284,6 +307,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                 value={userSearch}
                                 onChange={(e) => setUserSearch(e.target.value)}
                             />
+                        </div>
+                        
+                        <div className="flex justify-between items-center px-1">
+                             <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                                Total: {users.length}
+                             </div>
+                             
+                             <div className="flex gap-2">
+                                <button
+                                    onClick={loadUsers}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2a2a2a] rounded text-[10px] font-bold text-white border border-white/10 hover:bg-[#333]"
+                                >
+                                    <RotateCcw className="w-3 h-3" />
+                                    REFRESH
+                                </button>
+                                <button
+                                    onClick={handleDeleteAllGuests}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/20 rounded text-[10px] font-bold text-red-400 border border-red-900/30 hover:bg-red-900/40"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                    CLEAR GUESTS
+                                </button>
+                             </div>
                         </div>
                     </div>
 
@@ -298,6 +344,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                 const lastSeen = formatLastSeen(u.lastActive);
                                 const dailyTime = getDailyWatchTime(u);
                                 const tickets = u.tickets !== undefined ? u.tickets : 0;
+                                const isGuest = u.profile?.username === 'browser_guest';
                                 
                                 return (
                                 <div key={u.id} className="bg-[#1a1a1a] border border-white/5 rounded-xl p-4 flex items-start gap-4 shadow-sm relative overflow-hidden">
@@ -321,18 +368,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start gap-3">
                                             <div className="min-w-0 flex-1">
-                                                <h4 className="text-white font-bold text-base truncate">
-                                                    {u.profile?.first_name} {u.profile?.last_name}
-                                                </h4>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="text-white font-bold text-base truncate">
+                                                        {u.profile?.first_name} {u.profile?.last_name}
+                                                    </h4>
+                                                    {isGuest && (
+                                                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] font-bold rounded uppercase border border-blue-500/30">Guest</span>
+                                                    )}
+                                                </div>
                                                 
-                                                {/* NEW: Telegram Username Display */}
+                                                {/* Telegram Username */}
                                                 {u.profile?.username && (
                                                     <div className="text-[#3b82f6] text-xs font-medium mb-1 truncate">
                                                         @{u.profile.username}
                                                     </div>
                                                 )}
 
-                                                {/* NEW: Explicit ID Box */}
+                                                {/* ID Box */}
                                                 <div className="inline-flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 mt-0.5 max-w-full">
                                                     <span className="text-[10px] text-gray-500 font-mono flex-shrink-0">ID</span>
                                                     <span className="text-[11px] text-gray-300 font-mono tracking-tight select-all truncate">{u.id}</span>
