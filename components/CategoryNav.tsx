@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language, translations } from '../utils/translations';
 import { Haptics } from '../utils/haptics';
+import { Audio } from '../utils/audio';
 
 export type Category = 'trending' | 'movies' | 'tv' | 'cartoons';
 
@@ -31,7 +32,8 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
   }, []);
 
   const handleCategoryClick = (id: Category) => {
-      Haptics.selection(); // Subtle tick
+      Haptics.selection(); 
+      Audio.playClick(); // Sound
       onSelectCategory(id);
   };
 

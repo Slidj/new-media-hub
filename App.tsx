@@ -34,6 +34,7 @@ import {
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 import { Haptics } from './utils/haptics';
+import { Audio } from './utils/audio';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -309,7 +310,8 @@ function App() {
 
   const handleCategoryChange = useCallback((newCategory: Category) => {
     if (activeCategory === newCategory) return;
-    Haptics.selection(); // Selection feedback for category
+    Haptics.selection(); 
+    Audio.playClick(); // Sound on category change
     setActiveCategory(newCategory);
     setMovies([]); 
     setFeaturedMovie(null); 
@@ -402,7 +404,8 @@ function App() {
   }, [loading, hasMore, activeTab]);
 
   const handleMovieClick = useCallback((movie: Movie) => {
-    Haptics.medium(); // Medium feedback for movie selection
+    Haptics.medium(); 
+    Audio.playPop(); // Sound on movie click
     setSelectedMovie(movie);
   }, []);
 

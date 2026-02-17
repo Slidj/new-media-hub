@@ -4,6 +4,7 @@ import { Home, Search, MonitorPlay, Plus, Menu } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { TabType } from '../types';
 import { Haptics } from '../utils/haptics';
+import { Audio } from '../utils/audio';
 
 interface BottomNavProps {
   lang: Language;
@@ -16,12 +17,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
   const t = translations[lang];
 
   const handleTabClick = (tab: TabType) => {
-    Haptics.light(); // Light vibration for tab switching
+    Haptics.light();
+    Audio.playSwipe(); // Swipe/Whoosh sound for tab change
     onTabChange(tab);
   };
 
   const handleMoreClick = () => {
     Haptics.light();
+    Audio.playClick();
     onMoreClick();
   };
 

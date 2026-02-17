@@ -4,6 +4,7 @@ import { Play, Info } from 'lucide-react';
 import { Movie } from '../types';
 import { Language, translations } from '../utils/translations';
 import { Haptics } from '../utils/haptics';
+import { Audio } from '../utils/audio';
 
 interface HeroProps {
   movie: Movie;
@@ -22,12 +23,14 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   }, [movie.id]);
 
   const handlePlay = () => {
-      Haptics.heavy(); // Strong vibration for the main action
+      Haptics.heavy(); 
+      Audio.playAction(); // Deep bass sound
       onPlay();
   };
 
   const handleMoreInfo = () => {
-      Haptics.medium(); // Medium vibration for opening details
+      Haptics.medium();
+      Audio.playClick(); // Standard click
       onMoreInfo();
   };
 

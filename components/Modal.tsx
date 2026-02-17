@@ -5,6 +5,7 @@ import { Movie, Cast, Video } from '../types';
 import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
 import { Haptics } from '../utils/haptics';
+import { Audio } from '../utils/audio';
 
 interface ModalProps {
   movie: Movie | null;
@@ -145,18 +146,21 @@ export const Modal: React.FC<ModalProps> = ({
   if (!movie) return null;
 
   const handleClose = () => {
-    Haptics.light(); // Light close
+    Haptics.light(); 
+    Audio.playClick(); // Sound on close
     setIsVisible(false);
     setTimeout(onClose, 500); 
   };
 
   const handlePlayClick = () => {
-    Haptics.heavy(); // Heavy Play
+    Haptics.heavy(); 
+    Audio.playAction(); // Sound on play
     onPlay(movie);
   };
   
   const handleRecommendationClick = (recMovie: Movie) => {
-      Haptics.medium(); // Medium selection
+      Haptics.medium(); 
+      Audio.playPop(); // Sound on select
       if (onMovieSelect) {
           setIsVisible(false);
           setTimeout(() => onMovieSelect(recMovie), 300);
@@ -165,11 +169,13 @@ export const Modal: React.FC<ModalProps> = ({
 
   const handleTrailerClick = (videoKey: string) => {
       Haptics.medium();
+      Audio.playClick();
       setPlayingTrailerKey(videoKey);
   };
 
   const handleTabChange = (tab: TabType) => {
-      Haptics.selection(); // Subtle selection tick
+      Haptics.selection(); 
+      Audio.playClick();
       setActiveTab(tab);
   };
 
@@ -304,6 +310,7 @@ export const Modal: React.FC<ModalProps> = ({
                             <button 
                                 onClick={() => {
                                     Haptics.light();
+                                    Audio.playClick();
                                     onToggleList?.(movie);
                                 }}
                                 className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
@@ -328,6 +335,7 @@ export const Modal: React.FC<ModalProps> = ({
                             <button 
                                 onClick={() => {
                                     Haptics.light();
+                                    Audio.playClick();
                                     onToggleLike?.(movie);
                                 }}
                                 className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
@@ -338,6 +346,7 @@ export const Modal: React.FC<ModalProps> = ({
                             <button 
                                 onClick={() => {
                                     Haptics.light();
+                                    Audio.playClick();
                                     onToggleDislike?.(movie);
                                 }}
                                 className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
@@ -498,6 +507,7 @@ export const Modal: React.FC<ModalProps> = ({
                         e.stopPropagation();
                         setPlayingTrailerKey(null);
                         Haptics.light();
+                        Audio.playClick();
                     }}
                     className="absolute top-20 right-6 p-2 bg-[#1a1a1a] text-white rounded-full hover:bg-[#333] transition z-50 group border border-white/10"
                 >
