@@ -211,19 +211,20 @@ function App() {
         }
       }
     } else {
-        // --- FALLBACK FOR BROWSER / GUEST ---
-        const guestId = parseInt(localStorage.getItem('guest_user_id') || '0') || Math.floor(Math.random() * 1000000) + 1000000;
-        localStorage.setItem('guest_user_id', guestId.toString());
+        // --- FALLBACK FOR BROWSER / GUEST (STATIC DEV USER) ---
+        // Використовуємо фіксований ID 999999 для розробки.
+        // Це запобігає створенню дублікатів при кожному перезавантаженні.
+        const STATIC_TEST_ID = 999999;
 
         const guestUser: WebAppUser = {
-            id: guestId,
-            first_name: "Guest",
-            last_name: "User",
-            username: "browser_guest",
+            id: STATIC_TEST_ID,
+            first_name: "Dev",
+            last_name: "Tester",
+            username: "browser_admin",
             photo_url: ""
         };
         
-        console.log("Running in Guest Mode with ID:", guestId);
+        console.log("Running in Dev Mode with Fixed ID:", STATIC_TEST_ID);
         setUser(guestUser);
         syncUser(guestUser);
     }
