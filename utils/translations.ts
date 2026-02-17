@@ -78,7 +78,15 @@ export const translations = {
     confirmDelete: "Are you sure you want to delete this user? This cannot be undone.",
     status: "Status",
     active: "Active",
-    banned: "Banned"
+    banned: "Banned",
+    // Last Seen Statuses
+    online: "Online",
+    today: "Today",
+    yesterday: "Yesterday",
+    daysAgo: "days ago",
+    longAgo: "Long time ago",
+    monthAgo: "Month ago",
+    never: "Never"
   },
   uk: {
     home: "Головна",
@@ -155,7 +163,15 @@ export const translations = {
     confirmDelete: "Ви впевнені, що хочете видалити цього користувача? Це незворотньо.",
     status: "Статус",
     active: "Активний",
-    banned: "Забанений"
+    banned: "Забанений",
+    // Last Seen Statuses
+    online: "Онлайн",
+    today: "Сьогодні",
+    yesterday: "Вчора",
+    daysAgo: "днів тому",
+    longAgo: "Давно був",
+    monthAgo: "Місяць тому",
+    never: "Ніколи"
   },
   ru: {
     home: "Главная",
@@ -232,7 +248,15 @@ export const translations = {
     confirmDelete: "Вы уверены, что хотите удалить этого пользователя? Это необратимо.",
     status: "Статус",
     active: "Активен",
-    banned: "Забанен"
+    banned: "Забанен",
+    // Last Seen Statuses
+    online: "Онлайн",
+    today: "Сегодня",
+    yesterday: "Вчера",
+    daysAgo: "дней назад",
+    longAgo: "Давно был",
+    monthAgo: "Месяц назад",
+    never: "Никогда"
   }
 };
 

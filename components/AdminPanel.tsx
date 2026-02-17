@@ -120,21 +120,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       return name.includes(search) || username.includes(search) || id.includes(search);
   });
 
-  // HELPER: Format Last Seen
+  // HELPER: Format Last Seen Logic
   const formatLastSeen = (isoString?: string) => {
-      if (!isoString) return { text: "Never", color: "text-gray-500", isOnline: false };
+      if (!isoString) return { text: t.never, color: "text-gray-500", isOnline: false };
       
       const date = new Date(isoString);
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       
+      // Check for Online status (active within 3 mins)
       const isOnline = diffMs < 3 * 60 * 1000;
-      if (isOnline) return { text: "Online", color: "text-green-500", isOnline: true };
+      if (isOnline) return { text: t.online, color: "text-green-500", isOnline: true };
 
-      if (diffDays === 0) return { text: date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), color: "text-gray-400", isOnline: false };
-      if (diffDays === 1) return { text: "Yesterday", color: "text-gray-400", isOnline: false };
-      return { text: `${diffDays}d ago`, color: "text-gray-500", isOnline: false };
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Logic:
+      // 0 days -> Today, HH:MM
+      // 1 day -> Yesterday, HH:MM
+      // 2-5 days -> X days ago
+      // 6-30 days -> Long ago
+      // > 30 days -> Month ago
+
+      if (diffDays === 0) {
+          return { text: `${t.today}, ${timeStr}`, color: "text-gray-300", isOnline: false };
+      }
+      
+      if (diffDays === 1) {
+          return { text: `${t.yesterday}, ${timeStr}`, color: "text-gray-400", isOnline: false };
+      }
+
+      if (diffDays <= 5) {
+          return { text: `${diffDays} ${t.daysAgo}`, color: "text-gray-500", isOnline: false };
+      }
+
+      if (diffDays <= 30) {
+          return { text: t.longAgo, color: "text-gray-600", isOnline: false };
+      }
+
+      return { text: t.monthAgo, color: "text-gray-700", isOnline: false };
   };
 
   // HELPER: Get Daily Watch Time
