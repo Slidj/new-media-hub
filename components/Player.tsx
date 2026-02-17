@@ -113,14 +113,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   }, [movie, userId]);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
       {/* Кнопка закриття 
           UPDATED: dynamic top position using safe-area + 60px to avoid system bars
       */}
       <button 
         onClick={onClose}
         className={`
-            absolute right-6 z-[210] p-2.5 
+            absolute right-6 z-[9999] p-2.5 
             bg-black/40 text-white rounded-full backdrop-blur-md 
             border border-white/10 shadow-lg
             transition-all duration-700 ease-in-out
