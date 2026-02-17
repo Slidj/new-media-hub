@@ -124,8 +124,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   return (
     <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col h-full">
         
-        {/* HEADER */}
-        <div className="bg-[#141414] border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+16px)] pb-4 flex items-center justify-between shrink-0 z-20">
+        {/* HEADER - Increased Padding Top significantly */}
+        <div className="bg-[#141414] border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+50px)] pb-4 flex items-center justify-between shrink-0 z-20">
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setIsSidebarOpen(true)}
@@ -158,7 +158,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                 fixed top-0 left-0 h-full w-[280px] bg-[#1a1a1a] z-40 border-r border-white/10 transform transition-transform duration-300 ease-out flex flex-col
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
-                <div className="pt-[calc(env(safe-area-inset-top)+30px)] px-6 pb-6 border-b border-white/5">
+                {/* Sidebar Header - Increased Padding */}
+                <div className="pt-[calc(env(safe-area-inset-top)+60px)] px-6 pb-6 border-b border-white/5">
                     <h3 className="text-2xl font-bebas text-white tracking-widest">MEDIA HUB <span className="text-[#E50914]">ADMIN</span></h3>
                 </div>
 

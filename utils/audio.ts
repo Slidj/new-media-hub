@@ -6,7 +6,7 @@ class AudioController {
     private isMuted: boolean = false;
 
     constructor() {
-        // AudioContext is initialized lazily on first user interaction to comply with browser autoplay policies
+        // AudioContext is initialized lazily
     }
 
     private initContext() {
@@ -16,9 +16,13 @@ class AudioController {
                 this.context = new AudioContextClass();
             }
         }
-        // Resume context if suspended (common in browsers)
+    }
+
+    // Public method to unlock audio on first interaction (Click/Touch)
+    public unlock() {
+        this.initContext();
         if (this.context && this.context.state === 'suspended') {
-            this.context.resume();
+            this.context.resume().catch(e => console.debug("Audio unlock failed", e));
         }
     }
 
@@ -33,6 +37,12 @@ class AudioController {
         if (this.isMuted) return;
         this.initContext();
         if (!this.context) return;
+        
+        // Safety check: if context is still suspended, try to resume
+        if (this.context.state === 'suspended') {
+            this.context.resume().catch(() => {});
+            return; // Can't play if suspended
+        }
 
         const osc = this.context.createOscillator();
         const gain = this.context.createGain();
@@ -82,7 +92,7 @@ class AudioController {
     public playSuccess() {
         if (this.isMuted) return;
         this.initContext();
-        if (!this.context) return;
+        if (!this.context || this.context.state === 'suspended') return;
         
         // Simple major chord arpeggio
         const now = this.context.currentTime;

@@ -169,6 +169,24 @@ function App() {
   
   const isLoadingRef = useRef(false);
 
+  // AUDIO UNLOCK FOR MOBILE BROWSERS
+  useEffect(() => {
+      const unlockAudio = () => {
+          Audio.unlock();
+          // Remove listeners once unlocked
+          window.removeEventListener('click', unlockAudio);
+          window.removeEventListener('touchstart', unlockAudio);
+      };
+
+      window.addEventListener('click', unlockAudio);
+      window.addEventListener('touchstart', unlockAudio);
+
+      return () => {
+          window.removeEventListener('click', unlockAudio);
+          window.removeEventListener('touchstart', unlockAudio);
+      };
+  }, []);
+
   useEffect(() => {
     if (window.Telegram?.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
       const tg = window.Telegram.WebApp;
