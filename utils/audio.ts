@@ -77,12 +77,17 @@ class AudioController {
     }
 
     public playPop() {
-        // Used for movie cards in App.tsx -> User wants 'click.mp3' for movies
+        // Previously used 'pop' sound for movies, now user wants 'click' for movies
         this.playSound('click');
     }
 
     public playSwipe() {
-        // Used for tabs -> User wants 'click.mp3' for navigation
+        // Tabs navigation
+        this.playSound('click');
+    }
+
+    public playSuccess() {
+        // Success actions
         this.playSound('click');
     }
 
@@ -91,12 +96,7 @@ class AudioController {
         this.playSound('action');
     }
 
-    public playSuccess() {
-        // Success actions usually imply a completed state, sticking to click to be safe/consistent
-        this.playSound('click');
-    }
-
-    // 3. POP: Only for Notifications
+    // 3. POP: Only for Notifications center
     public playNotification() {
         this.playSound('pop');
     }
