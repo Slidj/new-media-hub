@@ -1,168 +1,101 @@
 
 
-// Web Audio API Controller for UI Sound Effects
-// Uses custom assets: /public/sounds/Tap.wav, /public/sounds/Play.wav, /public/sounds/Notification.wav
+// Audio Controller using actual files from public/sounds/
+// This ensures high-quality custom audio (no synthesis).
 
 class AudioController {
-    private context: AudioContext | null = null;
+    private sounds: Record<string, HTMLAudioElement> = {};
     private isMuted: boolean = false;
-    private masterGain: GainNode | null = null;
-
-    // Buffers to store loaded audio data
-    private tapBuffer: AudioBuffer | null = null;
-    private playBuffer: AudioBuffer | null = null;
-    private notificationBuffer: AudioBuffer | null = null; // New buffer
-    private areSoundsLoaded: boolean = false;
+    private initialized: boolean = false;
 
     constructor() {
-        // Lazy init
-    }
-
-    private initContext() {
-        if (!this.context) {
+        // We initialize lazily or on import, but we wrap in try-catch to be safe
+        if (typeof window !== 'undefined') {
             try {
-                // Support standard and WebKit (iOS) audio contexts
-                const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-                if (AudioContextClass) {
-                    this.context = new AudioContextClass();
-                    
-                    // Master Gain to control global volume
-                    this.masterGain = this.context.createGain();
-                    this.masterGain.gain.value = 1.0; 
-                    this.masterGain.connect(this.context.destination);
-                }
+                this.sounds = {
+                    click: new window.Audio('./sounds/click.mp3'),
+                    pop: new window.Audio('./sounds/pop.mp3'),
+                    action: new window.Audio('./sounds/action.mp3'),
+                };
+
+                // Pre-configure volume
+                Object.values(this.sounds).forEach(sound => {
+                    sound.volume = 0.6;
+                    // Preload if possible
+                    sound.load();
+                });
             } catch (e) {
-                console.error("Audio API not supported", e);
+                console.error("Audio initialization failed:", e);
             }
         }
     }
 
-    // Helper to fetch and decode audio files
-    private async loadAudioFile(filename: string): Promise<AudioBuffer | null> {
-        if (!this.context) return null;
-        
-        try {
-            // Get base URL from Vite env (handles './' or '/' correctly)
-            // Fix: Cast import.meta to any to avoid TS error "Property 'env' does not exist on type 'ImportMeta'"
-            const baseUrl = (import.meta as any).env.BASE_URL;
-            
-            // Construct path ensuring no double slashes
-            const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-            const url = `${cleanBase}${filename}`;
-
-            // Add timestamp to prevent stale 404 caching during dev
-            const fetchUrl = `${url}?v=${new Date().getTime()}`;
-
-            const response = await fetch(fetchUrl);
-            
-            if (!response.ok) {
-                return null;
-            }
-
-            const arrayBuffer = await response.arrayBuffer();
-            return await this.context.decodeAudioData(arrayBuffer);
-        } catch (error) {
-            return null;
-        }
-    }
-
-    // Critical: Call this on first user interaction (click/touch)
+    // Required for iOS/Mobile to "wake up" the audio engine
     public async unlock() {
-        this.initContext();
-        if (this.context) {
-            // 1. Resume Context if suspended (Browser Policy)
-            if (this.context.state === 'suspended') {
-                try {
-                    await this.context.resume();
-                } catch (e) {
-                    // console.debug("Audio resume failed", e);
-                }
-            }
-
-            // 2. Load Custom Sounds (if not loaded yet)
-            if (!this.areSoundsLoaded) {
-                // Pass path WITHOUT leading ./ or /
-                const [tap, play, notification] = await Promise.all([
-                    this.loadAudioFile('sounds/Tap.wav'),
-                    this.loadAudioFile('sounds/Play.wav'),
-                    this.loadAudioFile('sounds/Notification.wav') // Load new sound
-                ]);
-                
-                if (tap) this.tapBuffer = tap;
-                if (play) this.playBuffer = play;
-                if (notification) this.notificationBuffer = notification;
-                
-                if (tap || play || notification) {
-                    this.areSoundsLoaded = true;
-                }
-            }
-            
-            // 3. Play silent buffer to force iOS audio engine wake-up
-            try {
-                const buffer = this.context.createBuffer(1, 1, 22050);
-                const source = this.context.createBufferSource();
-                source.buffer = buffer;
-                source.connect(this.context.destination);
-                source.start(0);
-            } catch (e) {
-                // Ignore errors during silent unlock
-            }
-        }
-    }
-
-    private async ensureContext() {
-        if (!this.context) this.initContext();
-        if (this.context?.state === 'suspended') {
-            await this.context.resume().catch(() => {});
-        }
-    }
-
-    private async playBufferSource(buffer: AudioBuffer | null, volume: number = 1.0) {
-        if (this.isMuted || !buffer) return;
-        await this.ensureContext();
-        if (!this.context || !this.masterGain) return;
-
+        if (this.initialized) return;
+        
+        // Try to play and immediately pause one sound to unlock the context
         try {
-            const source = this.context.createBufferSource();
-            source.buffer = buffer;
-
-            const gainNode = this.context.createGain();
-            gainNode.gain.value = volume;
-
-            source.connect(gainNode);
-            gainNode.connect(this.masterGain);
-
-            source.start(0);
+            const silentPlay = this.sounds.click.play();
+            if (silentPlay !== undefined) {
+                silentPlay.then(() => {
+                    this.sounds.click.pause();
+                    this.sounds.click.currentTime = 0;
+                    this.initialized = true;
+                }).catch(() => {
+                    // Auto-play might be blocked, wait for next interaction
+                });
+            }
         } catch (e) {
-            // Ignore play errors
+            // Ignore unlock errors
         }
     }
 
-    // --- PUBLIC METHODS ---
+    private playSound(key: string) {
+        if (this.isMuted) return;
+        
+        const sound = this.sounds[key];
+        if (sound) {
+            try {
+                sound.currentTime = 0;
+                const playPromise = sound.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        // console.debug("Audio play blocked/failed:", error);
+                    });
+                }
+            } catch (e) {
+                // Ignore
+            }
+        }
+    }
+
+    // --- PUBLIC API MAPPED TO FILES ---
 
     public playClick() {
-        this.playBufferSource(this.tapBuffer, 1.0);
+        this.playSound('click');
     }
 
     public playPop() {
-        this.playBufferSource(this.tapBuffer, 1.0);
-    }
-
-    public playSwipe() {
-        this.playBufferSource(this.tapBuffer, 0.7); 
-    }
-
-    public playSuccess() {
-        this.playBufferSource(this.tapBuffer, 1.0);
+        this.playSound('pop');
     }
 
     public playAction() {
-        this.playBufferSource(this.playBuffer, 1.0);
+        this.playSound('action');
     }
 
-    // New method for Notification
+    public playSwipe() {
+        // Re-use click or pop for swipe
+        this.playSound('click');
+    }
+
+    public playSuccess() {
+        // Re-use action for success
+        this.playSound('action');
+    }
+
     public playNotification() {
-        this.playBufferSource(this.notificationBuffer, 0.8); // 80% volume usually enough for alerts
+        this.playSound('pop');
     }
 
     public toggleMute(muted: boolean) {

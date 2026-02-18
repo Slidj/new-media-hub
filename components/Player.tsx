@@ -21,7 +21,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // --- PLAYER CONFIGURATION ---
+  // --- PLAYER CONFIGURATION (STABLE) ---
   const NEW_PLAYER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
   const PLAYER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
 
@@ -31,26 +31,25 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID
+            // Отримуємо IMDB ID для точності
             const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
             const title = encodeURIComponent(movie.title);
 
             let params = `token=${PLAYER_TOKEN}`;
             
-            // Передаємо всі можливі варіанти ID, щоб балансер точно зрозумів, про який фільм йде мова
+            // --- PARAMETERS STRATEGY ---
+            // Передаємо максимум даних, щоб балансер точно знайшов відео
+            
             if (imdbId) {
-                params += `&imdb=${imdbId}`;     
-                params += `&imdb_id=${imdbId}`;  
+                params += `&imdb=${imdbId}`;      
+                params += `&imdb_id=${imdbId}`;   
             }
 
             params += `&tmdb=${movie.id}`;
             params += `&tmdb_id=${movie.id}`;
-            
-            // Назва як резервний варіант
             params += `&title=${title}`;
             params += `&name=${title}`;
             
-            // Тип контенту
             if (movie.mediaType === 'tv') {
                 params += `&type=tv_series`;
             } else {
@@ -63,7 +62,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             
         } catch (e) {
             console.error("Failed to prepare player url", e);
-            // Абсолютний резерв: тільки назва
+            // Резервний варіант - тільки назва
             const fallbackParams = `token=${PLAYER_TOKEN}&title=${encodeURIComponent(movie.title)}`;
             setEmbedUrl(`${NEW_PLAYER_BASE}?${fallbackParams}`);
         }
@@ -79,7 +78,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       setIsLoading(false);
     }, 4000);
 
-    // --- REWARD SYSTEM & TRACKING ---
+    // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
         if (document.hidden) {
             isTabActiveRef.current = false;
@@ -114,6 +113,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
+      {/* Close Button */}
       <button 
         onClick={onClose}
         className={`
@@ -129,12 +129,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         <X className="w-8 h-8" />
       </button>
 
+      {/* Loading State */}
       {(isLoading || !embedUrl) && (
         <div className="absolute inset-0 flex items-center justify-center z-0 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin" />
         </div>
       )}
 
+      {/* Iframe Player */}
       {embedUrl ? (
         <div className="w-full h-full relative z-10 bg-black">
             <iframe
