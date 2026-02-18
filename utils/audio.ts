@@ -67,10 +67,10 @@ class AudioController {
 
             // 2. Load Custom Sounds (if not loaded yet)
             if (!this.areSoundsLoaded) {
-                // Load in parallel - using ABSOLUTE paths to work on any route
+                // Load in parallel - using RELATIVE paths to work with base: './'
                 const [tap, play] = await Promise.all([
-                    this.loadAudioFile('/sounds/Tap.wav'),
-                    this.loadAudioFile('/sounds/Play.wav')
+                    this.loadAudioFile('./sounds/Tap.wav'),
+                    this.loadAudioFile('./sounds/Play.wav')
                 ]);
                 
                 if (tap) this.tapBuffer = tap;
