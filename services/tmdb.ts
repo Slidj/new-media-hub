@@ -104,8 +104,12 @@ export const fetchTrending = async (page: number = 1, language: string = 'en-US'
 // REPLACED: Fetch Upcoming (Smart Netflix-Style Hype List)
 export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
   try {
+    // FIX: Use LOCAL time to get the correct "today" date string, not UTC.
+    // This prevents "yesterday" issues in timezones ahead of UTC (like Ukraine).
     const todayDate = new Date();
-    const todayStr = todayDate.toISOString().split('T')[0];
+    const offset = todayDate.getTimezoneOffset();
+    const localDate = new Date(todayDate.getTime() - (offset*60*1000));
+    const todayStr = localDate.toISOString().split('T')[0];
     
     // Look ahead 6 months to find the REAL hits
     const futureDate = new Date();

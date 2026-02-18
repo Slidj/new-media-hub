@@ -36,7 +36,22 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                 const allMovies = [...page1, ...page2, ...page3];
                 const uniqueMovies = Array.from(new Map(allMovies.map(m => [m.id, m])).values());
                 
-                const sortedMovies = uniqueMovies.sort((a, b) => {
+                // STRICT CLIENT-SIDE FILTERING
+                // Ensure we do not show movies from yesterday, even if API returned them
+                const now = new Date();
+                // Reset time to midnight to compare dates only (start of today)
+                now.setHours(0, 0, 0, 0);
+
+                const validMovies = uniqueMovies.filter(m => {
+                    if (!m.releaseDate) return false;
+                    const releaseDate = new Date(m.releaseDate);
+                    // Reset release date time to midnight for fair comparison
+                    releaseDate.setHours(0, 0, 0, 0);
+                    // Keep if release date is today or in future
+                    return releaseDate >= now;
+                });
+
+                const sortedMovies = validMovies.sort((a, b) => {
                     const dateA = new Date(a.releaseDate || '9999-12-31').getTime();
                     const dateB = new Date(b.releaseDate || '9999-12-31').getTime();
                     return dateA - dateB;
