@@ -35,15 +35,30 @@ class AudioController {
         }
     }
 
-    // Helper to fetch and decode audio files
+    // Helper to fetch and decode audio files with Fallback strategy
     private async loadAudioFile(url: string): Promise<AudioBuffer | null> {
         if (!this.context) return null;
+        
         try {
-            const response = await fetch(url);
+            // Attempt 1: Try path as provided (relative: ./sounds/...)
+            let response = await fetch(url);
+
+            // Attempt 2: If failed and path starts with '.', try removing dot (absolute: /sounds/...)
+            // This fixes localhost 404s while keeping production working
+            if (!response.ok && url.startsWith('.')) {
+                const fallbackUrl = url.substring(1); // converts ./sounds to /sounds
+                const fallbackResponse = await fetch(fallbackUrl);
+                if (fallbackResponse.ok) {
+                    response = fallbackResponse;
+                }
+            }
+
             if (!response.ok) {
-                console.warn(`Audio file missing: ${url} (Ensure it is in /public/sounds/)`);
+                // Only log warning if BOTH attempts fail
+                console.warn(`Audio asset not found: ${url} (checked relative and absolute)`);
                 return null;
             }
+
             const arrayBuffer = await response.arrayBuffer();
             return await this.context.decodeAudioData(arrayBuffer);
         } catch (error) {
@@ -78,7 +93,7 @@ class AudioController {
                 
                 if (tap || play) {
                     this.areSoundsLoaded = true;
-                    console.log("Audio assets loaded successfully");
+                    // console.log("Audio assets loaded successfully"); 
                 }
             }
             
@@ -120,7 +135,7 @@ class AudioController {
 
             source.start(0);
         } catch (e) {
-            console.error("Error playing sound buffer", e);
+            // console.error("Error playing sound buffer", e);
         }
     }
 
