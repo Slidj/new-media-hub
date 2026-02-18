@@ -21,8 +21,9 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // Базовий URL CDN
-  const BASE_PLAYER_URL = 'https://68865.svetacdn.in/lQRlkhufNdas';
+  // --- PLAYER CONFIGURATION ---
+  const NEW_PLAYER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
+  const PLAYER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
 
   useEffect(() => {
     // Блокуємо скрол на сторінці під час перегляду
@@ -30,17 +31,41 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID, оскільки він надійніший для CDN, ніж TMDB ID
+            // Отримуємо IMDB ID
             const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
+            const title = encodeURIComponent(movie.title);
+
+            let params = `token=${PLAYER_TOKEN}`;
             
+            // Передаємо всі можливі варіанти ID, щоб балансер точно зрозумів, про який фільм йде мова
             if (imdbId) {
-                setEmbedUrl(`${BASE_PLAYER_URL}?imdb_id=${imdbId}`);
-            } else {
-                setEmbedUrl(`${BASE_PLAYER_URL}?tmdb_id=${movie.id}`);
+                params += `&imdb=${imdbId}`;     
+                params += `&imdb_id=${imdbId}`;  
             }
+
+            params += `&tmdb=${movie.id}`;
+            params += `&tmdb_id=${movie.id}`;
+            
+            // Назва як резервний варіант
+            params += `&title=${title}`;
+            params += `&name=${title}`;
+            
+            // Тип контенту
+            if (movie.mediaType === 'tv') {
+                params += `&type=tv_series`;
+            } else {
+                params += `&type=movie`;
+            }
+
+            params += `&autoplay=1`;
+
+            setEmbedUrl(`${NEW_PLAYER_BASE}?${params}`);
+            
         } catch (e) {
             console.error("Failed to prepare player url", e);
-            setEmbedUrl(`${BASE_PLAYER_URL}?tmdb_id=${movie.id}`);
+            // Абсолютний резерв: тільки назва
+            const fallbackParams = `token=${PLAYER_TOKEN}&title=${encodeURIComponent(movie.title)}`;
+            setEmbedUrl(`${NEW_PLAYER_BASE}?${fallbackParams}`);
         }
     };
 
@@ -55,8 +80,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
     }, 4000);
 
     // --- REWARD SYSTEM & TRACKING ---
-    
-    // 1. Visibility Handler (Only stop if tab is switched/minimized)
     const handleVisibilityChange = () => {
         if (document.hidden) {
             isTabActiveRef.current = false;
@@ -65,23 +88,15 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         }
     };
 
-    // REMOVED: blur/focus listeners. 
-    // Clicking the iframe triggers 'blur' on the window, which was wrongly pausing the timer.
-    
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // 2. Main Tracking Loop
     if (userId) {
         timerRef.current = setInterval(() => {
-            // Only count if tab is visually active
             if (isTabActiveRef.current) {
                 accumulatedTimeRef.current += 1; 
-
-                // CHANGED: Update every 60 seconds (1 minute) instead of 5 minutes
+                // Reward every 60 seconds
                 if (accumulatedTimeRef.current >= 60) {
-                    // Send Reward! (60 seconds)
                     addWatchTimeReward(userId, 60);
-                    // Reset accumulator
                     accumulatedTimeRef.current = 0;
                 }
             }
@@ -93,7 +108,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       clearTimeout(dimTimer);
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
-      
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [movie, userId]);
@@ -121,8 +135,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         </div>
       )}
 
-      {embedUrl && (
-        <div className="w-full h-full relative z-10">
+      {embedUrl ? (
+        <div className="w-full h-full relative z-10 bg-black">
             <iframe
             src={embedUrl}
             title={movie.title}
@@ -134,6 +148,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             referrerPolicy="origin"
             onLoad={() => setIsLoading(false)}
             />
+        </div>
+      ) : (
+        <div className="relative z-10 text-center px-6">
+            <p className="text-gray-400 mb-2">Video source unavailable.</p>
+            <button onClick={onClose} className="text-white underline">Close</button>
         </div>
       )}
     </div>
