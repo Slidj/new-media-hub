@@ -1,11 +1,16 @@
 
 // Web Audio API Controller for UI Sound Effects
-// Optimized for Telegram WebApp and Mobile Browsers
+// Uses custom assets: /public/sounds/Tap.wav and /public/sounds/Play.wav
 
 class AudioController {
     private context: AudioContext | null = null;
     private isMuted: boolean = false;
     private masterGain: GainNode | null = null;
+
+    // Buffers to store loaded audio data
+    private tapBuffer: AudioBuffer | null = null;
+    private playBuffer: AudioBuffer | null = null;
+    private areSoundsLoaded: boolean = false;
 
     constructor() {
         // Lazy init
@@ -21,7 +26,7 @@ class AudioController {
                     
                     // Master Gain to control global volume
                     this.masterGain = this.context.createGain();
-                    this.masterGain.gain.value = 0.5; // Default global volume (0.0 to 1.0)
+                    this.masterGain.gain.value = 1.0; // Max volume for custom files (controlled by file loudness)
                     this.masterGain.connect(this.context.destination);
                 }
             } catch (e) {
@@ -30,10 +35,25 @@ class AudioController {
         }
     }
 
+    // Helper to fetch and decode audio files
+    private async loadAudioFile(url: string): Promise<AudioBuffer | null> {
+        if (!this.context) return null;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            const arrayBuffer = await response.arrayBuffer();
+            return await this.context.decodeAudioData(arrayBuffer);
+        } catch (error) {
+            console.error(`Error loading sound ${url}:`, error);
+            return null;
+        }
+    }
+
     // Critical: Call this on first user interaction (click/touch)
     public async unlock() {
         this.initContext();
         if (this.context) {
+            // 1. Resume Context if suspended (Browser Policy)
             if (this.context.state === 'suspended') {
                 try {
                     await this.context.resume();
@@ -41,8 +61,21 @@ class AudioController {
                     console.debug("Audio resume failed", e);
                 }
             }
+
+            // 2. Load Custom Sounds (if not loaded yet)
+            if (!this.areSoundsLoaded) {
+                // Load in parallel
+                const [tap, play] = await Promise.all([
+                    this.loadAudioFile('./sounds/Tap.wav'),
+                    this.loadAudioFile('./sounds/Play.wav')
+                ]);
+                this.tapBuffer = tap;
+                this.playBuffer = play;
+                this.areSoundsLoaded = true;
+                console.log("Audio assets loaded");
+            }
             
-            // Play a silent buffer to forcing the audio engine to wake up on iOS
+            // 3. Play silent buffer to force iOS audio engine wake-up
             const buffer = this.context.createBuffer(1, 1, 22050);
             const source = this.context.createBufferSource();
             source.buffer = buffer;
@@ -58,106 +91,53 @@ class AudioController {
         }
     }
 
-    private async playTone(
-        freq: number, 
-        type: OscillatorType, 
-        duration: number, 
-        vol: number = 0.2, // Increased default volume
-        slideFreq: number | null = null
-    ) {
-        if (this.isMuted) return;
+    private async playBufferSource(buffer: AudioBuffer | null, volume: number = 1.0) {
+        if (this.isMuted || !buffer) return;
         await this.ensureContext();
         if (!this.context || !this.masterGain) return;
 
-        const osc = this.context.createOscillator();
-        const gain = this.context.createGain();
+        try {
+            const source = this.context.createBufferSource();
+            source.buffer = buffer;
 
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.context.currentTime);
-        
-        if (slideFreq) {
-            // Smooth frequency slide
-            osc.frequency.exponentialRampToValueAtTime(slideFreq, this.context.currentTime + duration);
+            // Optional: Individual volume control for this specific sound
+            const gainNode = this.context.createGain();
+            gainNode.gain.value = volume;
+
+            source.connect(gainNode);
+            gainNode.connect(this.masterGain);
+
+            source.start(0);
+        } catch (e) {
+            console.error("Error playing sound buffer", e);
         }
-
-        // Volume Envelope (Avoid clicks)
-        // Attack
-        gain.gain.setValueAtTime(0, this.context.currentTime);
-        gain.gain.linearRampToValueAtTime(vol, this.context.currentTime + 0.02); 
-        // Decay
-        gain.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + duration);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-
-        osc.start();
-        osc.stop(this.context.currentTime + duration);
-        
-        // Garbage collection helper
-        setTimeout(() => {
-            osc.disconnect();
-            gain.disconnect();
-        }, duration * 1000 + 100);
     }
 
-    // 1. Navigation Click (Tabs, Close, Back) - Crisp, audible high pitch
+    // --- PUBLIC METHODS MAPPED TO FILES ---
+
+    // 1. General Interaction (Tabs, Close, Back, Info) -> Tap.wav
     public playClick() {
-        // Increased duration and volume
-        this.playTone(800, 'sine', 0.15, 0.2);
+        this.playBufferSource(this.tapBuffer, 0.8);
     }
 
-    // 2. Selection Pop (Movie Card) - Bubbly sound
+    // 2. Selection (Movie Card) -> Tap.wav
     public playPop() {
-        this.playTone(400, 'triangle', 0.15, 0.2);
+        this.playBufferSource(this.tapBuffer, 0.8);
     }
 
-    // 3. Tab Switch / Swipe - "Whoosh" effect
+    // 3. Navigation/Swipe -> Tap.wav
     public playSwipe() {
-        this.playTone(300, 'sine', 0.2, 0.15, 600);
+        this.playBufferSource(this.tapBuffer, 0.6); // Slightly quieter for rapid swipes
     }
 
-    // 4. Heavy Action (PLAY / Netflix "Ta-dum" simulation)
-    public async playAction() {
-        if (this.isMuted) return;
-        await this.ensureContext();
-        if (!this.context || !this.masterGain) return;
-
-        const now = this.context.currentTime;
-        
-        // Play a chord (Root + Fifth) deep bass
-        [55, 82.4].forEach(freq => {
-            const osc = this.context!.createOscillator();
-            const gain = this.context!.createGain();
-            
-            osc.type = 'sawtooth'; // Sawtooth for "richer" sound
-            osc.frequency.setValueAtTime(freq, now);
-            
-            // Percussive envelope
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.3, now + 0.05); // Hard attack
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8); // Long decay
-
-            // Lowpass filter to muffle the harsh sawtooth (makes it sound like a drum)
-            const filter = this.context!.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(800, now);
-            filter.frequency.exponentialRampToValueAtTime(100, now + 0.5);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.masterGain!);
-
-            osc.start();
-            osc.stop(now + 1.0);
-        });
-    }
-
-    // 5. Success / Notification
+    // 4. Success -> Tap.wav (or Play.wav if you prefer, but usually Tap)
     public playSuccess() {
-        if (this.isMuted) return;
-        // Simple major third
-        this.playTone(523.25, 'sine', 0.2, 0.1); // C5
-        setTimeout(() => this.playTone(659.25, 'sine', 0.4, 0.1), 100); // E5
+        this.playBufferSource(this.tapBuffer, 1.0);
+    }
+
+    // 5. Heavy Action (PLAY BUTTON) -> Play.wav
+    public playAction() {
+        this.playBufferSource(this.playBuffer, 1.0);
     }
 
     public toggleMute(muted: boolean) {
