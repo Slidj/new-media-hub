@@ -178,13 +178,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       return { text: t.monthAgo, color: "text-gray-700", isOnline: false };
   };
 
-  // HELPER: Get Daily Watch Time
-  const getDailyWatchTime = (user: any) => {
-    const today = new Date().toISOString().split('T')[0];
-    const stats = user.dailyStats;
-    if (!stats || stats.date !== today) return "0m";
-    
-    const seconds = stats.watchedSeconds || 0;
+  // HELPER: Get Total Watch Time (Formatted)
+  const formatTotalTime = (seconds: number) => {
+    if (!seconds) return "0m";
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     
@@ -383,7 +379,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                         <div className="space-y-3 pb-20">
                             {paginatedUsers.map((u) => {
                                 const lastSeen = formatLastSeen(u.lastActive);
-                                const dailyTime = getDailyWatchTime(u);
+                                const totalTime = formatTotalTime(u.totalWatchedSeconds);
                                 const tickets = u.tickets !== undefined ? u.tickets : 0;
                                 const isGuest = u.profile?.username === 'browser_guest';
                                 
@@ -464,7 +460,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                              <div className="w-px h-3 bg-white/20"></div>
                                              <div className="flex items-center gap-1.5">
                                                 <Clock className="w-3.5 h-3.5 text-blue-400" />
-                                                <span className="text-xs text-gray-300">{dailyTime}</span>
+                                                <span className="text-xs text-gray-300">{totalTime}</span>
                                              </div>
                                              <div className="ml-auto text-[10px] text-gray-500 font-medium">
                                                  {lastSeen.text}

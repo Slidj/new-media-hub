@@ -53,6 +53,7 @@ export const syncUser = async (user: WebAppUser) => {
         dislikedMovies: [], // Init dislikes
         watchHistory: [], 
         tickets: 0, // Init tickets
+        totalWatchedSeconds: 0, // Init TOTAL watch time tracking
         dailyStats: { date: new Date().toISOString().split('T')[0], watchedSeconds: 0 }, // Init stats
         isBanned: false, 
         createdAt: new Date().toISOString(),
@@ -86,7 +87,7 @@ export const updateUserHeartbeat = async (userId: number) => {
     }
 };
 
-// REWARDS: Add Ticket Progress & Track Daily Stats
+// REWARDS: Add Ticket Progress & Track Daily Stats AND Total Stats
 // Updated to accept variable duration (seconds)
 export const addWatchTimeReward = async (userId: number, secondsWatched: number = 60) => {
     try {
@@ -112,6 +113,7 @@ export const addWatchTimeReward = async (userId: number, secondsWatched: number 
 
             await updateDoc(userRef, {
                 tickets: increment(ticketReward), 
+                totalWatchedSeconds: increment(secondsWatched), // Always increment total history
                 dailyStats: {
                     date: today,
                     watchedSeconds: newSeconds
