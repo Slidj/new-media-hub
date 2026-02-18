@@ -1,4 +1,5 @@
 
+
 // Web Audio API Controller for UI Sound Effects
 // Uses custom assets: /public/sounds/Tap.wav and /public/sounds/Play.wav
 
@@ -26,7 +27,7 @@ class AudioController {
                     
                     // Master Gain to control global volume
                     this.masterGain = this.context.createGain();
-                    this.masterGain.gain.value = 1.0; // Max volume for custom files (controlled by file loudness)
+                    this.masterGain.gain.value = 1.0; 
                     this.masterGain.connect(this.context.destination);
                 }
             } catch (e) {
@@ -35,34 +36,35 @@ class AudioController {
         }
     }
 
-    // Helper to fetch and decode audio files with Fallback strategy
-    private async loadAudioFile(url: string): Promise<AudioBuffer | null> {
+    // Helper to fetch and decode audio files
+    private async loadAudioFile(filename: string): Promise<AudioBuffer | null> {
         if (!this.context) return null;
         
         try {
-            // Attempt 1: Try path as provided (relative: ./sounds/...)
-            let response = await fetch(url);
+            // Get base URL from Vite env (handles './' or '/' correctly)
+            // Fix: Cast import.meta to any to avoid TS error "Property 'env' does not exist on type 'ImportMeta'"
+            const baseUrl = (import.meta as any).env.BASE_URL;
+            
+            // Construct path ensuring no double slashes
+            // If baseUrl is './', path becomes './sounds/Tap.wav'
+            const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+            const url = `${cleanBase}${filename}`;
 
-            // Attempt 2: If failed and path starts with '.', try removing dot (absolute: /sounds/...)
-            // This fixes localhost 404s while keeping production working
-            if (!response.ok && url.startsWith('.')) {
-                const fallbackUrl = url.substring(1); // converts ./sounds to /sounds
-                const fallbackResponse = await fetch(fallbackUrl);
-                if (fallbackResponse.ok) {
-                    response = fallbackResponse;
-                }
-            }
+            // Add timestamp to prevent stale 404 caching during dev
+            const fetchUrl = `${url}?v=${new Date().getTime()}`;
 
+            const response = await fetch(fetchUrl);
+            
             if (!response.ok) {
-                // Only log warning if BOTH attempts fail
-                console.warn(`Audio asset not found: ${url} (checked relative and absolute)`);
+                // Silently fail in dev console to avoid noise, 
+                // knowing it might work in production or on second attempt
                 return null;
             }
 
             const arrayBuffer = await response.arrayBuffer();
             return await this.context.decodeAudioData(arrayBuffer);
         } catch (error) {
-            console.error(`Error loading sound ${url}:`, error);
+            // console.error(`Error loading sound ${filename}`, error);
             return null;
         }
     }
@@ -76,16 +78,17 @@ class AudioController {
                 try {
                     await this.context.resume();
                 } catch (e) {
-                    console.debug("Audio resume failed", e);
+                    // console.debug("Audio resume failed", e);
                 }
             }
 
             // 2. Load Custom Sounds (if not loaded yet)
             if (!this.areSoundsLoaded) {
-                // Load in parallel - using RELATIVE paths to work with base: './'
+                // Pass path WITHOUT leading ./ or /
+                // The loadAudioFile function prepends the correct BASE_URL
                 const [tap, play] = await Promise.all([
-                    this.loadAudioFile('./sounds/Tap.wav'),
-                    this.loadAudioFile('./sounds/Play.wav')
+                    this.loadAudioFile('sounds/Tap.wav'),
+                    this.loadAudioFile('sounds/Play.wav')
                 ]);
                 
                 if (tap) this.tapBuffer = tap;
@@ -93,7 +96,6 @@ class AudioController {
                 
                 if (tap || play) {
                     this.areSoundsLoaded = true;
-                    // console.log("Audio assets loaded successfully"); 
                 }
             }
             
@@ -126,7 +128,6 @@ class AudioController {
             const source = this.context.createBufferSource();
             source.buffer = buffer;
 
-            // Optional: Individual volume control for this specific sound
             const gainNode = this.context.createGain();
             gainNode.gain.value = volume;
 
@@ -135,38 +136,29 @@ class AudioController {
 
             source.start(0);
         } catch (e) {
-            // console.error("Error playing sound buffer", e);
+            // Ignore play errors
         }
     }
 
-    // --- PUBLIC METHODS MAPPED TO FILES ---
+    // --- PUBLIC METHODS ---
 
-    // 1. General Interaction (Tabs, Close, Back, Info) -> Tap.wav
     public playClick() {
-        // Use Tap.wav
         this.playBufferSource(this.tapBuffer, 1.0);
     }
 
-    // 2. Selection (Movie Card) -> Tap.wav
     public playPop() {
-        // Use Tap.wav
         this.playBufferSource(this.tapBuffer, 1.0);
     }
 
-    // 3. Navigation/Swipe -> Tap.wav
     public playSwipe() {
-        // Use Tap.wav, slightly quieter
         this.playBufferSource(this.tapBuffer, 0.7); 
     }
 
-    // 4. Success -> Tap.wav
     public playSuccess() {
         this.playBufferSource(this.tapBuffer, 1.0);
     }
 
-    // 5. Heavy Action (PLAY BUTTON) -> Play.wav
     public playAction() {
-        // Use Play.wav
         this.playBufferSource(this.playBuffer, 1.0);
     }
 
