@@ -40,7 +40,10 @@ class AudioController {
         if (!this.context) return null;
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            if (!response.ok) {
+                console.warn(`Audio file missing: ${url} (Ensure it is in /public/sounds/)`);
+                return null;
+            }
             const arrayBuffer = await response.arrayBuffer();
             return await this.context.decodeAudioData(arrayBuffer);
         } catch (error) {
@@ -64,23 +67,31 @@ class AudioController {
 
             // 2. Load Custom Sounds (if not loaded yet)
             if (!this.areSoundsLoaded) {
-                // Load in parallel
+                // Load in parallel - using ABSOLUTE paths to work on any route
                 const [tap, play] = await Promise.all([
-                    this.loadAudioFile('./sounds/Tap.wav'),
-                    this.loadAudioFile('./sounds/Play.wav')
+                    this.loadAudioFile('/sounds/Tap.wav'),
+                    this.loadAudioFile('/sounds/Play.wav')
                 ]);
-                this.tapBuffer = tap;
-                this.playBuffer = play;
-                this.areSoundsLoaded = true;
-                console.log("Audio assets loaded");
+                
+                if (tap) this.tapBuffer = tap;
+                if (play) this.playBuffer = play;
+                
+                if (tap || play) {
+                    this.areSoundsLoaded = true;
+                    console.log("Audio assets loaded successfully");
+                }
             }
             
             // 3. Play silent buffer to force iOS audio engine wake-up
-            const buffer = this.context.createBuffer(1, 1, 22050);
-            const source = this.context.createBufferSource();
-            source.buffer = buffer;
-            source.connect(this.context.destination);
-            source.start(0);
+            try {
+                const buffer = this.context.createBuffer(1, 1, 22050);
+                const source = this.context.createBufferSource();
+                source.buffer = buffer;
+                source.connect(this.context.destination);
+                source.start(0);
+            } catch (e) {
+                // Ignore errors during silent unlock
+            }
         }
     }
 
@@ -117,26 +128,30 @@ class AudioController {
 
     // 1. General Interaction (Tabs, Close, Back, Info) -> Tap.wav
     public playClick() {
-        this.playBufferSource(this.tapBuffer, 0.8);
+        // Use Tap.wav
+        this.playBufferSource(this.tapBuffer, 1.0);
     }
 
     // 2. Selection (Movie Card) -> Tap.wav
     public playPop() {
-        this.playBufferSource(this.tapBuffer, 0.8);
+        // Use Tap.wav
+        this.playBufferSource(this.tapBuffer, 1.0);
     }
 
     // 3. Navigation/Swipe -> Tap.wav
     public playSwipe() {
-        this.playBufferSource(this.tapBuffer, 0.6); // Slightly quieter for rapid swipes
+        // Use Tap.wav, slightly quieter
+        this.playBufferSource(this.tapBuffer, 0.7); 
     }
 
-    // 4. Success -> Tap.wav (or Play.wav if you prefer, but usually Tap)
+    // 4. Success -> Tap.wav
     public playSuccess() {
         this.playBufferSource(this.tapBuffer, 1.0);
     }
 
     // 5. Heavy Action (PLAY BUTTON) -> Play.wav
     public playAction() {
+        // Use Play.wav
         this.playBufferSource(this.playBuffer, 1.0);
     }
 
