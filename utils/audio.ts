@@ -1,7 +1,7 @@
 
 
 // Web Audio API Controller for UI Sound Effects
-// Uses custom assets: /public/sounds/Tap.wav and /public/sounds/Play.wav
+// Uses custom assets: /public/sounds/Tap.wav, /public/sounds/Play.wav, /public/sounds/Notification.wav
 
 class AudioController {
     private context: AudioContext | null = null;
@@ -11,6 +11,7 @@ class AudioController {
     // Buffers to store loaded audio data
     private tapBuffer: AudioBuffer | null = null;
     private playBuffer: AudioBuffer | null = null;
+    private notificationBuffer: AudioBuffer | null = null; // New buffer
     private areSoundsLoaded: boolean = false;
 
     constructor() {
@@ -46,7 +47,6 @@ class AudioController {
             const baseUrl = (import.meta as any).env.BASE_URL;
             
             // Construct path ensuring no double slashes
-            // If baseUrl is './', path becomes './sounds/Tap.wav'
             const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
             const url = `${cleanBase}${filename}`;
 
@@ -56,15 +56,12 @@ class AudioController {
             const response = await fetch(fetchUrl);
             
             if (!response.ok) {
-                // Silently fail in dev console to avoid noise, 
-                // knowing it might work in production or on second attempt
                 return null;
             }
 
             const arrayBuffer = await response.arrayBuffer();
             return await this.context.decodeAudioData(arrayBuffer);
         } catch (error) {
-            // console.error(`Error loading sound ${filename}`, error);
             return null;
         }
     }
@@ -85,16 +82,17 @@ class AudioController {
             // 2. Load Custom Sounds (if not loaded yet)
             if (!this.areSoundsLoaded) {
                 // Pass path WITHOUT leading ./ or /
-                // The loadAudioFile function prepends the correct BASE_URL
-                const [tap, play] = await Promise.all([
+                const [tap, play, notification] = await Promise.all([
                     this.loadAudioFile('sounds/Tap.wav'),
-                    this.loadAudioFile('sounds/Play.wav')
+                    this.loadAudioFile('sounds/Play.wav'),
+                    this.loadAudioFile('sounds/Notification.wav') // Load new sound
                 ]);
                 
                 if (tap) this.tapBuffer = tap;
                 if (play) this.playBuffer = play;
+                if (notification) this.notificationBuffer = notification;
                 
-                if (tap || play) {
+                if (tap || play || notification) {
                     this.areSoundsLoaded = true;
                 }
             }
@@ -160,6 +158,11 @@ class AudioController {
 
     public playAction() {
         this.playBufferSource(this.playBuffer, 1.0);
+    }
+
+    // New method for Notification
+    public playNotification() {
+        this.playBufferSource(this.notificationBuffer, 0.8); // 80% volume usually enough for alerts
     }
 
     public toggleMute(muted: boolean) {

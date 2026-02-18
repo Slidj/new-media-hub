@@ -1,4 +1,5 @@
 
+
 // Update: Main App Component Integration
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { Navbar } from './components/Navbar';
@@ -146,6 +147,9 @@ function App() {
   });
 
   const [unreadCount, setUnreadCount] = useState(0);
+  // Refs to track notifications for sound
+  const prevUnreadCountRef = useRef(0);
+  const isFirstNotificationLoadRef = useRef(true);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -282,7 +286,7 @@ function App() {
     };
   }, [user]);
 
-  // Process Notifications
+  // Process Notifications & Play Sound
   useEffect(() => {
       const now = new Date();
       const processed = rawNotifications
@@ -303,8 +307,25 @@ function App() {
           .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       const finalDisplay = processed.slice(0, 5);
+      const currentUnreadCount = finalDisplay.filter(n => !n.isRead).length;
+
       setNotifications(finalDisplay);
-      setUnreadCount(finalDisplay.filter(n => !n.isRead).length);
+      setUnreadCount(currentUnreadCount);
+
+      // --- SOUND LOGIC ---
+      // Check if this is the first load. If so, don't play sound (don't annoy user on startup).
+      if (isFirstNotificationLoadRef.current) {
+          isFirstNotificationLoadRef.current = false;
+      } else {
+          // If unread count INCREASED, play sound.
+          if (currentUnreadCount > prevUnreadCountRef.current) {
+              Audio.playNotification();
+              Haptics.success();
+          }
+      }
+
+      // Update ref for next comparison
+      prevUnreadCountRef.current = currentUnreadCount;
 
   }, [rawNotifications, readGlobalIds, deletedGlobalIds]);
 
