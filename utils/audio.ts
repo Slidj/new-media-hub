@@ -12,9 +12,9 @@ class AudioController {
         if (typeof window !== 'undefined') {
             try {
                 this.sounds = {
-                    click: new window.Audio('./sounds/click.mp3'),
-                    pop: new window.Audio('./sounds/pop.mp3'),
-                    action: new window.Audio('./sounds/action.mp3'),
+                    click: new window.Audio('sounds/click.mp3'),
+                    pop: new window.Audio('sounds/pop.mp3'),
+                    action: new window.Audio('sounds/action.mp3'),
                 };
 
                 // Pre-configure volume
