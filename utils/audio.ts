@@ -1,5 +1,4 @@
 
-
 // Audio Controller using actual files from public/sounds/
 // This ensures high-quality custom audio (no synthesis).
 
@@ -70,30 +69,34 @@ class AudioController {
         }
     }
 
-    // --- PUBLIC API MAPPED TO FILES ---
+    // --- PUBLIC API MAPPED TO SPECIFIC FILES ---
 
+    // 1. CLICK: General interactions, movies, tabs, closing
     public playClick() {
         this.playSound('click');
     }
 
     public playPop() {
-        this.playSound('pop');
+        // Used for movie cards in App.tsx -> User wants 'click.mp3' for movies
+        this.playSound('click');
     }
 
+    public playSwipe() {
+        // Used for tabs -> User wants 'click.mp3' for navigation
+        this.playSound('click');
+    }
+
+    // 2. ACTION: Only for "WATCH/PLAY" button
     public playAction() {
         this.playSound('action');
     }
 
-    public playSwipe() {
-        // Re-use click or pop for swipe
+    public playSuccess() {
+        // Success actions usually imply a completed state, sticking to click to be safe/consistent
         this.playSound('click');
     }
 
-    public playSuccess() {
-        // Re-use action for success
-        this.playSound('action');
-    }
-
+    // 3. POP: Only for Notifications
     public playNotification() {
         this.playSound('pop');
     }
