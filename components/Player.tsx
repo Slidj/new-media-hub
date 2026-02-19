@@ -123,7 +123,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             hover:bg-[#E50914] hover:opacity-100 hover:scale-110 active:opacity-100
             ${isControlsDimmed ? 'opacity-30' : 'opacity-100'}
         `}
-        style={{ top: 'calc(20px + env(safe-area-inset-top))' }}
+        style={{ top: 'calc(60px + env(safe-area-inset-top))' }}
       >
         <X className="w-8 h-8" />
       </button>
