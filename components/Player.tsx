@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Loader2, Server, MonitorPlay } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Movie } from '../types';
 import { API } from '../services/tmdb';
 import { addWatchTimeReward } from '../services/firebase';
@@ -15,7 +15,9 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
-  const [activeServer, setActiveServer] = useState<1 | 2>(1);
+  
+  // Active Server State (Fixed to 1 for now until Server 2 is verified)
+  const [activeServer] = useState<1 | 2>(1); 
 
   // Watch Time Tracking Refs
   const accumulatedTimeRef = useRef(0); 
@@ -28,7 +30,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
   // --- SERVER 2 CONFIGURATION (FlixCDN) ---
   // Format: https://player0.flixcdn.space/show/imdb/tt1234567
-  const SERVER_2_BASE = 'https://player0.flixcdn.space/show/imdb';
+  // const SERVER_2_BASE = 'https://player0.flixcdn.space/show/imdb';
 
   useEffect(() => {
     // Блокуємо скрол на сторінці під час перегляду
@@ -65,27 +67,21 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
                 setEmbedUrl(`${SERVER_1_BASE}?${params}`);
 
             } else {
-                // --- SERVER 2 LOGIC (FlixCDN) ---
-                // Doc: <iframe src="//player0.flixcdn.space/show/imdb/tt2719848" ...>
-                
+                // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
+                /*
                 if (imdbId) {
-                    // FlixCDN relies heavily on IMDb ID for this iframe format
                     setEmbedUrl(`${SERVER_2_BASE}/${imdbId}`);
                 } else {
-                    console.warn("FlixCDN requires IMDb ID, but none found. Switching to fallback or showing error.");
-                    // Fallback to Server 1 if no IMDb ID is available for FlixCDN
-                    // But for now, let's try to pass just the URL. If it fails, user can switch to Server 1.
                     setEmbedUrl(null); 
                 }
+                */
             }
             
         } catch (e) {
             console.error("Failed to prepare player url", e);
-            // Fallback just in case
-            if (activeServer === 1) {
-                const fallbackParams = `token=${SERVER_1_TOKEN}&title=${encodeURIComponent(movie.title)}`;
-                setEmbedUrl(`${SERVER_1_BASE}?${fallbackParams}`);
-            }
+            // Fallback
+            const fallbackParams = `token=${SERVER_1_TOKEN}&title=${encodeURIComponent(movie.title)}`;
+            setEmbedUrl(`${SERVER_1_BASE}?${fallbackParams}`);
         }
     };
 
@@ -95,7 +91,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       setIsControlsDimmed(true);
     }, 3000);
 
-    // Reset loading state slightly after URL is set to allow iframe to start request
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
@@ -133,57 +128,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
     };
   }, [movie, userId, activeServer]);
 
-  // Helper to handle server switch
-  const switchServer = (serverId: 1 | 2) => {
-      if (activeServer !== serverId) {
-          setEmbedUrl(null); // Clear URL to force reload visual
-          setActiveServer(serverId);
-      }
-  };
-
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
       
-      {/* SERVER SWITCHER (Top Center) - HIDDEN UNTIL VERIFICATION */}
-      {/* 
-      <div 
-        className={`
-            absolute top-6 left-1/2 -translate-x-1/2 z-[10000]
-            flex items-center gap-2 p-1 bg-black/60 backdrop-blur-md rounded-lg border border-white/10
-            transition-opacity duration-300
-            ${isControlsDimmed ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}
-        `}
-        style={{ top: 'calc(20px + env(safe-area-inset-top))' }}
-      >
-          <button 
-             onClick={() => switchServer(1)}
-             className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all
-                ${activeServer === 1 
-                    ? 'bg-[#E50914] text-white shadow-lg' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }
-             `}
-          >
-              <Server className="w-3 h-3" />
-              SERVER 1
-          </button>
-          <div className="w-px h-4 bg-white/20"></div>
-          <button 
-             onClick={() => switchServer(2)}
-             className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all
-                ${activeServer === 2 
-                    ? 'bg-[#E50914] text-white shadow-lg' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }
-             `}
-          >
-              <MonitorPlay className="w-3 h-3" />
-              SERVER 2
-          </button>
-      </div>
-      */}
+      {/* SERVER SWITCHER HIDDEN */}
 
       {/* Close Button */}
       <button 
@@ -206,11 +154,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
-             {activeServer === 2 && !embedUrl ? "Content ID missing for Server 2" : `Connecting to Server...`}
+             Connecting to Server...
           </p>
-          {activeServer === 2 && !embedUrl && (
-             <p className="text-gray-500 text-[10px] mt-2">Try switching to Server 1</p>
-          )}
         </div>
       )}
 
