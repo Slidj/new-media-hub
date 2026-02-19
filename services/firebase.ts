@@ -209,11 +209,12 @@ export const subscribeToUserData = (userId: number, onUpdate: (data: any) => voi
 
 // --- USER MANAGEMENT (ADMIN) ---
 
-// 1. Fetch All Users (Limited to last 50 active for performance)
+// 1. Fetch All Users (NO LIMIT - FETCH EVERYONE)
 export const getAllUsers = async (): Promise<any[]> => {
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, orderBy("lastActive", "desc"), limit(50));
+        // Removed limit(50) to ensure ALL users are displayed
+        const q = query(usersRef, orderBy("lastActive", "desc"));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({
             id: doc.id,
