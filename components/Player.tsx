@@ -21,13 +21,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // --- PLAYER CONFIGURATION (STABLE) ---
-  const NEW_PLAYER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
-  const PLAYER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
+  // --- SERVER CONFIGURATION (Ashdi/Rstprg) ---
+  const SERVER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
+  const SERVER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
 
   useEffect(() => {
     // Блокуємо скрол на сторінці під час перегляду
     document.body.style.overflow = 'hidden';
+    setIsLoading(true);
 
     const preparePlayer = async () => {
         try {
@@ -35,10 +36,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
             const title = encodeURIComponent(movie.title);
 
-            let params = `token=${PLAYER_TOKEN}`;
-            
-            // --- PARAMETERS STRATEGY ---
-            // Передаємо максимум даних, щоб балансер точно знайшов відео
+            let params = `token=${SERVER_TOKEN}`;
             
             if (imdbId) {
                 params += `&imdb=${imdbId}`;      
@@ -57,14 +55,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             }
 
             params += `&autoplay=1`;
-
-            setEmbedUrl(`${NEW_PLAYER_BASE}?${params}`);
+            setEmbedUrl(`${SERVER_BASE}?${params}`);
             
         } catch (e) {
             console.error("Failed to prepare player url", e);
-            // Резервний варіант - тільки назва
-            const fallbackParams = `token=${PLAYER_TOKEN}&title=${encodeURIComponent(movie.title)}`;
-            setEmbedUrl(`${NEW_PLAYER_BASE}?${fallbackParams}`);
+            // Fallback just in case
+            const fallbackParams = `token=${SERVER_TOKEN}&title=${encodeURIComponent(movie.title)}`;
+            setEmbedUrl(`${SERVER_BASE}?${fallbackParams}`);
         }
     };
 
@@ -74,9 +71,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       setIsControlsDimmed(true);
     }, 3000);
 
+    // Reset loading state slightly after URL is set to allow iframe to start request
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 4000);
+    }, 2000);
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
@@ -113,6 +111,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
+      
       {/* Close Button */}
       <button 
         onClick={onClose}
@@ -124,15 +123,18 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             hover:bg-[#E50914] hover:opacity-100 hover:scale-110 active:opacity-100
             ${isControlsDimmed ? 'opacity-30' : 'opacity-100'}
         `}
-        style={{ top: 'calc(60px + env(safe-area-inset-top))' }}
+        style={{ top: 'calc(20px + env(safe-area-inset-top))' }}
       >
         <X className="w-8 h-8" />
       </button>
 
       {/* Loading State */}
       {(isLoading || !embedUrl) && (
-        <div className="absolute inset-0 flex items-center justify-center z-0 bg-black">
-          <Loader2 className="w-12 h-12 text-[#E50914] animate-spin" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black">
+          <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
+          <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
+            Loading Player...
+          </p>
         </div>
       )}
 
