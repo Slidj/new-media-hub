@@ -34,9 +34,14 @@
               'splash-zoom': 'splash-zoom 2.5s cubic-bezier(0.645, 0.045, 0.355, 1) forwards',
               'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
               'slide-in-left': 'slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'bell-ring': 'bell-ring 4s ease-in-out infinite'
+              'bell-ring': 'bell-ring 4s ease-in-out infinite',
+              'shimmer': 'shimmer 2s infinite linear'
             },
             keyframes: {
+              shimmer: {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(100%)' }
+              },
               slideInLeft: {
                 '0%': { transform: 'translateX(-20px)', opacity: '0' },
                 '100%': { transform: 'translateX(0)', opacity: '1' }

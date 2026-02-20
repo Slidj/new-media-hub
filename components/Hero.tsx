@@ -16,10 +16,12 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) => {
   const t = translations[lang];
   const [logoLoaded, setLogoLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Reset animation state when movie changes
   useEffect(() => {
     setLogoLoaded(false);
+    setImageLoaded(false);
   }, [movie.id]);
 
   const handlePlay = () => {
@@ -37,20 +39,27 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   return (
     <div className="relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden bg-black">
       {/* Background Layer - Z-0 */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-[#1a1a1a]">
         
+        {/* Skeleton Loader Overlay */}
+        <div className={`absolute inset-0 z-10 transition-opacity duration-700 pointer-events-none ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
+            <div className="w-full h-full bg-gradient-to-r from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a] animate-shimmer"></div>
+        </div>
+
         {/* Mobile: Vertical Poster */}
         <img
           src={movie.posterUrl}
           alt={movie.title}
-          className="block md:hidden w-full h-full object-cover object-center"
+          onLoad={() => setImageLoaded(true)}
+          className={`block md:hidden w-full h-full object-cover object-center transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
 
         {/* Desktop: Horizontal Banner */}
         <img
           src={movie.bannerUrl}
           alt={movie.title}
-          className="hidden md:block w-full h-full object-cover object-top"
+          onLoad={() => setImageLoaded(true)}
+          className={`hidden md:block w-full h-full object-cover object-top transition-opacity duration-700 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
         />
         
         {/* General Dark Overlay */}

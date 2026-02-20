@@ -46,6 +46,7 @@ interface MovieCardProps {
 }
 
 const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProps) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
     const isTop10 = activeCategory === 'trending' && index < 10;
     const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
@@ -69,12 +70,18 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 "
                 onClick={() => onClick(movie)}
             >
+                {/* Skeleton Overlay */}
+                <div className={`absolute inset-0 z-10 bg-[#181818] transition-opacity duration-500 ${imageLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                    <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer"></div>
+                </div>
+
                 <img
                     src={movie.smallPosterUrl || movie.posterUrl}
-                    className="w-full h-full object-cover bg-[#222]"
+                    className={`w-full h-full object-cover bg-[#222] transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     alt={movie.title}
                     loading="lazy"
                     decoding="async"
+                    onLoad={() => setImageLoaded(true)}
                 />
                 
                 {isTop10 && (
