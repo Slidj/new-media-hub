@@ -70,8 +70,8 @@ export const syncUser = async (user: WebAppUser) => {
         lastActive: new Date().toISOString()
       });
     }
-  } catch (error) {
-    console.error("Error syncing user:", error);
+  } catch (error: any) {
+    console.error("Error syncing user:", error?.message || error);
   }
 };
 
@@ -120,8 +120,8 @@ export const addWatchTimeReward = async (userId: number, secondsWatched: number 
                 }
             });
         }
-    } catch (e) {
-        console.error("Error adding reward", e);
+    } catch (e: any) {
+        console.error("Error adding reward", e?.message || e);
     }
 };
 
@@ -142,8 +142,8 @@ export const toggleMyList = async (userId: number, movie: Movie, isInList: boole
         myList: arrayUnion(movie)
       });
     }
-  } catch (error) {
-    console.error("Error toggling list:", error);
+  } catch (error: any) {
+    console.error("Error toggling list:", error?.message || error);
   }
 };
 
@@ -161,8 +161,8 @@ export const addToHistory = async (userId: number, movie: Movie) => {
             }
             await updateDoc(userRef, { watchHistory: currentHistory });
         }
-    } catch (error) {
-        console.error("Error adding to history:", error);
+    } catch (error: any) {
+        console.error("Error adding to history:", error?.message || error);
     }
 };
 
@@ -177,8 +177,8 @@ export const toggleLike = async (userId: number, movieId: string, isLiked: boole
             dislikedMovies: arrayRemove(movieId)
         });
     }
-  } catch (error) {
-    console.error("Error toggling like:", error);
+  } catch (error: any) {
+    console.error("Error toggling like:", error?.message || error);
   }
 };
 
@@ -193,8 +193,8 @@ export const toggleDislike = async (userId: number, movieId: string, isDisliked:
             likedMovies: arrayRemove(movieId)
         });
     }
-  } catch (error) {
-    console.error("Error toggling dislike:", error);
+  } catch (error: any) {
+    console.error("Error toggling dislike:", error?.message || error);
   }
 };
 
@@ -204,6 +204,8 @@ export const subscribeToUserData = (userId: number, onUpdate: (data: any) => voi
     if (doc.exists()) {
       onUpdate(doc.data());
     }
+  }, (error) => {
+      console.error("Error subscribing to user data:", error?.message || "Unknown error");
   });
 };
 
@@ -220,8 +222,8 @@ export const getAllUsers = async (): Promise<any[]> => {
             id: doc.id,
             ...doc.data()
         }));
-    } catch (error) {
-        console.error("Error fetching users:", error);
+    } catch (error: any) {
+        console.error("Error fetching users:", error?.message || error);
         return [];
     }
 };
@@ -231,8 +233,8 @@ export const toggleUserBan = async (userId: string, isBanned: boolean) => {
     try {
         const userRef = doc(db, "users", userId);
         await updateDoc(userRef, { isBanned: !isBanned });
-    } catch (error) {
-        console.error("Error toggling ban:", error);
+    } catch (error: any) {
+        console.error("Error toggling ban:", error?.message || error);
     }
 };
 
@@ -242,8 +244,8 @@ export const deleteUserAccount = async (userId: string) => {
         const userRef = doc(db, "users", userId);
         await deleteDoc(userRef);
         console.log(`User ${userId} deleted successfully.`);
-    } catch (error) {
-        console.error("Error deleting user:", error);
+    } catch (error: any) {
+        console.error("Error deleting user:", error?.message || error);
         throw error;
     }
 };
@@ -257,6 +259,8 @@ export const subscribeToUserBanStatus = (userId: number, onStatusChange: (isBann
             const banned = doc.data().isBanned === true; 
             onStatusChange(banned);
         }
+    }, (error) => {
+        console.error("Error subscribing to ban status:", error?.message || "Unknown error");
     });
 };
 
@@ -368,6 +372,8 @@ export const subscribeToPersonalNotifications = (userId: number, onUpdate: (noti
 
         // Return current state (UI will update automatically when delete happens and snapshot fires again)
         onUpdate(notifs);
+    }, (error) => {
+        console.error("Error subscribing to personal notifications:", error?.message || "Unknown error");
     });
 };
 
@@ -384,6 +390,8 @@ export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotificatio
             isRead: false 
         } as AppNotification));
         onUpdate(notifs);
+    }, (error) => {
+        console.error("Error subscribing to global notifications:", error?.message || "Unknown error");
     });
 };
 
