@@ -1,5 +1,5 @@
 
-// Audio Controller using actual files from public/sounds/
+// Audio Controller using actual files from public/sfx/
 // This ensures high-quality custom audio (no synthesis).
 
 class AudioController {
@@ -12,9 +12,9 @@ class AudioController {
         if (typeof window !== 'undefined') {
             try {
                 this.sounds = {
-                    click: new window.Audio('sound/click.mp3'),
-                    pop: new window.Audio('sound/pop.mp3'),
-                    action: new window.Audio('sound/action.mp3'),
+                    click: new window.Audio('sfx/click.mp3'),
+                    pop: new window.Audio('sfx/pop.mp3'),
+                    action: new window.Audio('sfx/action.mp3'),
                 };
 
                 // Pre-configure volume

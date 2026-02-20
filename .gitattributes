@@ -1,3 +1,5 @@
 # Force mp3 files to be treated as standard binary files, disabling LFS
 *.mp3 binary
 *.mp3 -filter=lfs -diff=lfs -merge=lfs -text
+public/sfx/*.mp3 binary
+public/sfx/*.mp3 -filter=lfs -diff=lfs -merge=lfs -text
