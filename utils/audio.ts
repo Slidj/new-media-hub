@@ -1,6 +1,13 @@
 
-// Audio Controller using actual files from public/sfx/
-// This ensures high-quality custom audio (no synthesis).
+// Audio Controller using external URLs
+// This avoids local file corruption issues with Git LFS/Deployment.
+
+const SOUND_URLS = {
+    // Replace these with your direct links (Dropbox, GitHub Raw, etc.)
+    click: 'https://cdn.pixabay.com/audio/2022/03/15/audio_c8c8a73467.mp3', // Short click
+    pop: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c230d77d9e.mp3',   // Pop sound
+    action: 'https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3' // Success/Action chime
+};
 
 class AudioController {
     private sounds: Record<string, HTMLAudioElement> = {};
@@ -12,14 +19,15 @@ class AudioController {
         if (typeof window !== 'undefined') {
             try {
                 this.sounds = {
-                    click: new window.Audio('sfx/click.mp3'),
-                    pop: new window.Audio('sfx/pop.mp3'),
-                    action: new window.Audio('sfx/action.mp3'),
+                    click: new window.Audio(SOUND_URLS.click),
+                    pop: new window.Audio(SOUND_URLS.pop),
+                    action: new window.Audio(SOUND_URLS.action),
                 };
 
                 // Pre-configure volume
                 Object.values(this.sounds).forEach(sound => {
                     sound.volume = 0.6;
+                    sound.crossOrigin = "anonymous"; // Enable CORS for external audio
                     // Preload if possible
                     sound.load();
                 });
