@@ -4,9 +4,9 @@
 
 const SOUND_URLS = {
     // Replace these with your direct links (Dropbox, GitHub Raw, etc.)
-    click: 'https://cdn.pixabay.com/audio/2022/03/15/audio_c8c8a73467.mp3', // Short click
-    pop: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c230d77d9e.mp3',   // Pop sound
-    action: 'https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3' // Success/Action chime
+    click: 'https://slidj.github.io/sfx/click.mp3', // Short click
+    pop: 'https://slidj.github.io/sfx/pop.mp3',   // Pop sound
+    action: 'https://slidj.github.io/sfx/action.mp3' // Success/Action chime
 };
 
 class AudioController {
