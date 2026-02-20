@@ -125,3 +125,6 @@ dist
 # Vite
 dist-ssr
 *.local
+
+# User custom sounds
+public/sound/
