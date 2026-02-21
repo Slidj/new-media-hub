@@ -16,84 +16,53 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
   
-  // Active Server State (Fixed to 1 for now until Server 2 is verified)
-  const [activeServer] = useState<1 | 2>(1); 
-
   // Watch Time Tracking Refs
   const accumulatedTimeRef = useRef(0); 
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // --- SERVER 1 CONFIGURATION (Ashdi/Rstprg) ---
-  const SERVER_1_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
-  const SERVER_1_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
-
-  // --- SERVER 2 CONFIGURATION (VideoCDN / Kinoserial) - BACKUP ---
-  // const SERVER_VIDEOCDN_BASE = 'https://tv-1-kinoserial.net/embed';
-  // const SERVER_VIDEOCDN_TOKEN = '1a3ff41a822fc5be328b7c6a91b7f2fb';
-
-  // --- SERVER 3 CONFIGURATION (FlixCDN) ---
-  // Format: https://player0.flixcdn.space/show/imdb/tt1234567
-  // const SERVER_2_BASE = 'https://player0.flixcdn.space/show/imdb';
+  // --- SERVER CONFIGURATION ---
+  // Updated with the FULL token from the working example
+  const SERVER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
+  const SERVER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ3OS1hNDBjLTA2YTY0MTE0MzNhOSIsInNjb3BlIjoiRExFIn0.4PmKGf512P-ov-tEjwr3gfOVxccjx8SSt28slJXypYU';
 
   useEffect(() => {
-    // Блокуємо скрол на сторінці під час перегляду
+    // Lock scroll
     document.body.style.overflow = 'hidden';
     setIsLoading(true);
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо всі зовнішні ID
+            // Fetch external IDs (IMDB is key)
             const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
-            const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id;
             const imdbId = externalIds?.imdb_id;
             const title = encodeURIComponent(movie.title);
 
-            // --- SERVER 1 LOGIC (Ashdi) ---
-            const BASE_URL = 'https://api.rstprgapipt.com/balancer-api/iframe';
+            // Construct URL parameters
+            const params = new URLSearchParams();
+            params.append('token', SERVER_TOKEN);
             
-            let finalUrl = '';
-
-            // STRICT STRATEGY: Match the user's working link exactly
-            if (kpId) {
-                // If we have KP ID, send ONLY what is in the working example
-                const params = new URLSearchParams();
-                params.append('token', SERVER_1_TOKEN);
-                params.append('kp', kpId.toString());
-                params.append('autoplay', '1');
-                params.append('disabled_share', '1');
-                
-                finalUrl = `${BASE_URL}?${params.toString()}`;
-            } 
-            else if (imdbId) {
-                // Fallback to IMDB if no KP
-                const params = new URLSearchParams();
-                params.append('token', SERVER_1_TOKEN);
+            if (imdbId) {
                 params.append('imdb', imdbId);
-                params.append('autoplay', '1');
-                params.append('disabled_share', '1');
-                
-                finalUrl = `${BASE_URL}?${params.toString()}`;
-            }
-            else {
-                // Last resort: TMDB + Title
-                const params = new URLSearchParams();
-                params.append('token', SERVER_1_TOKEN);
-                params.append('tmdb', movie.id.toString());
-                params.append('title', movie.title);
-                params.append('autoplay', '1');
-                params.append('disabled_share', '1');
-                
-                finalUrl = `${BASE_URL}?${params.toString()}`;
             }
             
-            console.log("Generated Embed URL:", finalUrl);
+            params.append('tmdb', movie.id);
+            params.append('title', movie.title);
+            params.append('autoplay', '1');
+            params.append('disabled_share', '1'); // As per working example
+
+            const finalUrl = `${SERVER_BASE}?${params.toString()}`;
+            console.log("Player URL:", finalUrl);
+            
             setEmbedUrl(finalUrl);
             
         } catch (e) {
-            console.error("Failed to prepare player url", e);
-            // Fallback
-            setEmbedUrl(`${SERVER_1_BASE}?token=${SERVER_1_TOKEN}&title=${encodeURIComponent(movie.title)}`);
+            console.error("Error preparing player:", e);
+            // Fallback to just title search if IDs fail
+            const params = new URLSearchParams();
+            params.append('token', SERVER_TOKEN);
+            params.append('title', movie.title);
+            setEmbedUrl(`${SERVER_BASE}?${params.toString()}`);
         }
     };
 
@@ -103,10 +72,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       setIsControlsDimmed(true);
     }, 3000);
 
-    // Increase timeout to 10s to avoid flashing error state
+    // Timeout to hide loader if iframe takes too long (or fails silently)
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 10000);
+    }, 5000);
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
@@ -139,13 +108,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [movie, userId, activeServer]);
+  }, [movie, userId]);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
       
-      {/* SERVER SWITCHER HIDDEN */}
-
       {/* Close Button */}
       <button 
         onClick={onClose}
