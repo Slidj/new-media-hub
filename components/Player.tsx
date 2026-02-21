@@ -57,29 +57,42 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             // Базовий URL
             const BASE_URL = 'https://api.rstprgapipt.com/balancer-api/iframe';
             
-            // Формуємо параметри точно як у працюючому прикладі
-            let params = `token=${SERVER_1_TOKEN}`;
-            
-            // Пріоритет 1: Kinopoisk ID (як у прикладі користувача)
-            if (kpId) {
-                params += `&kp=${kpId}`;
-            }
-            
-            // Пріоритет 2: IMDB ID
-            if (imdbId) {
-                params += `&imdb=${imdbId}`;
-            }
+            let finalUrl = '';
 
-            // Пріоритет 3: TMDB ID (завжди є)
-            params += `&tmdb=${movie.id}`;
+            // Стратегія 1: Якщо є Kinopoisk ID (як у працюючому прикладі)
+            if (kpId) {
+                // Використовуємо мінімальний набір параметрів, який точно працює
+                const params = new URLSearchParams({
+                    token: SERVER_1_TOKEN,
+                    kp: kpId.toString(),
+                    autoplay: '1',
+                    disabled_share: '1' // Як у прикладі користувача
+                });
+                finalUrl = `${BASE_URL}?${params.toString()}`;
+            } 
+            // Стратегія 2: Якщо є IMDB ID
+            else if (imdbId) {
+                const params = new URLSearchParams({
+                    token: SERVER_1_TOKEN,
+                    imdb: imdbId,
+                    autoplay: '1',
+                    disabled_share: '1'
+                });
+                finalUrl = `${BASE_URL}?${params.toString()}`;
+            }
+            // Стратегія 3: Fallback на TMDB + Title
+            else {
+                const params = new URLSearchParams({
+                    token: SERVER_1_TOKEN,
+                    tmdb: movie.id.toString(),
+                    title: movie.title,
+                    autoplay: '1',
+                    disabled_share: '1'
+                });
+                finalUrl = `${BASE_URL}?${params.toString()}`;
+            }
             
-            // Додаткові параметри
-            params += `&title=${title}`;
-            params += `&autoplay=1`;
-            
-            const finalUrl = `${BASE_URL}?${params}`;
             console.log("Generated Embed URL:", finalUrl);
-            
             setEmbedUrl(finalUrl);
             
         } catch (e) {
@@ -155,7 +168,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
              Loading Player...
@@ -165,7 +178,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
       {/* Error State */}
       {!isLoading && !embedUrl && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black text-center px-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-black text-center px-6">
             <div className="text-[#E50914] text-5xl mb-4">:(</div>
             <h3 className="text-white text-xl font-bold mb-2">Video Not Found</h3>
             <p className="text-gray-400 text-sm max-w-md">
