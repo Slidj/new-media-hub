@@ -156,22 +156,22 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       </button>
 
       {/* Loading State */}
-      {isLoading && !embedUrl && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black">
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
-             Connecting to Server...
+             Loading Player...
           </p>
         </div>
       )}
 
       {/* Error State */}
       {!isLoading && !embedUrl && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black text-center px-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black text-center px-6">
             <div className="text-[#E50914] text-5xl mb-4">:(</div>
             <h3 className="text-white text-xl font-bold mb-2">Video Not Found</h3>
             <p className="text-gray-400 text-sm max-w-md">
-                We couldn't find this title on the server. It might be missing or blocked in your region.
+                We couldn't find this title. It might be missing or blocked.
             </p>
             <button 
                 onClick={onClose}
@@ -183,7 +183,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       )}
 
       {/* Iframe Player */}
-      {embedUrl ? (
+      {embedUrl && (
         <div className="w-full h-full relative z-10 bg-black">
             <iframe
             key={embedUrl}
@@ -198,7 +198,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             onLoad={() => setIsLoading(false)}
             />
         </div>
-      ) : null}
+      )}
     </div>
   );
 };
