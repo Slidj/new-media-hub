@@ -46,6 +46,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             // Отримуємо зовнішні ID (IMDB, Kinopoisk)
             const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
             const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id; 
+            const imdbId = externalIds?.imdb_id; // Restore IMDB ID
             const title = encodeURIComponent(movie.title);
 
             if (activeServer === 1) {
