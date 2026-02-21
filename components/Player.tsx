@@ -45,28 +45,29 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         try {
             // Отримуємо зовнішні ID (IMDB, Kinopoisk)
             const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
-            const imdbId = externalIds?.imdb_id;
-            
-            // Пріоритет за запитом користувача: IMDB -> TMDB -> Kinopoisk
-            // VideoCDN чудово працює з IMDB ID.
-            
-            let embedId = imdbId; 
-            
+            const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id; 
+            const title = encodeURIComponent(movie.title);
+
             if (activeServer === 1) {
                 // --- SERVER 1 LOGIC (VideoCDN / Kinoserial) ---
-                // Шаблон: https://tv-2-kinoserial.net/embed_auto/IMDB_ID/?token=ТОКЕН
-                // Або: https://tv-2-kinoserial.net/embed/IMDB_ID/?token=ТОКЕН
+                // ВАЖЛИВО: Вони підтвердили, що авто-підстановка працює ТІЛЬКИ з KP_ID (Kinopoisk ID).
+                // IMDB ID не підтримується в URL /embed/IMDB_ID.
+                // Тому ми мусимо використовувати KP_ID.
                 
-                const BASE_URL = 'https://tv-2-kinoserial.net/embed'; 
+                const BASE_URL = 'https://tv-1-kinoserial.net/embed'; 
                 
-                if (embedId) {
-                     // Використовуємо IMDB ID як найнадійніший міжнародний ідентифікатор
-                     setEmbedUrl(`${BASE_URL}/${embedId}/?token=${SERVER_1_TOKEN}&autoplay=1`);
+                if (kpId) {
+                     // Є KP_ID - ідеальний варіант
+                     setEmbedUrl(`${BASE_URL}/${kpId}?token=${SERVER_1_TOKEN}&autoplay=1`);
                 } else {
-                    // Fallback: TMDB ID (movie.id)
-                    // VideoCDN підтримує TMDB ID, якщо передати його в тому ж форматі
-                    console.warn("No IMDB ID found, using TMDB ID");
-                    setEmbedUrl(`${BASE_URL}/${movie.id}/?token=${SERVER_1_TOKEN}&autoplay=1`);
+                    // Немає KP_ID.
+                    // Оскільки IMDB ID не працює в embed, а API ми не можемо викликати (CORS),
+                    // єдиний шанс - пошук за назвою через їхній пошуковий параметр (якщо він працює в iframe)
+                    // Або спробувати передати назву як query param.
+                    
+                    console.warn("No Kinopoisk ID found for VideoCDN. IMDB not supported in embed.");
+                    // Спробуємо передати назву фільму. Деякі плеєри VideoCDN підтримують ?title=
+                    setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
                 }
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
