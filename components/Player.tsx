@@ -43,29 +43,30 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID для точності (VideoCDN найкраще працює з IMDB або Kinopoisk ID)
-            const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
-            const title = encodeURIComponent(movie.title);
-
+            // Отримуємо зовнішні ID (IMDB, Kinopoisk)
+            const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
+            const imdbId = externalIds?.imdb_id;
+            
+            // Пріоритет за запитом користувача: IMDB -> TMDB -> Kinopoisk
+            // VideoCDN чудово працює з IMDB ID.
+            
+            let embedId = imdbId; 
+            
             if (activeServer === 1) {
-                // --- SERVER 1 LOGIC (VideoCDN) ---
-                // Шаблон: https://tv-1-kinoserial.net/embed/{id}/?token={token}
-                // ID може бути Kinopoisk ID або IMDB ID (tt1234567)
+                // --- SERVER 1 LOGIC (VideoCDN / Kinoserial) ---
+                // Шаблон: https://tv-2-kinoserial.net/embed_auto/IMDB_ID/?token=ТОКЕН
+                // Або: https://tv-2-kinoserial.net/embed/IMDB_ID/?token=ТОКЕН
                 
-                // Спробуємо отримати Kinopoisk ID, якщо він є (через TMDB API іноді повертається, але не завжди)
-                // Але у нас є IMDB ID. VideoCDN чудово працює з IMDB ID.
-                
-                let embedId = imdbId;
+                const BASE_URL = 'https://tv-2-kinoserial.net/embed'; 
                 
                 if (embedId) {
-                     // Strict format: /embed/{id}/?token={token}
-                     // Note the trailing slash after ID might be important for some balancers
-                     setEmbedUrl(`${SERVER_1_BASE}/${embedId}?token=${SERVER_1_TOKEN}&autoplay=1`);
+                     // Використовуємо IMDB ID як найнадійніший міжнародний ідентифікатор
+                     setEmbedUrl(`${BASE_URL}/${embedId}/?token=${SERVER_1_TOKEN}&autoplay=1`);
                 } else {
-                    // Fallback using TMDB ID if IMDB is missing. 
-                    // VideoCDN often accepts TMDB ID in the same slot if IMDB is missing.
-                    console.warn("No IMDB ID found for VideoCDN, trying TMDB ID");
-                    setEmbedUrl(`${SERVER_1_BASE}/${movie.id}?token=${SERVER_1_TOKEN}&autoplay=1`);
+                    // Fallback: TMDB ID (movie.id)
+                    // VideoCDN підтримує TMDB ID, якщо передати його в тому ж форматі
+                    console.warn("No IMDB ID found, using TMDB ID");
+                    setEmbedUrl(`${BASE_URL}/${movie.id}/?token=${SERVER_1_TOKEN}&autoplay=1`);
                 }
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
