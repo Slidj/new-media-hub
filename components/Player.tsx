@@ -99,7 +99,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 8000); // Increased timeout to prevent premature black screen
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
@@ -194,8 +194,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             className="w-full h-full border-none"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="origin"
-            onLoad={() => setIsLoading(false)}
+            referrerPolicy="no-referrer-when-downgrade"
+            onLoad={() => {
+                console.log("Iframe loaded successfully");
+                setIsLoading(false);
+            }}
             />
         </div>
       )}
