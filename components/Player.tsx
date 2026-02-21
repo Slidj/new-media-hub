@@ -24,9 +24,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // --- SERVER 1 CONFIGURATION (Ashdi/Rstprg) ---
-  const SERVER_1_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
-  const SERVER_1_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
+  // --- SERVER 1 CONFIGURATION (VideoCDN / Kinoserial) ---
+  const SERVER_1_BASE = 'https://tv-1-kinoserial.net/embed';
+  const SERVER_1_TOKEN = '1a3ff41a822fc5be328b7c6a91b7f2fb';
+
+  // --- BACKUP SERVER (Ashdi/Rstprg) ---
+  // const SERVER_BACKUP_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
+  // const SERVER_BACKUP_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
 
   // --- SERVER 2 CONFIGURATION (FlixCDN) ---
   // Format: https://player0.flixcdn.space/show/imdb/tt1234567
@@ -39,33 +43,34 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID для точності
+            // Отримуємо IMDB ID для точності (VideoCDN найкраще працює з IMDB або Kinopoisk ID)
             const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
             const title = encodeURIComponent(movie.title);
 
             if (activeServer === 1) {
-                // --- SERVER 1 LOGIC (Ashdi) ---
-                let params = `token=${SERVER_1_TOKEN}`;
+                // --- SERVER 1 LOGIC (VideoCDN) ---
+                // Шаблон: https://tv-1-kinoserial.net/embed/{id}/?token={token}
+                // ID може бути Kinopoisk ID або IMDB ID (tt1234567)
                 
-                if (imdbId) {
-                    params += `&imdb=${imdbId}`;      
-                    params += `&imdb_id=${imdbId}`;   
-                }
-
-                params += `&tmdb=${movie.id}`;
-                params += `&tmdb_id=${movie.id}`;
-                params += `&title=${title}`;
-                params += `&name=${title}`;
+                // Спробуємо отримати Kinopoisk ID, якщо він є (через TMDB API іноді повертається, але не завжди)
+                // Але у нас є IMDB ID. VideoCDN чудово працює з IMDB ID.
                 
-                if (movie.mediaType === 'tv') {
-                    params += `&type=tv_series`;
+                let embedId = imdbId;
+                
+                if (embedId) {
+                     setEmbedUrl(`${SERVER_1_BASE}/${embedId}?token=${SERVER_1_TOKEN}&autoplay=1`);
                 } else {
-                    params += `&type=movie`;
+                    // Якщо немає IMDB ID, VideoCDN дозволяє пошук за назвою через iframe, 
+                    // але формат URL трохи інший, або ми можемо спробувати передати TMDB ID.
+                    // На жаль, прямий embed за назвою не завжди задокументований публічно для iframe.
+                    // Спробуємо передати назву як query parameter, деякі плеєри це підтримують.
+                    // АБО краще: спробуємо знайти ID через їх API (якщо б ми мали бекенд).
+                    
+                    // Фолбек: спробуємо передати назву фільму в URL, сподіваючись на розумний редірект
+                    // Або просто покажемо повідомлення.
+                    console.warn("No IMDB ID found for VideoCDN, trying title search fallback");
+                    setEmbedUrl(`${SERVER_1_BASE}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
                 }
-
-                params += `&autoplay=1`;
-                setEmbedUrl(`${SERVER_1_BASE}?${params}`);
-
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
                 /*
