@@ -50,24 +50,55 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
             if (activeServer === 1) {
                 // --- SERVER 1 LOGIC (VideoCDN / Kinoserial) ---
-                // ВАЖЛИВО: Вони підтвердили, що авто-підстановка працює ТІЛЬКИ з KP_ID (Kinopoisk ID).
-                // IMDB ID не підтримується в URL /embed/IMDB_ID.
-                // Тому ми мусимо використовувати KP_ID.
+                // Support said: "Auto-embed by IMDB not supported yet. Must use API."
+                // So we must fetch the iframe URL from their API using the IMDB ID.
                 
-                const BASE_URL = 'https://tv-1-kinoserial.net/embed'; 
+                const API_DOMAIN = 'https://api.videoseed.tv/apiv2.php';
                 
-                if (kpId) {
-                     // Є KP_ID - ідеальний варіант
-                     setEmbedUrl(`${BASE_URL}/${kpId}?token=${SERVER_1_TOKEN}&autoplay=1`);
+                if (externalIds?.imdb_id) {
+                    try {
+                        // Determine type for VideoCDN API
+                        const type = movie.mediaType === 'tv' ? 'serial' : 'movie';
+                        
+                        // Construct API URL
+                        const apiUrl = `${API_DOMAIN}?token=${SERVER_1_TOKEN}&item=${type}&imdb=${externalIds.imdb_id}`;
+                        
+                        console.log("Fetching VideoCDN data:", apiUrl);
+                        
+                        const response = await fetch(apiUrl);
+                        const data = await response.json();
+                        
+                        if (data.status === 'success' && data.data && data.data.length > 0) {
+                            // Found the movie/show!
+                            // The API returns an 'iframe' field which is the URL we need.
+                            let videoUrl = data.data[0].iframe;
+                            
+                            // Ensure it has autoplay
+                            if (videoUrl.includes('?')) {
+                                videoUrl += '&autoplay=1';
+                            } else {
+                                videoUrl += '?autoplay=1';
+                            }
+                            
+                            setEmbedUrl(videoUrl);
+                        } else {
+                            console.warn("VideoCDN API returned no results for IMDB ID:", externalIds.imdb_id);
+                            // Fallback to title search via API if IMDB fails
+                            throw new Error("No results by IMDB");
+                        }
+                    } catch (apiError) {
+                        console.error("VideoCDN API Error (likely CORS or Not Found):", apiError);
+                        
+                        // Fallback: Try constructing a search URL for the iframe directly (last resort)
+                        // Some players allow ?title= query param
+                        const BASE_URL = 'https://tv-1-kinoserial.net/embed';
+                        setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
+                    }
                 } else {
-                    // Немає KP_ID.
-                    // Оскільки IMDB ID не працює в embed, а API ми не можемо викликати (CORS),
-                    // єдиний шанс - пошук за назвою через їхній пошуковий параметр (якщо він працює в iframe)
-                    // Або спробувати передати назву як query param.
-                    
-                    console.warn("No Kinopoisk ID found for VideoCDN. IMDB not supported in embed.");
-                    // Спробуємо передати назву фільму. Деякі плеєри VideoCDN підтримують ?title=
-                    setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
+                     // No IMDB ID available
+                     console.warn("No IMDB ID for VideoCDN API");
+                     const BASE_URL = 'https://tv-1-kinoserial.net/embed';
+                     setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
                 }
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
