@@ -378,13 +378,13 @@ export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | '
     return details.duration;
 }
 
-export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promise<any> => {
+export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promise<string | null> => {
     try {
         const url = `${BASE_URL}/${type}/${id}/external_ids?api_key=${API_KEY}`;
         const request = await fetch(url);
         if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
         const data = await request.json();
-        return data;
+        return data.imdb_id || null;
     } catch (error) {
         console.error("Error fetching external IDs:", error);
         return null;
