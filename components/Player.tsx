@@ -43,12 +43,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо всі зовнішні ID (IMDB, Kinopoisk, etc.)
+            // Отримуємо всі зовнішні ID
             const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
-            
-            // Логуємо для відлагодження
-            console.log("External IDs:", externalIds);
-
             const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id;
             const imdbId = externalIds?.imdb_id;
             const title = encodeURIComponent(movie.title);
@@ -56,42 +52,42 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             // --- SERVER 1 LOGIC (Ashdi) ---
             const BASE_URL = 'https://api.rstprgapipt.com/balancer-api/iframe';
             
-            let params = `token=${SERVER_1_TOKEN}`;
+            let finalUrl = '';
 
-            // 1. Kinopoisk ID (Highest Priority)
+            // STRICT STRATEGY: Match the user's working link exactly
             if (kpId) {
-                params += `&kp=${kpId}`;
-                params += `&kp_id=${kpId}`;
+                // If we have KP ID, send ONLY what is in the working example
+                const params = new URLSearchParams();
+                params.append('token', SERVER_1_TOKEN);
+                params.append('kp', kpId.toString());
+                params.append('autoplay', '1');
+                params.append('disabled_share', '1');
+                
+                finalUrl = `${BASE_URL}?${params.toString()}`;
+            } 
+            else if (imdbId) {
+                // Fallback to IMDB if no KP
+                const params = new URLSearchParams();
+                params.append('token', SERVER_1_TOKEN);
+                params.append('imdb', imdbId);
+                params.append('autoplay', '1');
+                params.append('disabled_share', '1');
+                
+                finalUrl = `${BASE_URL}?${params.toString()}`;
             }
-
-            // 2. IMDB ID
-            if (imdbId) {
-                params += `&imdb=${imdbId}`;
-                params += `&imdb_id=${imdbId}`;
+            else {
+                // Last resort: TMDB + Title
+                const params = new URLSearchParams();
+                params.append('token', SERVER_1_TOKEN);
+                params.append('tmdb', movie.id.toString());
+                params.append('title', movie.title);
+                params.append('autoplay', '1');
+                params.append('disabled_share', '1');
+                
+                finalUrl = `${BASE_URL}?${params.toString()}`;
             }
-
-            // 3. TMDB ID
-            params += `&tmdb=${movie.id}`;
-            params += `&tmdb_id=${movie.id}`;
-
-            // 4. Metadata
-            params += `&title=${title}`;
-            params += `&name=${title}`;
             
-            // 5. Type (Crucial for some balancers)
-            if (movie.mediaType === 'tv') {
-                params += `&type=tv_series`;
-            } else {
-                params += `&type=movie`;
-            }
-
-            // 6. Settings
-            params += `&autoplay=1`;
-            params += `&disabled_share=1`;
-            
-            const finalUrl = `${BASE_URL}?${params}`;
             console.log("Generated Embed URL:", finalUrl);
-            
             setEmbedUrl(finalUrl);
             
         } catch (e) {
@@ -107,9 +103,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       setIsControlsDimmed(true);
     }, 3000);
 
+    // Increase timeout to 10s to avoid flashing error state
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 10000);
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
@@ -204,7 +201,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             className="w-full h-full border-none"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="no-referrer"
+            referrerPolicy="origin"
             onLoad={() => setIsLoading(false)}
             />
         </div>
