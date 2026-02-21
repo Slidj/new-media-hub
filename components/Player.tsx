@@ -43,23 +43,27 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID для точності
-            const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
+            // Отримуємо зовнішні ID
+            const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
+            const imdbId = externalIds?.imdb_id;
+            const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id;
             const title = encodeURIComponent(movie.title);
 
             if (activeServer === 1) {
                 // --- SERVER 1 LOGIC (Ashdi) ---
                 let params = `token=${SERVER_1_TOKEN}`;
                 
+                // Додаємо KP ID як в прикладі користувача
+                if (kpId) {
+                    params += `&kp=${kpId}`;
+                }
+
                 if (imdbId) {
                     params += `&imdb=${imdbId}`;      
-                    params += `&imdb_id=${imdbId}`;   
                 }
 
                 params += `&tmdb=${movie.id}`;
-                params += `&tmdb_id=${movie.id}`;
                 params += `&title=${title}`;
-                params += `&name=${title}`;
                 
                 if (movie.mediaType === 'tv') {
                     params += `&type=tv_series`;
