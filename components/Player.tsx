@@ -54,45 +54,44 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             const title = encodeURIComponent(movie.title);
 
             // --- SERVER 1 LOGIC (Ashdi) ---
-            // Базовий URL
             const BASE_URL = 'https://api.rstprgapipt.com/balancer-api/iframe';
             
-            let finalUrl = '';
+            let params = `token=${SERVER_1_TOKEN}`;
 
-            // Стратегія 1: Якщо є Kinopoisk ID (як у працюючому прикладі)
+            // 1. Kinopoisk ID (Highest Priority)
             if (kpId) {
-                // Використовуємо мінімальний набір параметрів, який точно працює
-                const params = new URLSearchParams({
-                    token: SERVER_1_TOKEN,
-                    kp: kpId.toString(),
-                    autoplay: '1',
-                    disabled_share: '1' // Як у прикладі користувача
-                });
-                finalUrl = `${BASE_URL}?${params.toString()}`;
-            } 
-            // Стратегія 2: Якщо є IMDB ID
-            else if (imdbId) {
-                const params = new URLSearchParams({
-                    token: SERVER_1_TOKEN,
-                    imdb: imdbId,
-                    autoplay: '1',
-                    disabled_share: '1'
-                });
-                finalUrl = `${BASE_URL}?${params.toString()}`;
+                params += `&kp=${kpId}`;
+                params += `&kp_id=${kpId}`;
             }
-            // Стратегія 3: Fallback на TMDB + Title
-            else {
-                const params = new URLSearchParams({
-                    token: SERVER_1_TOKEN,
-                    tmdb: movie.id.toString(),
-                    title: movie.title,
-                    autoplay: '1',
-                    disabled_share: '1'
-                });
-                finalUrl = `${BASE_URL}?${params.toString()}`;
+
+            // 2. IMDB ID
+            if (imdbId) {
+                params += `&imdb=${imdbId}`;
+                params += `&imdb_id=${imdbId}`;
             }
+
+            // 3. TMDB ID
+            params += `&tmdb=${movie.id}`;
+            params += `&tmdb_id=${movie.id}`;
+
+            // 4. Metadata
+            params += `&title=${title}`;
+            params += `&name=${title}`;
             
+            // 5. Type (Crucial for some balancers)
+            if (movie.mediaType === 'tv') {
+                params += `&type=tv_series`;
+            } else {
+                params += `&type=movie`;
+            }
+
+            // 6. Settings
+            params += `&autoplay=1`;
+            params += `&disabled_share=1`;
+            
+            const finalUrl = `${BASE_URL}?${params}`;
             console.log("Generated Embed URL:", finalUrl);
+            
             setEmbedUrl(finalUrl);
             
         } catch (e) {
@@ -205,7 +204,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             className="w-full h-full border-none"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="origin"
+            referrerPolicy="no-referrer"
             onLoad={() => setIsLoading(false)}
             />
         </div>
