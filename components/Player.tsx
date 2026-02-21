@@ -24,15 +24,15 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
 
-  // --- SERVER 1 CONFIGURATION (VideoCDN / Kinoserial) ---
-  const SERVER_1_BASE = 'https://tv-1-kinoserial.net/embed';
-  const SERVER_1_TOKEN = '1a3ff41a822fc5be328b7c6a91b7f2fb';
+  // --- SERVER 1 CONFIGURATION (Ashdi/Rstprg) ---
+  const SERVER_1_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
+  const SERVER_1_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
 
-  // --- BACKUP SERVER (Ashdi/Rstprg) ---
-  // const SERVER_BACKUP_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
-  // const SERVER_BACKUP_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ';
+  // --- SERVER 2 CONFIGURATION (VideoCDN / Kinoserial) - BACKUP ---
+  // const SERVER_VIDEOCDN_BASE = 'https://tv-1-kinoserial.net/embed';
+  // const SERVER_VIDEOCDN_TOKEN = '1a3ff41a822fc5be328b7c6a91b7f2fb';
 
-  // --- SERVER 2 CONFIGURATION (FlixCDN) ---
+  // --- SERVER 3 CONFIGURATION (FlixCDN) ---
   // Format: https://player0.flixcdn.space/show/imdb/tt1234567
   // const SERVER_2_BASE = 'https://player0.flixcdn.space/show/imdb';
 
@@ -49,57 +49,28 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             const title = encodeURIComponent(movie.title);
 
             if (activeServer === 1) {
-                // --- SERVER 1 LOGIC (VideoCDN / Kinoserial) ---
-                // Support said: "Auto-embed by IMDB not supported yet. Must use API."
-                // So we must fetch the iframe URL from their API using the IMDB ID.
+                // --- SERVER 1 LOGIC (Ashdi) ---
+                let params = `token=${SERVER_1_TOKEN}`;
                 
-                const API_DOMAIN = 'https://api.videoseed.tv/apiv2.php';
-                
-                if (externalIds?.imdb_id) {
-                    try {
-                        // Determine type for VideoCDN API
-                        const type = movie.mediaType === 'tv' ? 'serial' : 'movie';
-                        
-                        // Construct API URL
-                        const apiUrl = `${API_DOMAIN}?token=${SERVER_1_TOKEN}&item=${type}&imdb=${externalIds.imdb_id}`;
-                        
-                        console.log("Fetching VideoCDN data:", apiUrl);
-                        
-                        const response = await fetch(apiUrl);
-                        const data = await response.json();
-                        
-                        if (data.status === 'success' && data.data && data.data.length > 0) {
-                            // Found the movie/show!
-                            // The API returns an 'iframe' field which is the URL we need.
-                            let videoUrl = data.data[0].iframe;
-                            
-                            // Ensure it has autoplay
-                            if (videoUrl.includes('?')) {
-                                videoUrl += '&autoplay=1';
-                            } else {
-                                videoUrl += '?autoplay=1';
-                            }
-                            
-                            setEmbedUrl(videoUrl);
-                        } else {
-                            console.warn("VideoCDN API returned no results for IMDB ID:", externalIds.imdb_id);
-                            // Fallback to title search via API if IMDB fails
-                            throw new Error("No results by IMDB");
-                        }
-                    } catch (apiError) {
-                        console.error("VideoCDN API Error (likely CORS or Not Found):", apiError);
-                        
-                        // Fallback: Try constructing a search URL for the iframe directly (last resort)
-                        // Some players allow ?title= query param
-                        const BASE_URL = 'https://tv-1-kinoserial.net/embed';
-                        setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
-                    }
-                } else {
-                     // No IMDB ID available
-                     console.warn("No IMDB ID for VideoCDN API");
-                     const BASE_URL = 'https://tv-1-kinoserial.net/embed';
-                     setEmbedUrl(`${BASE_URL}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
+                if (imdbId) {
+                    params += `&imdb=${imdbId}`;      
+                    params += `&imdb_id=${imdbId}`;   
                 }
+
+                params += `&tmdb=${movie.id}`;
+                params += `&tmdb_id=${movie.id}`;
+                params += `&title=${title}`;
+                params += `&name=${title}`;
+                
+                if (movie.mediaType === 'tv') {
+                    params += `&type=tv_series`;
+                } else {
+                    params += `&type=movie`;
+                }
+
+                params += `&autoplay=1`;
+                setEmbedUrl(`${SERVER_1_BASE}?${params}`);
+
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
                 /*
@@ -184,12 +155,29 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       </button>
 
       {/* Loading State */}
-      {(isLoading || !embedUrl) && (
+      {isLoading && !embedUrl && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
              Connecting to Server...
           </p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!isLoading && !embedUrl && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-0 bg-black text-center px-6">
+            <div className="text-[#E50914] text-5xl mb-4">:(</div>
+            <h3 className="text-white text-xl font-bold mb-2">Video Not Found</h3>
+            <p className="text-gray-400 text-sm max-w-md">
+                We couldn't find this title on the server. It might be missing or blocked in your region.
+            </p>
+            <button 
+                onClick={onClose}
+                className="mt-6 px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-200 transition"
+            >
+                Close Player
+            </button>
         </div>
       )}
 
