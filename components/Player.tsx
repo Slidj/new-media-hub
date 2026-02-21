@@ -58,18 +58,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
                 let embedId = imdbId;
                 
                 if (embedId) {
+                     // Strict format: /embed/{id}/?token={token}
+                     // Note the trailing slash after ID might be important for some balancers
                      setEmbedUrl(`${SERVER_1_BASE}/${embedId}?token=${SERVER_1_TOKEN}&autoplay=1`);
                 } else {
-                    // Якщо немає IMDB ID, VideoCDN дозволяє пошук за назвою через iframe, 
-                    // але формат URL трохи інший, або ми можемо спробувати передати TMDB ID.
-                    // На жаль, прямий embed за назвою не завжди задокументований публічно для iframe.
-                    // Спробуємо передати назву як query parameter, деякі плеєри це підтримують.
-                    // АБО краще: спробуємо знайти ID через їх API (якщо б ми мали бекенд).
-                    
-                    // Фолбек: спробуємо передати назву фільму в URL, сподіваючись на розумний редірект
-                    // Або просто покажемо повідомлення.
-                    console.warn("No IMDB ID found for VideoCDN, trying title search fallback");
-                    setEmbedUrl(`${SERVER_1_BASE}?token=${SERVER_1_TOKEN}&title=${title}&autoplay=1`);
+                    // Fallback using TMDB ID if IMDB is missing. 
+                    // VideoCDN often accepts TMDB ID in the same slot if IMDB is missing.
+                    console.warn("No IMDB ID found for VideoCDN, trying TMDB ID");
+                    setEmbedUrl(`${SERVER_1_BASE}/${movie.id}?token=${SERVER_1_TOKEN}&autoplay=1`);
                 }
             } else {
                 // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
