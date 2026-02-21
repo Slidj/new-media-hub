@@ -43,10 +43,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо зовнішні ID (IMDB, Kinopoisk)
-            const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
-            const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id; 
-            const imdbId = externalIds?.imdb_id; // Restore IMDB ID
+            // Отримуємо IMDB ID для точності
+            const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
             const title = encodeURIComponent(movie.title);
 
             if (activeServer === 1) {
@@ -99,7 +97,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 8000); // Increased timeout to prevent premature black screen
+    }, 2000);
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
@@ -194,11 +192,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             className="w-full h-full border-none"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-            referrerPolicy="no-referrer-when-downgrade"
-            onLoad={() => {
-                console.log("Iframe loaded successfully");
-                setIsLoading(false);
-            }}
+            referrerPolicy="origin"
+            onLoad={() => setIsLoading(false)}
             />
         </div>
       )}
