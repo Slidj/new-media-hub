@@ -43,46 +43,49 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
 
     const preparePlayer = async () => {
         try {
-            // Отримуємо IMDB ID для точності
-            const imdbId = await API.fetchExternalIds(movie.id, movie.mediaType);
+            // Отримуємо всі зовнішні ID (IMDB, Kinopoisk, etc.)
+            const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
+            
+            // Логуємо для відлагодження
+            console.log("External IDs:", externalIds);
+
+            const kpId = externalIds?.id_kp || externalIds?.kinopoisk_id;
+            const imdbId = externalIds?.imdb_id;
             const title = encodeURIComponent(movie.title);
 
-            if (activeServer === 1) {
-                // --- SERVER 1 LOGIC (Ashdi) ---
-                let params = `token=${SERVER_1_TOKEN}`;
-                
-                if (imdbId) {
-                    params += `&imdb=${imdbId}`;      
-                }
-
-                params += `&tmdb=${movie.id}`;
-                params += `&title=${title}`;
-                
-                if (movie.mediaType === 'tv') {
-                    params += `&type=tv_series`;
-                } else {
-                    params += `&type=movie`;
-                }
-
-                params += `&autoplay=1`;
-                setEmbedUrl(`${SERVER_1_BASE}?${params}`);
-
-            } else {
-                // --- SERVER 2 LOGIC (FlixCDN) - HIDDEN FOR NOW ---
-                /*
-                if (imdbId) {
-                    setEmbedUrl(`${SERVER_2_BASE}/${imdbId}`);
-                } else {
-                    setEmbedUrl(null); 
-                }
-                */
+            // --- SERVER 1 LOGIC (Ashdi) ---
+            // Базовий URL
+            const BASE_URL = 'https://api.rstprgapipt.com/balancer-api/iframe';
+            
+            // Формуємо параметри точно як у працюючому прикладі
+            let params = `token=${SERVER_1_TOKEN}`;
+            
+            // Пріоритет 1: Kinopoisk ID (як у прикладі користувача)
+            if (kpId) {
+                params += `&kp=${kpId}`;
             }
+            
+            // Пріоритет 2: IMDB ID
+            if (imdbId) {
+                params += `&imdb=${imdbId}`;
+            }
+
+            // Пріоритет 3: TMDB ID (завжди є)
+            params += `&tmdb=${movie.id}`;
+            
+            // Додаткові параметри
+            params += `&title=${title}`;
+            params += `&autoplay=1`;
+            
+            const finalUrl = `${BASE_URL}?${params}`;
+            console.log("Generated Embed URL:", finalUrl);
+            
+            setEmbedUrl(finalUrl);
             
         } catch (e) {
             console.error("Failed to prepare player url", e);
             // Fallback
-            const fallbackParams = `token=${SERVER_1_TOKEN}&title=${encodeURIComponent(movie.title)}`;
-            setEmbedUrl(`${SERVER_1_BASE}?${fallbackParams}`);
+            setEmbedUrl(`${SERVER_1_BASE}?token=${SERVER_1_TOKEN}&title=${encodeURIComponent(movie.title)}`);
         }
     };
 
