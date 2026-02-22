@@ -171,13 +171,19 @@ export const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
     {movie && (
         // Z-INDEX 100: Above Navbar
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto">
+        <motion.div 
+            key="modal-wrapper"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-auto"
+        >
         {/* Overlay - Fade Animation */}
         <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.5 }}
             className="absolute inset-0 bg-black/90 backdrop-blur-md"
             onClick={handleClose}
         />
@@ -187,7 +193,7 @@ export const Modal: React.FC<ModalProps> = ({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            transition={{ type: "spring", damping: 30, stiffness: 200 }}
             className={`
             relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
             bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
@@ -531,7 +537,7 @@ export const Modal: React.FC<ModalProps> = ({
                 )}
             </AnimatePresence>
         </motion.div>
-        </div>
+        </motion.div>
     )}
     </AnimatePresence>
   );

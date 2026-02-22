@@ -663,21 +663,19 @@ function App() {
         onMoreClick={() => setIsMoreMenuOpen(true)}
       />
 
-      {selectedMovie && (
-        <Modal 
-          movie={selectedMovie} 
-          onClose={() => setSelectedMovie(null)} 
-          onPlay={(m) => handlePlay(m)}
-          onMovieSelect={setSelectedMovie} 
-          onToggleList={handleToggleList}
-          onToggleLike={handleToggleLike}
-          onToggleDislike={handleToggleDislike}
-          isInList={myList.some(m => m.id === selectedMovie.id)}
-          isLiked={likedMovies.includes(selectedMovie.id)}
-          isDisliked={dislikedMovies.includes(selectedMovie.id)}
-          lang={lang}
-        />
-      )}
+      <Modal 
+        movie={selectedMovie} 
+        onClose={() => setSelectedMovie(null)} 
+        onPlay={(m) => handlePlay(m)}
+        onMovieSelect={setSelectedMovie} 
+        onToggleList={handleToggleList}
+        onToggleLike={handleToggleLike}
+        onToggleDislike={handleToggleDislike}
+        isInList={selectedMovie ? myList.some(m => m.id === selectedMovie.id) : false}
+        isLiked={selectedMovie ? likedMovies.includes(selectedMovie.id) : false}
+        isDisliked={selectedMovie ? dislikedMovies.includes(selectedMovie.id) : false}
+        lang={lang}
+      />
 
       {playingMovie && (
         <Player 
