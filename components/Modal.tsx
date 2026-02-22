@@ -245,23 +245,23 @@ export const Modal: React.FC<ModalProps> = ({
                 {/* HERO IMAGE AREA */}
                 <div className="relative w-full bg-[#181818]">
                     <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#222]">
+                        {/* Low Res Placeholder (Blurry) */}
                         <img 
-                            src={movie.smallPosterUrl || movie.posterUrl}
+                            src={movie.smallPosterUrl}
                             alt=""
-                            className="absolute inset-0 w-full h-full object-cover"
+                            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100'} blur-sm scale-105`}
                         />
+                        
+                        {/* High Res Image (Fade In) */}
                         <img 
                             src={movie.posterUrl}
                             alt={movie.title}
-                            className={`
-                                absolute inset-0 w-full h-full object-cover z-10
-                                transition-opacity duration-700 ease-in-out
-                                ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}
-                            `}
+                            className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
                             loading="eager"
                             decoding="async"
                             onLoad={() => setIsHighResLoaded(true)}
                         />
+                        
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
                     </div>
 

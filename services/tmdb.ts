@@ -7,12 +7,12 @@ const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 // OPTIMIZATION:
-// w1280 is much lighter than 'original' but looks great on phones for banners
-const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280'; 
-// w780 is good for high-res details view
-const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w780';
-// w342 is perfect for the 3-column grid (much faster scroll)
-const SMALL_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w342';
+// w780 is lighter than w1280, better for mobile performance
+const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w780'; 
+// w500 is good for high-res details view but lighter than w780
+const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+// w185 is perfect for the 3-column grid (much faster scroll)
+const SMALL_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w185';
 // w185 for cast profiles
 const PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w185';
 
