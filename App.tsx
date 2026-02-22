@@ -60,7 +60,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+            transition={{ duration: 0.4, delay: (index % 20) * 0.05, ease: "easeOut" }}
             className="relative"
         >
             <div 
@@ -72,14 +72,14 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 "
                 onClick={() => onClick(movie)}
             >
-                {/* Skeleton Overlay */}
-                <div className={`absolute inset-0 z-10 bg-[#181818] transition-opacity duration-500 ${imageLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                    <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer"></div>
+                {/* Skeleton Overlay - Behind Image */}
+                <div className="absolute inset-0 z-0 bg-[#181818]">
+                    <div className={`w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer transition-opacity duration-700 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}></div>
                 </div>
 
                 <img
                     src={movie.smallPosterUrl || movie.posterUrl}
-                    className={`w-full h-full object-cover bg-[#222] transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    className={`relative z-10 w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     alt={movie.title}
                     loading="lazy"
                     decoding="async"
@@ -116,7 +116,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 </div>
                 </div>
 
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
         </motion.div>
     );
@@ -462,7 +462,8 @@ function App() {
       const scrollHeight = document.documentElement.scrollHeight;
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
-      if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore && !isLoadingRef.current) {
+      // Reduced threshold to 100px so user hits bottom before loading
+      if (scrollTop + clientHeight >= scrollHeight - 100 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
