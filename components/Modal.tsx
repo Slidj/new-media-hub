@@ -286,96 +286,123 @@ export const Modal: React.FC<ModalProps> = ({
                 </div>
 
                 {/* CONTENT AREA */}
-                <div className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32">
+                <motion.div 
+                    className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                            opacity: 1,
+                            transition: {
+                                staggerChildren: 0.1,
+                                delayChildren: 0.3
+                            }
+                        }
+                    }}
+                >
 
+                    {/* Metadata Row */}
                     <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="space-y-4"
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        }}
+                        className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md"
                     >
-                        {/* Metadata Row */}
-                        <div className="flex items-center justify-center gap-3 text-sm font-medium text-gray-300 drop-shadow-md">
-                            <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
-                            <span>{movie.year}</span>
-                            <span className="bg-[#404040] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
-                            {duration && duration !== 'N/A' && (
-                                <span>{duration}</span>
-                            )}
-                            <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col gap-3">
-                            <button 
-                                onClick={handlePlayClick}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
-                            >
-                                <Play className="w-7 h-7 fill-black" />
-                                <span className="text-lg font-bold">{t.play}</span>
-                            </button>
-
-                            <div className="grid grid-cols-4 gap-3">
-                                <button 
-                                    onClick={() => {
-                                        Haptics.light();
-                                        Audio.playClick();
-                                        onToggleList?.(movie);
-                                    }}
-                                    className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
-                                >
-                                    <div className={`
-                                        absolute inset-0 flex items-center justify-center 
-                                        transition-all duration-300 ease-in-out
-                                        ${isInList ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}
-                                    `}>
-                                        <Plus className="w-6 h-6" />
-                                    </div>
-
-                                    <div className={`
-                                        absolute inset-0 flex items-center justify-center 
-                                        transition-all duration-300 ease-in-out
-                                        ${isInList ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}
-                                    `}>
-                                        <Check className="w-6 h-6 text-[#E50914]" strokeWidth={3} />
-                                    </div>
-                                </button>
-                                
-                                <button 
-                                    onClick={() => {
-                                        Haptics.light();
-                                        Audio.playClick();
-                                        onToggleLike?.(movie);
-                                    }}
-                                    className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
-                                >
-                                    <ThumbsUp className={`w-5 h-5 ${isLiked ? 'text-white fill-white' : ''}`} />
-                                </button>
-                                
-                                <button 
-                                    onClick={() => {
-                                        Haptics.light();
-                                        Audio.playClick();
-                                        onToggleDislike?.(movie);
-                                    }}
-                                    className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
-                                >
-                                    <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'text-white fill-white' : ''}`} />
-                                </button>
-                                <button 
-                                    onClick={handleShare}
-                                    className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
-                                >
-                                    <Share2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
+                        <span className="text-[#46d369] font-bold">{movie.match}% {t.match}</span>
+                        <span>{movie.year}</span>
+                        <span className="bg-[#404040] text-white px-1.5 py-0.5 rounded-[2px] text-xs border border-white/20 uppercase">{movie.rating}</span>
+                        {duration && duration !== 'N/A' && (
+                            <span>{duration}</span>
+                        )}
+                        <span className="border border-white/40 px-1 rounded-[2px] text-[10px] uppercase">HD</span>
                     </motion.div>
 
+                    {/* Play Button */}
                     <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        }}
+                    >
+                        <button 
+                            onClick={handlePlayClick}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
+                        >
+                            <Play className="w-7 h-7 fill-black" />
+                            <span className="text-lg font-bold">{t.play}</span>
+                        </button>
+                    </motion.div>
+
+                    {/* Action Buttons */}
+                    <motion.div 
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        }}
+                        className="grid grid-cols-4 gap-3"
+                    >
+                        <button 
+                            onClick={() => {
+                                Haptics.light();
+                                Audio.playClick();
+                                onToggleList?.(movie);
+                            }}
+                            className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
+                        >
+                            <div className={`
+                                absolute inset-0 flex items-center justify-center 
+                                transition-all duration-300 ease-in-out
+                                ${isInList ? 'opacity-0 scale-50 rotate-90' : 'opacity-100 scale-100 rotate-0'}
+                            `}>
+                                <Plus className="w-6 h-6" />
+                            </div>
+
+                            <div className={`
+                                absolute inset-0 flex items-center justify-center 
+                                transition-all duration-300 ease-in-out
+                                ${isInList ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'}
+                            `}>
+                                <Check className="w-6 h-6 text-[#E50914]" strokeWidth={3} />
+                            </div>
+                        </button>
+                        
+                        <button 
+                            onClick={() => {
+                                Haptics.light();
+                                Audio.playClick();
+                                onToggleLike?.(movie);
+                            }}
+                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                        >
+                            <ThumbsUp className={`w-5 h-5 ${isLiked ? 'text-white fill-white' : ''}`} />
+                        </button>
+                        
+                        <button 
+                            onClick={() => {
+                                Haptics.light();
+                                Audio.playClick();
+                                onToggleDislike?.(movie);
+                            }}
+                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                        >
+                            <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'text-white fill-white' : ''}`} />
+                        </button>
+                        <button 
+                            onClick={handleShare}
+                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                        >
+                            <Share2 className="w-5 h-5" />
+                        </button>
+                    </motion.div>
+
+                    {/* Tabs & Content */}
+                    <motion.div 
+                        variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        }}
                     >
                         
                         <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
@@ -523,7 +550,7 @@ export const Modal: React.FC<ModalProps> = ({
                             )}
                         </div>
                     </motion.div>
-                </div>
+                </motion.div>
             </div>
 
             {/* --- TRAILER PLAYER OVERLAY --- */}
