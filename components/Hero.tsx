@@ -85,7 +85,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
       </div>
 
       {/* Content Layer - Z-20 (Above Gradient) */}
-      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-20 md:pb-24 w-full">
+      <div className="relative z-20 h-full flex flex-col justify-end items-center md:items-start pb-8 md:pb-12 w-full">
             
             {/* Title / Logo */}
             <div className="mb-6 px-6 flex justify-center md:justify-start w-full min-h-[100px] md:min-h-[160px] items-end">

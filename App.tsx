@@ -561,7 +561,7 @@ function App() {
             <main className={`relative z-10 w-full bg-black -mt-1`}>
                 {/* NOW WATCHING ROW */}
                 {globalActivities.length > 0 && (
-                    <section className="pt-8 pb-4">
+                    <section className="pt-4 pb-0">
                         <NowWatchingRow 
                             title={translations[lang].nowWatching || "Now Watching"} 
                             activities={globalActivities} 
@@ -571,13 +571,9 @@ function App() {
                 )}
 
                 <section className="px-2 md:px-12 pb-10 pt-2">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <h2 className="text-xl font-bold text-white">
-                            {activeCategory === 'trending' ? (translations[lang].trending || "Trending Now") : 
-                             activeCategory === 'movies' ? (translations[lang].movies || "Movies") :
-                             activeCategory === 'tv' ? (translations[lang].tvShows || "TV Shows") :
-                             (translations[lang].cartoons || "Cartoons")}
-                        </h2>
+                    {/* Separator Line */}
+                    <div className="w-full flex justify-center py-6">
+                        <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     </div>
                     
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">

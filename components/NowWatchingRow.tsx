@@ -73,7 +73,7 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
     if (trendingMovies.length === 0) return null;
 
     return (
-        <div className="mb-8 px-4 md:px-12">
+        <div className="mb-2 px-4 md:px-12">
             <div className="flex items-center justify-between mb-4 group cursor-pointer">
                 <h2 className="text-lg md:text-xl font-bold text-white group-hover:text-[#E50914] transition-colors flex items-center gap-2">
                     <span className="relative flex h-3 w-3">
