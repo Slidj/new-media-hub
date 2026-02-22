@@ -36,6 +36,8 @@ import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
 import { Haptics } from './utils/haptics';
 import { Audio } from './utils/audio';
+import { AnimatePresence, motion } from 'framer-motion';
+import { HorizontalRow } from './components/HorizontalRow';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -50,22 +52,18 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
     const isTop10 = activeCategory === 'trending' && index < 10;
     const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
 
-    // Розрахунок затримки для ефекту "ланцюжка".
-    const animDelay = (index % 20) * 70; 
-
     return (
-        <div 
-            className="opacity-0 animate-fade-in-up fill-mode-forwards"
-            style={{ 
-                animationDelay: `${animDelay}ms`,
-                willChange: 'transform, opacity'
-            }}
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+            className="relative"
         >
             <div 
                 className="
                     relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
-                    transform-gpu transition-transform duration-200 ease-out
-                    hover:scale-105 hover:z-50 hover:shadow-2xl hover:shadow-black
+                    transform-gpu transition-transform duration-300 ease-out
+                    hover:scale-105 hover:z-50 hover:shadow-2xl hover:shadow-black/50
                     active:scale-95 active:brightness-75
                 "
                 onClick={() => onClick(movie)}
@@ -116,7 +114,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
 
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
-        </div>
+        </motion.div>
     );
 });
 
@@ -142,7 +140,7 @@ function App() {
   const [dislikedMovies, setDislikedMovies] = useState<string[]>([]);
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
   const [tickets, setTickets] = useState(0); 
-
+  
   // Notifications State
   const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); 
   const [notifications, setNotifications] = useState<AppNotification[]>([]); 
@@ -495,6 +493,9 @@ function App() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white pb-24">
+      {/* Subtle Background Gradient */}
+      <div className="fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black pointer-events-none" />
+
       <Navbar 
         user={user} 
         lang={lang} 
@@ -509,8 +510,16 @@ function App() {
         onBellClick={() => setIsNotificationsOpen(true)}
       />
       
-      {activeTab === 'home' && (
-        <>
+      <AnimatePresence mode="wait">
+        {activeTab === 'home' && (
+          <motion.div
+            key="home"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full relative z-10"
+          >
             <CategoryNav 
                 lang={lang} 
                 activeCategory={activeCategory} 
@@ -532,7 +541,27 @@ function App() {
             )}
 
             <main className={`relative z-10 w-full bg-black -mt-1`}>
+                {/* CONTINUE WATCHING ROW */}
+                {watchHistory.length > 0 && (
+                    <section className="pt-8 pb-4">
+                        <HorizontalRow 
+                            title={translations[lang].continueWatching || "Continue Watching"} 
+                            movies={watchHistory} 
+                            onMovieClick={handlePlay} // Direct play for continue watching
+                        />
+                    </section>
+                )}
+
                 <section className="px-2 md:px-12 pb-10 pt-2">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <h2 className="text-xl font-bold text-white">
+                            {activeCategory === 'trending' ? (translations[lang].trending || "Trending Now") : 
+                             activeCategory === 'movies' ? (translations[lang].movies || "Movies") :
+                             activeCategory === 'tv' ? (translations[lang].tvShows || "TV Shows") :
+                             (translations[lang].cartoons || "Cartoons")}
+                        </h2>
+                    </div>
+                    
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                         {movies.map((movie, index) => (
                             <MovieCard 
@@ -558,32 +587,60 @@ function App() {
                     )}
                 </section>
             </main>
-        </>
-      )}
+          </motion.div>
+        )}
 
-      {activeTab === 'search' && (
-        <SearchView 
-          lang={lang} 
-          onMovieSelect={setSelectedMovie} 
-        />
-      )}
+        {activeTab === 'search' && (
+          <motion.div
+            key="search"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full pt-20 relative z-10"
+          >
+            <SearchView 
+              lang={lang} 
+              onMovieSelect={setSelectedMovie} 
+            />
+          </motion.div>
+        )}
 
-      {activeTab === 'coming_soon' && (
-        <ComingSoonView
-            lang={lang}
-            onMovieSelect={setSelectedMovie}
-            user={user}
-        />
-      )}
+        {activeTab === 'coming_soon' && (
+          <motion.div
+            key="coming_soon"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full pt-20 relative z-10"
+          >
+            <ComingSoonView
+                lang={lang}
+                onMovieSelect={setSelectedMovie}
+                user={user}
+            />
+          </motion.div>
+        )}
 
-      {activeTab === 'my_list' && (
-          <MyListView 
-             myList={myList}
-             history={watchHistory}
-             onMovieSelect={setSelectedMovie}
-             lang={lang}
-          />
-      )}
+        {activeTab === 'my_list' && (
+          <motion.div
+            key="my_list"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="w-full pt-20 relative z-10"
+          >
+              <MyListView 
+                 myList={myList}
+                 history={watchHistory}
+                 onMovieSelect={setSelectedMovie}
+                 lang={lang}
+              />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav 
         lang={lang} 
@@ -626,10 +683,12 @@ function App() {
       />
 
       {isAdminPanelOpen && (
+        <div className="relative z-50">
           <AdminPanel 
              onClose={() => setIsAdminPanelOpen(false)}
              lang={lang}
           />
+        </div>
       )}
 
       {isNotificationsOpen && (
