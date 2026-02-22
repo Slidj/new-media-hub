@@ -29,7 +29,7 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
       return (
           <div className="fixed inset-0 z-[80] bg-[#121212] flex flex-col animate-fade-in">
               {/* Header */}
-              <div className="pt-[calc(env(safe-area-inset-top)+20px)] pb-4 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
+              <div className="pt-[calc(env(safe-area-inset-top)+60px)] pb-4 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
                   <h2 className="text-xl font-bold text-white">{t.about}</h2>
                   <button onClick={() => setIsAboutOpen(false)} className="p-2 bg-[#333] rounded-full text-white hover:bg-white hover:text-black transition">
                       <X className="w-5 h-5" />

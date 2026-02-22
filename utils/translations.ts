@@ -59,6 +59,8 @@ export const translations = {
     featureTicketsTitle: "Tickets System",
     featureRandomTitle: "Random Picker",
     featureMultiTitle: "Multi-Language",
+    aboutFooterRights: "© 2024 MediaHub. All rights reserved.",
+    aboutFooterSlogan: "Designed for seamless entertainment.",
     support: "Support",
     adminPanel: "Admin Panel",
     adminAccess: "Admin Access Granted",
