@@ -444,8 +444,8 @@ export const recordGlobalActivity = async (
 // 8. Subscribe to Global Activity
 export const subscribeToGlobalActivity = (onUpdate: (activities: any[]) => void) => {
     const activityRef = collection(db, "global_activity");
-    // Get last 10 activities
-    const q = query(activityRef, orderBy("timestamp", "desc"), limit(10));
+    // Get last 50 activities to aggregate "trending now"
+    const q = query(activityRef, orderBy("timestamp", "desc"), limit(50));
 
     return onSnapshot(q, (snapshot) => {
         const activities = snapshot.docs.map(doc => ({
