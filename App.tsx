@@ -42,6 +42,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
 import { RandomButton } from './components/RandomButton';
+import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -670,6 +671,11 @@ function App() {
             />
         )}
       </AnimatePresence>
+
+      {/* Scroll To Top Button */}
+      {activeTab === 'home' && !selectedMovie && !playingMovie && (
+          <ScrollToTopButton />
+      )}
 
       <BottomNav 
         lang={lang} 
