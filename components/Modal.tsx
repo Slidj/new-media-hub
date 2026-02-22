@@ -154,6 +154,27 @@ export const Modal: React.FC<ModalProps> = ({
       setPlayingTrailerKey(videoKey);
   };
 
+  const handleShare = () => {
+      Haptics.medium();
+      Audio.playClick();
+      
+      const shareUrl = `https://t.me/my_mediahub_bot/app?startapp=${movie?.id}`;
+      const shareText = `${t.watchOn} "${movie?.title}"`;
+
+      if (window.Telegram?.WebApp?.showPopup) {
+           const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+           window.Telegram.WebApp.openTelegramLink(tgShareUrl);
+      } else if (navigator.share) {
+          navigator.share({
+              title: movie?.title,
+              text: shareText,
+              url: shareUrl
+          }).catch(console.error);
+      } else {
+          window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
+      }
+  };
+
   const handleTabChange = (tab: TabType) => {
       Haptics.selection(); 
       Audio.playClick();
@@ -341,7 +362,10 @@ export const Modal: React.FC<ModalProps> = ({
                                 >
                                     <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'text-white fill-white' : ''}`} />
                                 </button>
-                                <button className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10">
+                                <button 
+                                    onClick={handleShare}
+                                    className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                                >
                                     <Share2 className="w-5 h-5" />
                                 </button>
                             </div>
