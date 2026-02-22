@@ -41,6 +41,7 @@ import { Audio } from './utils/audio';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
+import { RandomButton } from './components/RandomButton';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -125,6 +126,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [showRandomButton, setShowRandomButton] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [playingMovie, setPlayingMovie] = useState<Movie | null>(null);
   
@@ -367,6 +369,8 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
+      // Show random button slightly after splash
+      setTimeout(() => setShowRandomButton(true), 1000);
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
@@ -653,6 +657,16 @@ function App() {
                  lang={lang}
               />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Random Button */}
+      <AnimatePresence>
+        {showRandomButton && activeTab === 'home' && !selectedMovie && !playingMovie && (
+            <RandomButton 
+                movies={movies} 
+                onRandomSelect={handleMovieClick} 
+            />
         )}
       </AnimatePresence>
 
