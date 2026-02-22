@@ -87,7 +87,8 @@ export const translations = {
     daysAgo: "days ago",
     longAgo: "Long time ago",
     monthAgo: "Month ago",
-    never: "Never"
+    never: "Never",
+    nowWatching: "Now Watching"
   },
   uk: {
     home: "Головна",
@@ -173,7 +174,8 @@ export const translations = {
     daysAgo: "днів тому",
     longAgo: "Давно був",
     monthAgo: "Місяць тому",
-    never: "Ніколи"
+    never: "Ніколи",
+    nowWatching: "Зараз дивляться"
   },
   ru: {
     home: "Главная",
@@ -259,7 +261,8 @@ export const translations = {
     daysAgo: "дней назад",
     longAgo: "Давно был",
     monthAgo: "Месяц назад",
-    never: "Никогда"
+    never: "Никогда",
+    nowWatching: "Сейчас смотрят"
   }
 };
 

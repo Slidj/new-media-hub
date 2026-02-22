@@ -44,6 +44,20 @@ export interface RowProps {
   isLargeRow?: boolean;
 }
 
+export interface Activity {
+  id: string;
+  userId: number;
+  username: string;
+  userPhoto: string;
+  movieId: string;
+  movieTitle: string;
+  moviePoster: string;
+  movieBackdrop: string;
+  mediaType?: 'movie' | 'tv';
+  action: 'watching' | 'viewing';
+  timestamp: string;
+}
+
 export interface AppNotification {
   id: string;
   title: string;

@@ -17,7 +17,7 @@ import { MoreMenu } from './components/MoreMenu';
 import { AdminPanel } from './components/AdminPanel'; 
 import { NotificationsView } from './components/NotificationsView'; 
 import { BannedView } from './components/BannedView'; 
-import { Movie, WebAppUser, TabType, AppNotification } from './types';
+import { Movie, WebAppUser, TabType, AppNotification, Activity } from './types';
 import { API } from './services/tmdb';
 import { 
     syncUser, 
@@ -30,7 +30,9 @@ import {
     subscribeToGlobalNotifications,
     deletePersonalNotification,
     subscribeToUserBanStatus, 
-    updateUserHeartbeat 
+    updateUserHeartbeat,
+    recordGlobalActivity,
+    subscribeToGlobalActivity
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -38,6 +40,7 @@ import { Haptics } from './utils/haptics';
 import { Audio } from './utils/audio';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HorizontalRow } from './components/HorizontalRow';
+import { NowWatchingRow } from './components/NowWatchingRow';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -141,6 +144,9 @@ function App() {
   const [watchHistory, setWatchHistory] = useState<Movie[]>([]);
   const [tickets, setTickets] = useState(0); 
   
+  // New: Global Activity State
+  const [globalActivities, setGlobalActivities] = useState<Activity[]>([]);
+
   // Notifications State
   const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]); 
   const [notifications, setNotifications] = useState<AppNotification[]>([]); 
@@ -290,6 +296,14 @@ function App() {
         unsubscribeGlobalNotifs();
     };
   }, [user]);
+
+  // Subscribe to Global Activity (Independent of User)
+  useEffect(() => {
+      const unsubscribe = subscribeToGlobalActivity((activities) => {
+          setGlobalActivities(activities);
+      });
+      return () => unsubscribe();
+  }, []);
 
   // Process Notifications & Play Sound
   useEffect(() => {
@@ -444,7 +458,7 @@ function App() {
       const scrollHeight = document.documentElement.scrollHeight;
       const scrollTop = document.documentElement.scrollTop || window.pageYOffset;
       const clientHeight = document.documentElement.clientHeight;
-      if (scrollTop + clientHeight >= scrollHeight - 400 && !loading && hasMore && !isLoadingRef.current) {
+      if (scrollTop + clientHeight >= scrollHeight - 800 && !loading && hasMore && !isLoadingRef.current) {
         setPage(prev => prev + 1);
       }
     };
@@ -456,12 +470,16 @@ function App() {
     Haptics.medium(); 
     Audio.playPop(); // Sound on movie click
     setSelectedMovie(movie);
-  }, []);
+    if (user) {
+        recordGlobalActivity(user, movie, 'viewing');
+    }
+  }, [user]);
 
   const handlePlay = (movie: Movie) => {
       setPlayingMovie(movie);
       if (user?.id) {
           addToHistory(user.id, movie);
+          recordGlobalActivity(user, movie, 'watching');
       }
   };
 
@@ -541,13 +559,13 @@ function App() {
             )}
 
             <main className={`relative z-10 w-full bg-black -mt-1`}>
-                {/* CONTINUE WATCHING ROW */}
-                {watchHistory.length > 0 && (
+                {/* NOW WATCHING ROW */}
+                {globalActivities.length > 0 && (
                     <section className="pt-8 pb-4">
-                        <HorizontalRow 
-                            title={translations[lang].continueWatching || "Continue Watching"} 
-                            movies={watchHistory} 
-                            onMovieClick={handlePlay} // Direct play for continue watching
+                        <NowWatchingRow 
+                            title={translations[lang].nowWatching || "Now Watching"} 
+                            activities={globalActivities} 
+                            onMovieClick={handleMovieClick} 
                         />
                     </section>
                 )}

@@ -414,3 +414,46 @@ export const deletePersonalNotification = async (userId: number, notifId: string
         console.error("Error deleting notification", e);
     }
 };
+
+// 7. Record Global Activity (What users are watching/doing)
+export const recordGlobalActivity = async (
+    user: WebAppUser, 
+    movie: Movie, 
+    action: 'watching' | 'viewing' = 'watching'
+) => {
+    try {
+        const activityRef = collection(db, "global_activity");
+        await addDoc(activityRef, {
+            userId: user.id,
+            username: user.username || user.first_name || "Anonymous",
+            userPhoto: user.photo_url || "",
+            movieId: movie.id,
+            movieTitle: movie.title,
+            moviePoster: movie.posterUrl,
+            movieBackdrop: movie.bannerUrl,
+            mediaType: movie.mediaType || 'movie',
+            action,
+            timestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        // Silent fail
+        console.error("Error recording activity", e);
+    }
+};
+
+// 8. Subscribe to Global Activity
+export const subscribeToGlobalActivity = (onUpdate: (activities: any[]) => void) => {
+    const activityRef = collection(db, "global_activity");
+    // Get last 10 activities
+    const q = query(activityRef, orderBy("timestamp", "desc"), limit(10));
+
+    return onSnapshot(q, (snapshot) => {
+        const activities = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        onUpdate(activities);
+    }, (error) => {
+        console.error("Error subscribing to global activity:", error);
+    });
+};
