@@ -50,6 +50,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             params.append('title', movie.title);
             params.append('autoplay', '1');
             params.append('disabled_share', '1'); // As per working example
+            params.append('d', 'media-hub.app'); // Domain parameter for ad configuration
 
             const finalUrl = `${SERVER_BASE}?${params.toString()}`;
             console.log("Player URL:", finalUrl);
