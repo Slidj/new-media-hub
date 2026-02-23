@@ -267,12 +267,12 @@ export const subscribeToUserBanStatus = (userId: number, onStatusChange: (isBann
 
 // --- NOTIFICATIONS SYSTEM ---
 
-// Helper: Clean up old notifications (Max 5 items, Max 5 days old)
+// Helper: Clean up old notifications (Max 50 items, Max 7 days old)
 const cleanUpNotifications = async (userId: number, notifications: AppNotification[]) => {
     if (!notifications || notifications.length === 0) return;
 
-    const MAX_ITEMS = 5;
-    const MAX_DAYS = 5;
+    const MAX_ITEMS = 50;
+    const MAX_DAYS = 7;
     const now = new Date();
     const batch = writeBatch(db);
     let hasChanges = false;
@@ -287,7 +287,7 @@ const cleanUpNotifications = async (userId: number, notifications: AppNotificati
     // We assume 'notifications' is already sorted by date desc from the query
     const excessIds: string[] = [];
     if (notifications.length > MAX_ITEMS) {
-        // Take everything after index 4 (the 6th item onwards)
+        // Take everything after index 49 (the 51st item onwards)
         const itemsToRemove = notifications.slice(MAX_ITEMS);
         itemsToRemove.forEach(n => excessIds.push(n.id));
     }
@@ -310,6 +310,35 @@ const cleanUpNotifications = async (userId: number, notifications: AppNotificati
             console.log("Cleanup: Deleted old notifications");
         } catch (e) {
             console.error("Cleanup failed", e);
+        }
+    }
+};
+
+// Helper: Clean up old GLOBAL notifications (Max 7 days old)
+const cleanUpGlobalNotifications = async (notifications: AppNotification[]) => {
+    if (!notifications || notifications.length === 0) return;
+
+    const MAX_DAYS = 7;
+    const now = new Date();
+    const batch = writeBatch(db);
+    let hasChanges = false;
+
+    const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
+    
+    notifications.forEach(n => {
+        if (new Date(n.date).getTime() < validTime) {
+             const ref = doc(db, "global_notifications", n.id);
+             batch.delete(ref);
+             hasChanges = true;
+        }
+    });
+
+    if (hasChanges) {
+        try {
+            await batch.commit();
+            console.log("Cleanup: Deleted old global notifications");
+        } catch (e) {
+            console.error("Global cleanup failed", e);
         }
     }
 };
@@ -358,8 +387,8 @@ export const sendGlobalNotification = async (title: string, message: string) => 
 // 3. Subscribe to Personal Notifications with Auto-Cleanup
 export const subscribeToPersonalNotifications = (userId: number, onUpdate: (notifs: AppNotification[]) => void) => {
     const notifsRef = collection(db, "users", userId.toString(), "notifications");
-    // Limit to 20 initially to check for overflow, then we cleanup down to 5
-    const q = query(notifsRef, orderBy("date", "desc"), limit(20)); 
+    // Limit to 50 to match cleanup logic
+    const q = query(notifsRef, orderBy("date", "desc"), limit(50)); 
     
     return onSnapshot(q, (snapshot) => {
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
@@ -380,8 +409,8 @@ export const subscribeToPersonalNotifications = (userId: number, onUpdate: (noti
 // 4. Subscribe to Global Notifications
 export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotification[]) => void) => {
     const globalRef = collection(db, "global_notifications");
-    // Only fetch last 5 globals to keep it light
-    const q = query(globalRef, orderBy("date", "desc"), limit(5));
+    // Fetch last 20 to allow for cleanup of older ones
+    const q = query(globalRef, orderBy("date", "desc"), limit(20));
 
     return onSnapshot(q, (snapshot) => {
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
@@ -389,6 +418,10 @@ export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotificatio
             ...doc.data(),
             isRead: false 
         } as AppNotification));
+        
+        // Trigger cleanup in background
+        cleanUpGlobalNotifications(notifs);
+
         onUpdate(notifs);
     }, (error) => {
         console.error("Error subscribing to global notifications:", error?.message || "Unknown error");
