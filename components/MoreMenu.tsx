@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe, Star } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { WebAppUser } from '../types';
@@ -20,6 +20,17 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
   const isUserAdmin = isAdmin(user?.id);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isDonateOpen, setIsDonateOpen] = useState(false);
+
+  useEffect(() => {
+      if (isOpen || isAboutOpen || isDonateOpen) {
+          document.body.style.overflow = 'hidden';
+      } else {
+          document.body.style.overflow = 'unset';
+      }
+      return () => {
+          document.body.style.overflow = 'unset';
+      };
+  }, [isOpen, isAboutOpen, isDonateOpen]);
 
   const menuItems = [
       { icon: Star, label: t.donate, onClick: () => setIsDonateOpen(true), isPremium: true },
