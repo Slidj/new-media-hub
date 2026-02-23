@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe, Star } from 'lucide-react';
+import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe, Star, Image as ImageIcon } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { WebAppUser } from '../types';
 import { isAdmin } from '../utils/adminIds';
 import { Haptics } from '../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getHeroQuality, getRowQuality, setHeroQuality, setRowQuality, ImageQuality } from '../utils/settings';
 
 interface MoreMenuProps {
   isOpen: boolean;
@@ -21,9 +22,25 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
   const isUserAdmin = isAdmin(user?.id);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isDonateOpen, setIsDonateOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const [heroQuality, setHeroQualityState] = useState<ImageQuality>(getHeroQuality());
+  const [rowQuality, setRowQualityState] = useState<ImageQuality>(getRowQuality());
+
+  const handleHeroQualityChange = (q: ImageQuality) => {
+      setHeroQuality(q);
+      setHeroQualityState(q);
+      Haptics.selection();
+  };
+
+  const handleRowQualityChange = (q: ImageQuality) => {
+      setRowQuality(q);
+      setRowQualityState(q);
+      Haptics.selection();
+  };
 
   useEffect(() => {
-      if (isOpen || isAboutOpen || isDonateOpen) {
+      if (isOpen || isAboutOpen || isDonateOpen || isSettingsOpen) {
           document.body.style.overflow = 'hidden';
       } else {
           document.body.style.overflow = 'unset';
@@ -31,17 +48,101 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
       return () => {
           document.body.style.overflow = 'unset';
       };
-  }, [isOpen, isAboutOpen, isDonateOpen]);
+  }, [isOpen, isAboutOpen, isDonateOpen, isSettingsOpen]);
 
   const menuItems = [
       { icon: Star, label: t.donate, onClick: () => setIsDonateOpen(true), isPremium: true },
-      { icon: Settings, label: t.settings, onClick: () => {} }, // Placeholder
+      { icon: Settings, label: t.settings, onClick: () => setIsSettingsOpen(true) },
       { icon: MessageCircle, label: t.support, onClick: () => {} }, // Placeholder
       { icon: Info, label: t.about, onClick: () => setIsAboutOpen(true) },
   ];
 
   return (
     <>
+      <AnimatePresence>
+          {isSettingsOpen && (
+              <motion.div 
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 50 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="fixed inset-0 z-[80] bg-[#121212] flex flex-col"
+              >
+                  {/* Header */}
+                  <div className="pt-[calc(env(safe-area-inset-top)+100px)] pb-4 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                          <Settings className="w-6 h-6" />
+                          {t.settings}
+                      </h2>
+                      <button onClick={() => setIsSettingsOpen(false)} className="p-2 bg-[#333] rounded-full text-white hover:bg-white hover:text-black transition">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                      <div className="space-y-6">
+                          <div>
+                              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                  <ImageIcon className="w-4 h-4" />
+                                  {t.settingsQuality}
+                              </h3>
+                              
+                              <div className="bg-[#1a1a1a] rounded-xl border border-white/5 overflow-hidden">
+                                  {/* Hero Quality */}
+                                  <div className="p-4 border-b border-white/5">
+                                      <div className="mb-3">
+                                          <h4 className="text-white font-medium text-sm">{t.settingsHeroQuality}</h4>
+                                      </div>
+                                      <div className="flex bg-black/50 rounded-lg p-1">
+                                          {(['low', 'medium', 'high'] as ImageQuality[]).map((q) => (
+                                              <button
+                                                  key={q}
+                                                  onClick={() => handleHeroQualityChange(q)}
+                                                  className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                                      heroQuality === q 
+                                                          ? 'bg-[#E50914] text-white shadow-lg' 
+                                                          : 'text-gray-400 hover:text-white'
+                                                  }`}
+                                              >
+                                                  {q === 'low' ? t.qualityLow : q === 'medium' ? t.qualityMedium : t.qualityHigh}
+                                              </button>
+                                          ))}
+                                      </div>
+                                  </div>
+
+                                  {/* Row Quality */}
+                                  <div className="p-4">
+                                      <div className="mb-3">
+                                          <h4 className="text-white font-medium text-sm">{t.settingsRowQuality}</h4>
+                                      </div>
+                                      <div className="flex bg-black/50 rounded-lg p-1">
+                                          {(['low', 'medium', 'high'] as ImageQuality[]).map((q) => (
+                                              <button
+                                                  key={q}
+                                                  onClick={() => handleRowQualityChange(q)}
+                                                  className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                                      rowQuality === q 
+                                                          ? 'bg-[#E50914] text-white shadow-lg' 
+                                                          : 'text-gray-400 hover:text-white'
+                                                  }`}
+                                              >
+                                                  {q === 'low' ? t.qualityLow : q === 'medium' ? t.qualityMedium : t.qualityHigh}
+                                              </button>
+                                          ))}
+                                      </div>
+                                  </div>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-4 text-center">
+                                  {t.settingsRestart}
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+              </motion.div>
+          )}
+      </AnimatePresence>
+
       <AnimatePresence>
           {isDonateOpen && (
               <motion.div 

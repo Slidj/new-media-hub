@@ -105,7 +105,15 @@ export const translations = {
     donateDescription: "Support the development of MediaHub by donating Telegram Stars. Your support helps us improve the app and add new features!",
     donate5: "Donate 5 Stars",
     donate20: "Donate 20 Stars",
-    donate50: "Donate 50 Stars"
+    donate50: "Donate 50 Stars",
+    // Settings
+    settingsQuality: "Image Quality",
+    settingsHeroQuality: "Main Poster Quality",
+    settingsRowQuality: "List Poster Quality",
+    qualityLow: "Low",
+    qualityMedium: "Medium",
+    qualityHigh: "High",
+    settingsRestart: "Changes will take effect after restarting the app."
   },
   uk: {
     home: "Головна",
@@ -207,7 +215,15 @@ export const translations = {
     donateDescription: "Підтримайте розробку MediaHub, задонативши Telegram Stars. Ваша підтримка допомагає нам покращувати додаток та додавати нові функції!",
     donate5: "Задонатити 5 Stars",
     donate20: "Задонатити 20 Stars",
-    donate50: "Задонатити 50 Stars"
+    donate50: "Задонатити 50 Stars",
+    // Settings
+    settingsQuality: "Якість зображень",
+    settingsHeroQuality: "Якість головного постера",
+    settingsRowQuality: "Якість постерів у списку",
+    qualityLow: "Низька",
+    qualityMedium: "Середня",
+    qualityHigh: "Висока",
+    settingsRestart: "Зміни набудуть чинності після перезапуску додатку."
   },
   ru: {
     home: "Главная",
@@ -309,7 +325,15 @@ export const translations = {
     donateDescription: "Поддержите разработку MediaHub, задонатив Telegram Stars. Ваша поддержка помогает нам улучшать приложение и добавлять новые функции!",
     donate5: "Задонатить 5 Stars",
     donate20: "Задонатить 20 Stars",
-    donate50: "Задонатить 50 Stars"
+    donate50: "Задонатить 50 Stars",
+    // Settings
+    settingsQuality: "Качество изображений",
+    settingsHeroQuality: "Качество главного постера",
+    settingsRowQuality: "Качество постеров в списке",
+    qualityLow: "Низкое",
+    qualityMedium: "Среднее",
+    qualityHigh: "Высокое",
+    settingsRestart: "Изменения вступят в силу после перезапуска приложения."
   }
 };
 

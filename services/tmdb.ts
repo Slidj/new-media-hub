@@ -2,18 +2,33 @@
 // Update: TMDB Service - Added fetchUpcoming
 import { Movie, Cast, Video } from '../types';
 import { MOVIES } from '../constants';
+import { getHeroQuality, getRowQuality } from '../utils/settings';
 
 const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
 const BASE_URL = 'https://api.themoviedb.org/3';
 
-// OPTIMIZATION:
-// w780 is lighter than w1280, better for mobile performance
-const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w780'; 
-// w500 is good for high-res details view but lighter than w780
-const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-// w185 is perfect for the 3-column grid (much faster scroll)
-const SMALL_POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w185';
-// w185 for cast profiles
+// Dynamic Image URLs based on settings
+const getBannerBaseUrl = () => {
+    const q = getHeroQuality();
+    if (q === 'high') return 'https://image.tmdb.org/t/p/original';
+    if (q === 'low') return 'https://image.tmdb.org/t/p/w300';
+    return 'https://image.tmdb.org/t/p/w780';
+};
+
+const getPosterBaseUrl = () => {
+    const q = getHeroQuality();
+    if (q === 'high') return 'https://image.tmdb.org/t/p/w780';
+    if (q === 'low') return 'https://image.tmdb.org/t/p/w342';
+    return 'https://image.tmdb.org/t/p/w500';
+};
+
+const getSmallPosterBaseUrl = () => {
+    const q = getRowQuality();
+    if (q === 'high') return 'https://image.tmdb.org/t/p/w342';
+    if (q === 'low') return 'https://image.tmdb.org/t/p/w92';
+    return 'https://image.tmdb.org/t/p/w185';
+};
+
 const PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w185';
 
 // Keep requests object for legacy or specific calls if needed
@@ -57,9 +72,9 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
     id: result.id.toString(),
     title: result.title || result.name || result.original_name,
     description: result.overview,
-    bannerUrl: result.backdrop_path ? `${IMAGE_BASE_URL}${result.backdrop_path}` : '',
-    posterUrl: result.poster_path ? `${POSTER_BASE_URL}${result.poster_path}` : '',
-    smallPosterUrl: result.poster_path ? `${SMALL_POSTER_BASE_URL}${result.poster_path}` : '',
+    bannerUrl: result.backdrop_path ? `${getBannerBaseUrl()}${result.backdrop_path}` : '',
+    posterUrl: result.poster_path ? `${getPosterBaseUrl()}${result.poster_path}` : '',
+    smallPosterUrl: result.poster_path ? `${getSmallPosterBaseUrl()}${result.poster_path}` : '',
     genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
     duration: 'N/A', // Placeholder, will be fetched in Modal
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
@@ -241,7 +256,7 @@ export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<st
     const logo = data.logos?.find((l: any) => l.iso_639_1 === 'en' || l.iso_639_1 === null) || data.logos?.[0];
     
     if (logo) {
-      return `${IMAGE_BASE_URL}${logo.file_path}`;
+      return `${getBannerBaseUrl()}${logo.file_path}`;
     }
     return undefined;
   } catch (error) {
@@ -269,8 +284,8 @@ export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv
                                data.backdrops?.[0];
 
         return {
-            poster: cleanPosterObj ? `${POSTER_BASE_URL}${cleanPosterObj.file_path}` : undefined,
-            banner: cleanBannerObj ? `${IMAGE_BASE_URL}${cleanBannerObj.file_path}` : undefined
+            poster: cleanPosterObj ? `${getPosterBaseUrl()}${cleanPosterObj.file_path}` : undefined,
+            banner: cleanBannerObj ? `${getBannerBaseUrl()}${cleanBannerObj.file_path}` : undefined
         };
     } catch (error) {
         console.error("Error fetching clean images:", error);
