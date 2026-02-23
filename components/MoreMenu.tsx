@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe } from 'lucide-react';
+import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe, Star } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { WebAppUser } from '../types';
 import { isAdmin } from '../utils/adminIds';
+import { Haptics } from '../utils/haptics';
 
 interface MoreMenuProps {
   isOpen: boolean;
@@ -18,12 +19,94 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
   const t = translations[lang];
   const isUserAdmin = isAdmin(user?.id);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isDonateOpen, setIsDonateOpen] = useState(false);
 
   const menuItems = [
+      { icon: Star, label: t.donate, onClick: () => setIsDonateOpen(true), isPremium: true },
       { icon: Settings, label: t.settings, onClick: () => {} }, // Placeholder
       { icon: MessageCircle, label: t.support, onClick: () => {} }, // Placeholder
       { icon: Info, label: t.about, onClick: () => setIsAboutOpen(true) },
   ];
+
+  if (isDonateOpen) {
+      return (
+          <div className="fixed inset-0 z-[80] bg-[#121212] flex flex-col animate-fade-in">
+              {/* Header */}
+              <div className="pt-[calc(env(safe-area-inset-top)+60px)] pb-4 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
+                  <h2 className="text-xl font-bold text-yellow-500 flex items-center gap-2">
+                      <Star className="w-6 h-6 fill-yellow-500" />
+                      {t.donate}
+                  </h2>
+                  <button onClick={() => setIsDonateOpen(false)} className="p-2 bg-[#333] rounded-full text-white hover:bg-white hover:text-black transition">
+                      <X className="w-5 h-5" />
+                  </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                  <div className="text-center space-y-4">
+                      <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full shadow-[0_0_30px_rgba(234,179,8,0.3)] flex items-center justify-center">
+                          <Star className="w-12 h-12 text-white fill-white" />
+                      </div>
+                      <p className="text-gray-300 leading-relaxed max-w-sm mx-auto">
+                          {t.donateDescription}
+                      </p>
+                  </div>
+
+                  <div className="space-y-4 max-w-sm mx-auto">
+                      <a 
+                          href="https://t.me/$dg8POh3jOErKFgAAXydTAL3IV5g"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => Haptics.success()}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1a1a1a] to-[#2a2a2a] rounded-xl border border-yellow-500/20 hover:border-yellow-500/50 transition group"
+                      >
+                          <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                              </div>
+                              <span className="text-white font-bold">{t.donate5}</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-yellow-500 transition" />
+                      </a>
+
+                      <a 
+                          href="https://t.me/$IGZ5qh3jOErLFgAAdaeivliYG7k"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => Haptics.success()}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1a1a1a] to-[#2a2a2a] rounded-xl border border-yellow-500/20 hover:border-yellow-500/50 transition group"
+                      >
+                          <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                              </div>
+                              <span className="text-white font-bold">{t.donate20}</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-yellow-500 transition" />
+                      </a>
+
+                      <a 
+                          href="https://t.me/$8xXaLh3jOErMFgAA3wPWf_AsLvM"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => Haptics.success()}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-600/20 to-yellow-500/10 rounded-xl border border-yellow-500/40 hover:border-yellow-500 transition group relative overflow-hidden"
+                      >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                          <div className="flex items-center gap-3 relative z-10">
+                              <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.5)]">
+                                  <Star className="w-5 h-5 text-white fill-white" />
+                              </div>
+                              <span className="text-yellow-500 font-bold">{t.donate50}</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-yellow-500 transition relative z-10" />
+                      </a>
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   if (isAboutOpen) {
       return (
@@ -172,12 +255,22 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
             {menuItems.map((item, idx) => (
                 <div 
                     key={idx}
-                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-white/5 active:bg-white/10 cursor-pointer transition group"
+                    className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition group ${
+                        item.isPremium 
+                            ? 'bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/20 hover:border-yellow-500/50' 
+                            : 'hover:bg-white/5 active:bg-white/10'
+                    }`}
                     onClick={item.onClick}
                 >
-                    <item.icon className="w-6 h-6 text-gray-400 group-hover:text-white transition" />
-                    <span className="text-gray-300 group-hover:text-white font-medium text-sm flex-1">{item.label}</span>
-                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
+                    <item.icon className={`w-6 h-6 transition ${
+                        item.isPremium ? 'text-yellow-500 fill-yellow-500/20' : 'text-gray-400 group-hover:text-white'
+                    }`} />
+                    <span className={`font-medium text-sm flex-1 ${
+                        item.isPremium ? 'text-yellow-500' : 'text-gray-300 group-hover:text-white'
+                    }`}>{item.label}</span>
+                    <ChevronRight className={`w-4 h-4 ${
+                        item.isPremium ? 'text-yellow-500/50 group-hover:text-yellow-500' : 'text-gray-600 group-hover:text-gray-400'
+                    }`} />
                 </div>
             ))}
         </div>

@@ -99,7 +99,13 @@ export const translations = {
     longAgo: "Long time ago",
     monthAgo: "Month ago",
     never: "Never",
-    nowWatching: "Now Watching"
+    nowWatching: "Now Watching",
+    // Donate
+    donate: "Donate",
+    donateDescription: "Support the development of MediaHub by donating Telegram Stars. Your support helps us improve the app and add new features!",
+    donate5: "Donate 5 Stars",
+    donate20: "Donate 20 Stars",
+    donate50: "Donate 50 Stars"
   },
   uk: {
     home: "Головна",
@@ -195,7 +201,13 @@ export const translations = {
     longAgo: "Давно був",
     monthAgo: "Місяць тому",
     never: "Ніколи",
-    nowWatching: "Зараз дивляться"
+    nowWatching: "Зараз дивляться",
+    // Donate
+    donate: "Підтримати",
+    donateDescription: "Підтримайте розробку MediaHub, задонативши Telegram Stars. Ваша підтримка допомагає нам покращувати додаток та додавати нові функції!",
+    donate5: "Задонатити 5 Stars",
+    donate20: "Задонатити 20 Stars",
+    donate50: "Задонатити 50 Stars"
   },
   ru: {
     home: "Главная",
@@ -291,7 +303,13 @@ export const translations = {
     longAgo: "Давно был",
     monthAgo: "Месяц назад",
     never: "Никогда",
-    nowWatching: "Сейчас смотрят"
+    nowWatching: "Сейчас смотрят",
+    // Donate
+    donate: "Поддержать",
+    donateDescription: "Поддержите разработку MediaHub, задонатив Telegram Stars. Ваша поддержка помогает нам улучшать приложение и добавлять новые функции!",
+    donate5: "Задонатить 5 Stars",
+    donate20: "Задонатить 20 Stars",
+    donate50: "Задонатить 50 Stars"
   }
 };
 
