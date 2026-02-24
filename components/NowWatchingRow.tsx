@@ -1,16 +1,19 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, TrendingUp, Users } from 'lucide-react';
 import { Movie, Activity } from '../types';
+import { fetchMovieById } from '../services/tmdb';
 
 interface NowWatchingRowProps {
     title: string;
     activities: Activity[];
     onMovieClick: (movie: Movie) => void;
+    lang: string;
 }
 
-export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activities, onMovieClick }) => {
+export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activities, onMovieClick, lang }) => {
     const rowRef = useRef<HTMLDivElement>(null);
+    const [localizedMovies, setLocalizedMovies] = useState<Record<string, Movie>>({});
 
     // Aggregate and sort activities to find trending content
     const trendingMovies = useMemo(() => {
@@ -70,6 +73,32 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
             .map(item => ({ ...item.movie, viewers: item.viewers }));
     }, [activities]);
 
+    useEffect(() => {
+        const fetchLocalizedMovies = async () => {
+            const newMovies: Record<string, Movie> = {};
+            let hasNew = false;
+            
+            for (const movie of trendingMovies) {
+                const key = `${lang}_${movie.id}`;
+                if (!localizedMovies[key]) {
+                    const fullMovie = await fetchMovieById(movie.id, movie.mediaType, lang);
+                    if (fullMovie) {
+                        newMovies[key] = fullMovie;
+                        hasNew = true;
+                    }
+                }
+            }
+            
+            if (hasNew) {
+                setLocalizedMovies(prev => ({ ...prev, ...newMovies }));
+            }
+        };
+
+        if (trendingMovies.length > 0) {
+            fetchLocalizedMovies();
+        }
+    }, [trendingMovies, lang]);
+
     if (trendingMovies.length === 0) return null;
 
     return (
@@ -100,7 +129,7 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
                         >
                             <div 
                                 className="relative aspect-video rounded-lg overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/50 border border-white/10 group/card"
-                                onClick={() => onMovieClick(movie)}
+                                onClick={() => onMovieClick(localizedMovies[`${lang}_${movie.id}`] || movie)}
                             >
                                 <img 
                                     src={movie.bannerUrl || movie.posterUrl} 
@@ -127,7 +156,7 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
                                 {/* Title Overlay */}
                                 <div className="absolute bottom-0 left-0 right-0 p-2 z-10">
                                     <h3 className="text-xs md:text-sm font-bold text-white truncate drop-shadow-md leading-tight">
-                                        {movie.title}
+                                        {localizedMovies[`${lang}_${movie.id}`]?.title || movie.title}
                                     </h3>
                                     <div className="flex items-center gap-1 mt-0.5">
                                         <span className="text-[9px] text-red-500 font-bold uppercase tracking-wider animate-pulse">

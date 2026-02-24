@@ -571,7 +571,8 @@ function App() {
                         <NowWatchingRow 
                             title={translations[lang].nowWatching || "Now Watching"} 
                             activities={globalActivities} 
-                            onMovieClick={handleMovieClick} 
+                            onMovieClick={handleMovieClick}
+                            lang={lang}
                         />
                     </section>
                 )}

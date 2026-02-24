@@ -293,12 +293,33 @@ export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv
     }
 };
 
-export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ duration: string | null, tagline: string | null }> => {
+export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<Movie | null> => {
   try {
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}`);
+    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
     
-    if (!request.ok) return { duration: null, tagline: null };
+    if (!request.ok) return null;
+    const data = await request.json();
+    
+    // mapResultToMovie expects a result from a list, but details response is similar enough
+    // We just need to ensure genre_ids is populated from genres
+    if (data.genres && !data.genre_ids) {
+        data.genre_ids = data.genres.map((g: any) => g.id);
+    }
+    
+    return mapResultToMovie(data, language);
+  } catch (error) {
+    console.error("Error fetching movie by id", error);
+    return null;
+  }
+};
+
+export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<{ duration: string | null, tagline: string | null, title: string | null }> => {
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
+    
+    if (!request.ok) return { duration: null, tagline: null, title: null };
     const data = await request.json();
 
     let durationStr = null;
@@ -319,12 +340,13 @@ export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 't
 
     return {
         duration: durationStr,
-        tagline: data.tagline || null
+        tagline: data.tagline || null,
+        title: data.title || data.name || null
     };
 
   } catch (error) {
     console.error("Error fetching details", error);
-    return { duration: null, tagline: null };
+    return { duration: null, tagline: null, title: null };
   }
 }
 
@@ -420,6 +442,7 @@ export const API = {
   fetchExternalIds,
   fetchMovieDuration,
   fetchMovieDetails,
+  fetchMovieById,
   fetchCredits,
   fetchVideos,
   fetchRecommendations
