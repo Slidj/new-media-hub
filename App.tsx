@@ -576,9 +576,9 @@ function App() {
                     </section>
                 )}
 
-                <section className="px-2 md:px-12 pb-10 pt-2">
+                <section className="px-2 md:px-12 pb-10 pt-0">
                     {/* Separator Line */}
-                    <div className="w-full flex justify-center py-6">
+                    <div className="w-full flex justify-center py-2">
                         <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                     </div>
                     
