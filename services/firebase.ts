@@ -532,3 +532,13 @@ export const updateSupportMessageStatus = async (messageId: string, status: 'new
         console.error("Failed to update support message status", e);
     }
 };
+
+export const deleteSupportMessage = async (messageId: string) => {
+    try {
+        const ref = doc(db, "support_messages", messageId);
+        await deleteDoc(ref);
+    } catch (e) {
+        console.error("Failed to delete support message", e);
+        throw e;
+    }
+};

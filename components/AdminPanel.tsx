@@ -4,17 +4,18 @@ import {
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
     Menu, LayoutDashboard, ChevronRight, ChevronLeft, Trash2, RotateCcw,
-    Wifi
+    Wifi, HelpCircle
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
-import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount } from '../services/firebase';
+import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount, fetchSupportMessages, updateSupportMessageStatus, deleteSupportMessage } from '../services/firebase';
+import { SupportMessage } from '../types';
 
 interface AdminPanelProps {
   onClose: () => void;
   lang: Language;
 }
 
-type AdminView = 'dashboard' | 'users' | 'broadcast';
+type AdminView = 'dashboard' | 'users' | 'broadcast' | 'support';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   const t = translations[lang];
@@ -34,6 +35,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   const [userSearch, setUserSearch] = useState('');
   const [isOnlineFilterActive, setIsOnlineFilterActive] = useState(false);
   
+  // Support Messages State
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [loadingSupport, setLoadingSupport] = useState(false);
+
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -42,6 +47,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   // Initial Load
   useEffect(() => {
       loadUsers();
+      loadSupportMessages();
   }, []);
 
   // Reset pagination when search changes
@@ -54,6 +60,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       const data = await getAllUsers();
       setUsers(data);
       setLoadingUsers(false);
+  };
+
+  const loadSupportMessages = async () => {
+      setLoadingSupport(true);
+      const data = await fetchSupportMessages();
+      setSupportMessages(data as SupportMessage[]);
+      setLoadingSupport(false);
   };
 
   const handleToggleBan = async (userId: string, currentStatus: boolean) => {
@@ -212,6 +225,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'users', label: t.users, icon: Users },
       { id: 'broadcast', label: t.sendMessage, icon: MessageSquare },
+      { id: 'support', label: t.support || 'Support', icon: HelpCircle },
   ];
 
   const handleDashboardOnlineClick = () => {
@@ -649,6 +663,66 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                              </button>
                         </div>
                     </div>
+                </div>
+            )}
+            {/* --- SUPPORT VIEW --- */}
+            {activeView === 'support' && (
+                <div className="space-y-4 animate-fade-in-up">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <HelpCircle className="w-5 h-5 text-[#E50914]" />
+                            Support Messages
+                        </h3>
+                        <button 
+                            onClick={loadSupportMessages}
+                            className="p-2 bg-white/5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition"
+                        >
+                            <RotateCcw className={`w-4 h-4 ${loadingSupport ? 'animate-spin text-[#E50914]' : ''}`} />
+                        </button>
+                    </div>
+
+                    {loadingSupport ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-8 h-8 border-4 border-white/10 border-t-[#E50914] rounded-full animate-spin"></div>
+                        </div>
+                    ) : supportMessages.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500">
+                            <HelpCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                            <p>No support messages found.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {supportMessages.map(msg => (
+                                <div key={msg.id} className="bg-[#1f1f1f] p-4 rounded-xl border border-white/5 relative">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-white font-bold">{msg.username}</span>
+                                                <span className="text-xs text-gray-500">ID: {msg.userId}</span>
+                                            </div>
+                                            <span className="text-[10px] text-gray-400">
+                                                {new Date(msg.timestamp).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm("Delete this message?")) {
+                                                    await deleteSupportMessage(msg.id);
+                                                    setSupportMessages(prev => prev.filter(m => m.id !== msg.id));
+                                                }
+                                            }}
+                                            className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500/20 transition"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <p className="text-gray-300 text-sm mt-3 whitespace-pre-wrap bg-black/30 p-3 rounded-lg border border-white/5">
+                                        {msg.message}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
