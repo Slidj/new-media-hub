@@ -490,3 +490,45 @@ export const subscribeToGlobalActivity = (onUpdate: (activities: any[]) => void)
         console.error("Error subscribing to global activity:", error);
     });
 };
+
+// --- SUPPORT MESSAGES ---
+
+export const submitSupportMessage = async (userId: number, username: string, message: string) => {
+    try {
+        const supportRef = collection(db, "support_messages");
+        await addDoc(supportRef, {
+            userId,
+            username,
+            message,
+            timestamp: new Date().toISOString(),
+            status: 'new'
+        });
+    } catch (e) {
+        console.error("Failed to submit support message", e);
+        throw e;
+    }
+};
+
+export const fetchSupportMessages = async () => {
+    try {
+        const supportRef = collection(db, "support_messages");
+        const q = query(supportRef, orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (e) {
+        console.error("Failed to fetch support messages", e);
+        return [];
+    }
+};
+
+export const updateSupportMessageStatus = async (messageId: string, status: 'new' | 'read' | 'replied') => {
+    try {
+        const ref = doc(db, "support_messages", messageId);
+        await updateDoc(ref, { status });
+    } catch (e) {
+        console.error("Failed to update support message status", e);
+    }
+};

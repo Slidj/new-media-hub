@@ -23,6 +23,9 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isDonateOpen, setIsDonateOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [supportMessage, setSupportMessage] = useState('');
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
 
   const [heroQuality, setHeroQualityState] = useState<ImageQuality>(getHeroQuality());
   const [rowQuality, setRowQualityState] = useState<ImageQuality>(getRowQuality());
@@ -40,7 +43,7 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
   };
 
   useEffect(() => {
-      if (isOpen || isAboutOpen || isDonateOpen || isSettingsOpen) {
+      if (isOpen || isAboutOpen || isDonateOpen || isSettingsOpen || isSupportOpen) {
           document.body.style.overflow = 'hidden';
       } else {
           document.body.style.overflow = 'unset';
@@ -48,12 +51,49 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
       return () => {
           document.body.style.overflow = 'unset';
       };
-  }, [isOpen, isAboutOpen, isDonateOpen, isSettingsOpen]);
+  }, [isOpen, isAboutOpen, isDonateOpen, isSettingsOpen, isSupportOpen]);
+
+  const handleSupportSubmit = async () => {
+      if (!supportMessage.trim()) {
+          window.Telegram?.WebApp?.showAlert(t.supportEmpty);
+          return;
+      }
+      
+      const lastSent = localStorage.getItem('last_support_message');
+      if (lastSent) {
+          const lastSentTime = new Date(lastSent).getTime();
+          const now = new Date().getTime();
+          if (now - lastSentTime < 24 * 60 * 60 * 1000) {
+              window.Telegram?.WebApp?.showAlert(t.supportLimit);
+              return;
+          }
+      }
+
+      setIsSubmittingSupport(true);
+      try {
+          const { submitSupportMessage } = await import('../services/firebase');
+          await submitSupportMessage(
+              user?.id || 0, 
+              user?.username || user?.first_name || 'Anonymous', 
+              supportMessage.trim()
+          );
+          localStorage.setItem('last_support_message', new Date().toISOString());
+          setSupportMessage('');
+          setIsSupportOpen(false);
+          window.Telegram?.WebApp?.showAlert(t.supportSuccess);
+          Haptics.success();
+      } catch (error) {
+          console.error("Error submitting support message", error);
+          window.Telegram?.WebApp?.showAlert("Error sending message. Please try again later.");
+      } finally {
+          setIsSubmittingSupport(false);
+      }
+  };
 
   const menuItems = [
       { icon: Star, label: t.donate, onClick: () => setIsDonateOpen(true), isPremium: true },
       { icon: Settings, label: t.settings, onClick: () => setIsSettingsOpen(true) },
-      { icon: MessageCircle, label: t.support, onClick: () => {} }, // Placeholder
+      { icon: MessageCircle, label: t.support, onClick: () => setIsSupportOpen(true) },
       { icon: Info, label: t.about, onClick: () => setIsAboutOpen(true) },
   ];
 
@@ -305,6 +345,51 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
                               Designed for seamless entertainment.
                           </p>
                       </div>
+                  </div>
+              </motion.div>
+          )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+          {isSupportOpen && (
+              <motion.div 
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 50 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="fixed inset-0 z-[80] bg-[#121212] flex flex-col"
+              >
+                  {/* Header */}
+                  <div className="pt-[calc(env(safe-area-inset-top)+100px)] pb-4 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                          <MessageCircle className="w-6 h-6" />
+                          {t.supportTitle}
+                      </h2>
+                      <button onClick={() => setIsSupportOpen(false)} className="p-2 bg-[#333] rounded-full text-white hover:bg-white hover:text-black transition">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 overflow-y-auto p-6 flex flex-col">
+                      <p className="text-gray-400 text-sm mb-6">
+                          {t.supportDesc}
+                      </p>
+                      
+                      <textarea
+                          value={supportMessage}
+                          onChange={(e) => setSupportMessage(e.target.value)}
+                          placeholder={t.supportPlaceholder}
+                          className="w-full h-48 bg-[#1a1a1a] text-white p-4 rounded-xl border border-white/10 focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] outline-none resize-none mb-6"
+                      />
+                      
+                      <button
+                          onClick={handleSupportSubmit}
+                          disabled={isSubmittingSupport || !supportMessage.trim()}
+                          className="w-full py-4 bg-[#E50914] text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition active:scale-95"
+                      >
+                          {isSubmittingSupport ? t.thinking : t.supportSend}
+                      </button>
                   </div>
               </motion.div>
           )}

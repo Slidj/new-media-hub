@@ -69,6 +69,15 @@ export interface AppNotification {
   posterUrl?: string;
 }
 
+export interface SupportMessage {
+  id: string;
+  userId: number;
+  username: string;
+  message: string;
+  timestamp: string;
+  status: 'new' | 'read' | 'replied';
+}
+
 export interface WebAppUser {
   id: number;
   is_bot?: boolean;
