@@ -4,7 +4,7 @@ import {
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
     Menu, LayoutDashboard, ChevronRight, ChevronLeft, Trash2, RotateCcw,
-    Wifi, HelpCircle
+    Wifi, HelpCircle, Copy, Check
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount, fetchSupportMessages, updateSupportMessageStatus, deleteSupportMessage } from '../services/firebase';
@@ -233,8 +233,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       setActiveView('users');
   };
 
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (text: string, id: string) => {
+      const fallbackCopy = () => {
+          try {
+              const textArea = document.createElement("textarea");
+              textArea.value = text;
+              textArea.style.position = "fixed";
+              textArea.style.left = "-9999px";
+              textArea.style.top = "-9999px";
+              document.body.appendChild(textArea);
+              textArea.focus();
+              textArea.select();
+              const successful = document.execCommand('copy');
+              document.body.removeChild(textArea);
+              if (successful) {
+                  setCopiedId(id);
+                  setTimeout(() => setCopiedId(null), 2000);
+              }
+          } catch (err) {
+              console.error('Fallback copy failed', err);
+          }
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+              setCopiedId(id);
+              setTimeout(() => setCopiedId(null), 2000);
+          }).catch(err => {
+              console.error('Failed to copy text: ', err);
+              fallbackCopy();
+          });
+      } else {
+          fallbackCopy();
+      }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col h-full">
+    <div className="fixed inset-0 z-[100] bg-[#000000] flex flex-col h-full select-none">
         
         {/* HEADER */}
         <div className="bg-[#141414] border-b border-white/10 px-4 pt-[calc(env(safe-area-inset-top)+90px)] pb-4 flex items-center justify-between shrink-0 z-20">
@@ -503,15 +540,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                                     
                                                     {/* Telegram Username */}
                                                     {u.profile?.username && (
-                                                        <div className="text-[#3b82f6] text-xs font-medium mb-1 truncate">
-                                                            @{u.profile.username}
+                                                        <div className="flex items-center gap-1.5 mb-1">
+                                                            <div className="text-[#3b82f6] text-xs font-medium truncate">
+                                                                @{u.profile.username}
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => handleCopy(`@${u.profile.username}`, `username-${u.id}`)}
+                                                                className="p-1 hover:bg-white/10 rounded transition"
+                                                            >
+                                                                {copiedId === `username-${u.id}` ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
+                                                            </button>
                                                         </div>
                                                     )}
 
                                                     {/* ID Box */}
                                                     <div className="inline-flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 mt-0.5 max-w-full">
                                                         <span className="text-[10px] text-gray-500 font-mono flex-shrink-0">ID</span>
-                                                        <span className="text-[11px] text-gray-300 font-mono tracking-tight select-all truncate">{u.id}</span>
+                                                        <span className="text-[11px] text-gray-300 font-mono tracking-tight truncate">{u.id}</span>
+                                                        <button 
+                                                            onClick={() => handleCopy(u.id.toString(), `id-${u.id}`)}
+                                                            className="p-0.5 hover:bg-white/10 rounded transition ml-1"
+                                                        >
+                                                            {copiedId === `id-${u.id}` ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
+                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -617,7 +668,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                  <input 
                                     type="number" 
                                     placeholder={t.sendToAll} 
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-[#E50914] outline-none transition"
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-[#E50914] outline-none transition select-text"
                                     value={targetUserId}
                                     onChange={(e) => setTargetUserId(e.target.value)}
                                  />
@@ -628,7 +679,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                  <label className="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1.5">{t.title}</label>
                                  <input 
                                     type="text" 
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm font-bold focus:border-[#E50914] outline-none transition"
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm font-bold focus:border-[#E50914] outline-none transition select-text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                  />
@@ -637,7 +688,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                              <div>
                                  <label className="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1.5">{t.message}</label>
                                  <textarea 
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm h-32 resize-none focus:border-[#E50914] outline-none transition"
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm h-32 resize-none focus:border-[#E50914] outline-none transition select-text"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                  />
@@ -698,7 +749,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-white font-bold">{msg.username}</span>
-                                                <span className="text-xs text-gray-500">ID: {msg.userId}</span>
+                                                <button 
+                                                    onClick={() => handleCopy(msg.username, `support-username-${msg.id}`)}
+                                                    className="p-1 hover:bg-white/10 rounded transition"
+                                                >
+                                                    {copiedId === `support-username-${msg.id}` ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
+                                                </button>
+                                                <span className="text-xs text-gray-500 ml-2">ID: {msg.userId}</span>
+                                                <button 
+                                                    onClick={() => handleCopy(msg.userId.toString(), `support-id-${msg.id}`)}
+                                                    className="p-1 hover:bg-white/10 rounded transition"
+                                                >
+                                                    {copiedId === `support-id-${msg.id}` ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-gray-500" />}
+                                                </button>
                                             </div>
                                             <span className="text-[10px] text-gray-400">
                                                 {new Date(msg.timestamp).toLocaleString()}
@@ -716,9 +779,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <p className="text-gray-300 text-sm mt-3 whitespace-pre-wrap bg-black/30 p-3 rounded-lg border border-white/5">
-                                        {msg.message}
-                                    </p>
+                                    <div className="relative group">
+                                        <p className="text-gray-300 text-sm mt-3 whitespace-pre-wrap bg-black/30 p-3 rounded-lg border border-white/5 pr-10">
+                                            {msg.message}
+                                        </p>
+                                        <button 
+                                            onClick={() => handleCopy(msg.message, `support-msg-${msg.id}`)}
+                                            className="absolute top-2 right-2 p-1.5 bg-white/5 hover:bg-white/10 rounded transition"
+                                        >
+                                            {copiedId === `support-msg-${msg.id}` ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
