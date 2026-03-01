@@ -119,7 +119,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         onClick={onClose}
         className={`
             absolute right-6 z-[9999] p-2.5 
-            bg-black/40 text-white rounded-full backdrop-blur-md 
+            bg-black/60 text-white rounded-full 
             border border-white/10 shadow-lg
             transition-all duration-700 ease-in-out
             hover:bg-[#E50914] hover:opacity-100 hover:scale-110 active:opacity-100

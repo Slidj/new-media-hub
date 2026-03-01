@@ -77,7 +77,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
         {/* Header - Pushed down to avoid system bar overlap */}
         <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-4 px-4 border-b border-white/10 flex items-center justify-between bg-[#141414]">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">

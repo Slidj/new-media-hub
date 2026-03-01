@@ -107,7 +107,7 @@ export const MyListView: React.FC<MyListViewProps> = ({ myList, history, onMovie
                         )}
 
                         <div className="absolute bottom-2 right-2 z-20">
-                            <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
+                            <div className="bg-black/80 px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
                                 <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
                                 <span className="text-[10px] font-bold text-white">{movie.rating}</span>
                             </div>

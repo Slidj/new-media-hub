@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out
         pt-[calc(env(safe-area-inset-top)+80px)] pb-4
         ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
-          ? 'bg-black/95 backdrop-blur-2xl shadow-xl' 
+          ? 'bg-black shadow-md' 
           : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
         }
       `}

@@ -325,7 +325,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
         <>
             {/* Backdrop */}
             <div 
-                className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-30 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/80 z-30 transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsSidebarOpen(false)}
             />
             

@@ -191,7 +191,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 />
                                 
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 scale-50 group-hover:scale-100 shadow-xl">
+                                    <div className="w-14 h-14 rounded-full bg-black/60 border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl">
                                         <Play className="w-6 h-6 text-white fill-white ml-1" />
                                     </div>
                                 </div>

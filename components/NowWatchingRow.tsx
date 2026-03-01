@@ -147,7 +147,7 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
 
                                 {/* Viewers Badge */}
                                 {(movie as any).viewers > 1 && (
-                                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white/80 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 z-10">
+                                    <div className="absolute top-2 right-2 bg-black/80 text-white/80 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 z-10">
                                         <Users className="w-2.5 h-2.5" />
                                         {(movie as any).viewers}
                                     </div>
@@ -166,7 +166,7 @@ export const NowWatchingRow: React.FC<NowWatchingRowProps> = ({ title, activitie
                                 </div>
 
                                 {/* Play Icon Overlay on Hover */}
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[1px] z-20">
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 bg-black/40 z-20">
                                     <div className="w-10 h-10 rounded-full bg-[#E50914] flex items-center justify-center shadow-lg transform scale-0 group-hover/card:scale-100 transition-transform duration-300">
                                         <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                                     </div>

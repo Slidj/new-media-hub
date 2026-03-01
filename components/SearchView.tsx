@@ -113,7 +113,7 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
                         )}
 
                         <div className="absolute bottom-2 right-2 z-20">
-                            <div className="bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 shadow-lg">
+                            <div className="bg-black/80 px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 shadow-lg">
                             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                             <span className="text-[10px] font-bold text-white">{movie.rating}</span>
                             </div>

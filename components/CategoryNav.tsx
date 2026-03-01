@@ -64,10 +64,10 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                         className={`
                             opacity-0 animate-fade-in-up
                             whitespace-nowrap px-3 py-1.5 rounded-[4px] text-xs md:text-sm font-bold flex-shrink-0
-                            transition-all duration-300 active:scale-95 border backdrop-blur-md shadow-lg
+                            transition-all duration-300 active:scale-95 border shadow-lg
                             ${activeCategory === cat.id 
                                 ? 'bg-white text-black border-white' 
-                                : 'bg-black/40 text-white border-white/20 hover:bg-black/60'
+                                : 'bg-black/80 text-white border-white/20 hover:bg-black'
                             }
                         `}
                         style={{ 

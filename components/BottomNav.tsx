@@ -34,7 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
 
   return (
     // Z-INDEX set to 50 to match Navbar. Will be covered by Modal (z-100) and Player (z-200)
-    <div className="fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t border-[#222] px-2 md:hidden z-50 flex justify-between items-center pb-safe safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+    <div className="fixed bottom-0 left-0 w-full bg-black border-t border-[#222] px-2 md:hidden z-50 flex justify-between items-center pb-safe safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
       
       <button 
         type="button"

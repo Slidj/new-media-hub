@@ -205,7 +205,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-black/90 backdrop-blur-md"
+            className="absolute inset-0 bg-black/90"
             onClick={handleClose}
         />
 
@@ -229,7 +229,7 @@ export const Modal: React.FC<ModalProps> = ({
                 handleClose();
             }}
             className={`
-                absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/60 backdrop-blur-md
+                absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80
                 grid place-items-center hover:bg-[#2a2a2a] border border-white/10
                 transition-all duration-300
                 top-16 right-4 md:top-4 md:right-4

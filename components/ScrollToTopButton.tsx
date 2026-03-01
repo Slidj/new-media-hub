@@ -52,7 +52,7 @@ export const ScrollToTopButton = () => {
                     className={`
                         fixed bottom-24 left-4 z-40 
                         w-12 h-12 rounded-full 
-                        bg-[#2a2a2a]/80 backdrop-blur-xl 
+                        bg-[#2a2a2a] 
                         border border-white/10 
                         text-white shadow-lg 
                         flex items-center justify-center

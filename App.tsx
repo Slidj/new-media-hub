@@ -75,9 +75,11 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 onClick={() => onClick(movie)}
             >
                 {/* Skeleton Overlay - Behind Image */}
-                <div className="absolute inset-0 z-0 bg-[#181818]">
-                    <div className={`w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer transition-opacity duration-700 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}></div>
-                </div>
+                {!imageLoaded && (
+                    <div className="absolute inset-0 z-0 bg-[#181818]">
+                        <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer"></div>
+                    </div>
+                )}
 
                 <img
                     src={movie.smallPosterUrl || movie.posterUrl}
@@ -112,7 +114,7 @@ const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProp
                 )}
 
                 <div className="absolute bottom-2 right-2 z-20">
-                <div className="bg-black/60 backdrop-blur-md px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
+                <div className="bg-black/80 px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
                     <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
                     <span className="text-[10px] font-bold text-white">{movie.rating}</span>
                 </div>

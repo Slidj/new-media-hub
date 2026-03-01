@@ -48,9 +48,11 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
       <div className="absolute inset-0 z-0 bg-[#1a1a1a] overflow-hidden">
         
         {/* Skeleton Loader Overlay */}
-        <div className={`absolute inset-0 z-10 transition-opacity duration-700 pointer-events-none ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="w-full h-full bg-gradient-to-r from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a] animate-shimmer"></div>
-        </div>
+        {!imageLoaded && (
+            <div className="absolute inset-0 z-10 transition-opacity duration-700 pointer-events-none">
+                <div className="w-full h-full bg-gradient-to-r from-[#1a1a1a] via-[#2a2a2a] to-[#1a1a1a] animate-shimmer"></div>
+            </div>
+        )}
 
         <motion.div style={{ y, opacity }} className="w-full h-full">
             {/* Mobile: Vertical Poster */}
@@ -135,7 +137,7 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleMoreInfo}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-500/40 text-white font-bold rounded-[4px] hover:bg-gray-500/30 transition backdrop-blur-md border border-white/10 max-w-[200px] md:max-w-none cursor-pointer"
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-gray-600/90 text-white font-bold rounded-[4px] hover:bg-gray-600 transition border border-white/10 max-w-[200px] md:max-w-none cursor-pointer"
               >
                 <Info className="w-6 h-6 md:w-8 md:h-8" />
                 <span className="text-lg md:text-xl">{t.moreInfo}</span>
