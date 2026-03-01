@@ -32,7 +32,8 @@ import {
     subscribeToUserBanStatus, 
     updateUserHeartbeat,
     recordGlobalActivity,
-    subscribeToGlobalActivity
+    subscribeToGlobalActivity,
+    subscribeToGlobalSettings
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
 import { Star, Tv } from 'lucide-react';
@@ -165,6 +166,8 @@ function App() {
   const prevUnreadCountRef = useRef(0);
   const isFirstNotificationLoadRef = useRef(true);
 
+  const [logoIcon, setLogoIcon] = useState('');
+
   const [lang, setLang] = useState<Language>(() => {
     try {
       if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code) {
@@ -292,11 +295,18 @@ function App() {
         });
     });
 
+    const unsubscribeGlobalSettings = subscribeToGlobalSettings((settings) => {
+        if (settings?.logoIcon !== undefined) {
+            setLogoIcon(settings.logoIcon);
+        }
+    });
+
     return () => {
         unsubscribeBan();
         unsubscribeUser();
         unsubscribePersonalNotifs();
         unsubscribeGlobalNotifs();
+        unsubscribeGlobalSettings();
     };
   }, [user]);
 
@@ -532,6 +542,7 @@ function App() {
         activeTab={activeTab}
         unreadCount={unreadCount}
         onBellClick={() => setIsNotificationsOpen(true)}
+        logoIcon={logoIcon}
       />
       
       <AnimatePresence mode="wait">

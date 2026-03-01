@@ -13,6 +13,7 @@ interface NavbarProps {
   activeTab: TabType;
   unreadCount?: number;
   onBellClick: () => void;
+  logoIcon?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -22,11 +23,11 @@ export const Navbar: React.FC<NavbarProps> = ({
     onHomeClick, 
     activeTab, 
     unreadCount = 0,
-    onBellClick
+    onBellClick,
+    logoIcon = ''
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [logoIcon, setLogoIcon] = useState('');
   
   const t = translations[lang];
 
@@ -38,19 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Subscribe to global settings for logo icon
-    let unsubscribe = () => {};
-    import('../services/firebase').then(({ subscribeToGlobalSettings }) => {
-        unsubscribe = subscribeToGlobalSettings((settings) => {
-            if (settings?.logoIcon !== undefined) {
-                setLogoIcon(settings.logoIcon);
-            }
-        });
-    });
-
     return () => {
         window.removeEventListener('scroll', handleScroll);
-        unsubscribe();
     };
   }, []);
 
