@@ -68,8 +68,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="text-3xl md:text-5xl font-bebas text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo flex items-center gap-2"
             >
               MEDIA HUB
-              {logoIcon && <span className="text-2xl md:text-4xl drop-shadow-none">{logoIcon}</span>}
             </h1>
+            {logoIcon && <span className="text-2xl md:text-4xl drop-shadow-none text-white">{logoIcon}</span>}
           </div>
         </div>
 
