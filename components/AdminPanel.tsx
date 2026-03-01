@@ -4,7 +4,7 @@ import {
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
     Menu, LayoutDashboard, ChevronRight, ChevronLeft, Trash2, RotateCcw,
-    Wifi, HelpCircle, Copy, Check
+    Wifi, HelpCircle, Copy, Check, Gift
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount, fetchSupportMessages, updateSupportMessageStatus, deleteSupportMessage } from '../services/firebase';
@@ -39,6 +39,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [loadingSupport, setLoadingSupport] = useState(false);
 
+  // Global Settings State
+  const [logoIcon, setLogoIcon] = useState('');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -48,6 +52,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   useEffect(() => {
       loadUsers();
       loadSupportMessages();
+      
+      import('../services/firebase').then(({ subscribeToGlobalSettings }) => {
+          const unsubscribe = subscribeToGlobalSettings((settings) => {
+              if (settings?.logoIcon !== undefined) {
+                  setLogoIcon(settings.logoIcon);
+              }
+          });
+          return () => unsubscribe();
+      });
   }, []);
 
   // Reset pagination when search changes
@@ -67,6 +80,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       const data = await fetchSupportMessages();
       setSupportMessages(data as SupportMessage[]);
       setLoadingSupport(false);
+  };
+
+  const handleSaveSettings = async () => {
+      setIsSavingSettings(true);
+      try {
+          const { updateGlobalSettings } = await import('../services/firebase');
+          await updateGlobalSettings({ logoIcon });
+          alert('Settings saved successfully!');
+      } catch (e) {
+          console.error("Failed to save settings", e);
+          alert('Failed to save settings.');
+      } finally {
+          setIsSavingSettings(false);
+      }
   };
 
   const handleToggleBan = async (userId: string, currentStatus: boolean) => {
@@ -398,6 +425,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                 <span className="text-3xl font-black text-white block">45.2K</span>
                                 <span className="text-xs text-gray-400 uppercase font-bold tracking-wider">{t.totalViews}</span>
                             </div>
+                    </div>
+
+                    {/* Global Settings */}
+                    <div className="bg-[#1f1f1f] rounded-xl border border-white/5 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2 bg-white/5">
+                            <Gift className="w-4 h-4 text-gray-400" />
+                            <h3 className="text-white font-bold text-sm uppercase">Global Settings</h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Holiday Logo Icon (Emoji)</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={logoIcon}
+                                        onChange={(e) => setLogoIcon(e.target.value)}
+                                        placeholder="e.g. 🎄, 🎃, ❄️"
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#E50914] transition"
+                                    />
+                                    <button 
+                                        onClick={handleSaveSettings}
+                                        disabled={isSavingSettings}
+                                        className="bg-[#E50914] hover:bg-[#B20710] text-white px-4 py-2 rounded-lg font-bold transition disabled:opacity-50"
+                                    >
+                                        {isSavingSettings ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">This icon will appear next to the "MEDIA HUB" logo for all users.</p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* System Status */}

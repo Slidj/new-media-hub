@@ -26,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [logoIcon, setLogoIcon] = useState('');
   
   const t = translations[lang];
 
@@ -36,7 +37,21 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Subscribe to global settings for logo icon
+    let unsubscribe = () => {};
+    import('../services/firebase').then(({ subscribeToGlobalSettings }) => {
+        unsubscribe = subscribeToGlobalSettings((settings) => {
+            if (settings?.logoIcon !== undefined) {
+                setLogoIcon(settings.logoIcon);
+            }
+        });
+    });
+
+    return () => {
+        window.removeEventListener('scroll', handleScroll);
+        unsubscribe();
+    };
   }, []);
 
   return (
@@ -60,9 +75,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onHomeClick}
           >
             <h1 
-                className="text-3xl md:text-5xl font-bebas text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo"
+                className="text-3xl md:text-5xl font-bebas text-transparent bg-clip-text bg-gradient-to-b from-[#E50914] to-[#B20710] uppercase drop-shadow-logo flex items-center gap-2"
             >
               MEDIA HUB
+              {logoIcon && <span className="text-2xl md:text-4xl drop-shadow-none">{logoIcon}</span>}
             </h1>
           </div>
         </div>

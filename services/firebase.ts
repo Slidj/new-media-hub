@@ -542,3 +542,29 @@ export const deleteSupportMessage = async (messageId: string) => {
         throw e;
     }
 };
+
+export const subscribeToGlobalSettings = (onUpdate: (settings: any) => void) => {
+    try {
+        const ref = doc(db, "settings", "global");
+        return onSnapshot(ref, (doc) => {
+            if (doc.exists()) {
+                onUpdate(doc.data());
+            } else {
+                onUpdate({});
+            }
+        });
+    } catch (e) {
+        console.error("Failed to subscribe to global settings", e);
+        return () => {};
+    }
+};
+
+export const updateGlobalSettings = async (settings: any) => {
+    try {
+        const ref = doc(db, "settings", "global");
+        await setDoc(ref, settings, { merge: true });
+    } catch (e) {
+        console.error("Failed to update global settings", e);
+        throw e;
+    }
+};
