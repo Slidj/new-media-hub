@@ -49,13 +49,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav 
       className={`
-        fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out
-        pt-[calc(env(safe-area-inset-top)+20px)] pb-4
+        fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out pb-4
         ${theme === 'glass' 
-            ? 'bg-[#1e293b]/30 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
-            : isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
-                ? 'bg-black shadow-md pt-[calc(env(safe-area-inset-top)+20px)]' 
-                : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent pt-[calc(env(safe-area-inset-top)+40px)]'
+            ? 'pt-[calc(env(safe-area-inset-top)+20px)] bg-[#1e293b]/30 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
+            : `pt-[calc(env(safe-area-inset-top)+80px)] ${
+                isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
+                  ? 'bg-black shadow-md' 
+                  : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
+              }`
         }
       `}
     >
