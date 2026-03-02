@@ -192,6 +192,8 @@ function App() {
   
   // Theme State
   const [theme, setTheme] = useState<'default' | 'glass'>('default');
+  
+  const isLoadingRef = useRef(false);
 
   // AUDIO UNLOCK FOR MOBILE BROWSERS - IMPROVED
   useEffect(() => {
