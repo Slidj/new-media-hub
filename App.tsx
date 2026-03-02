@@ -44,6 +44,7 @@ import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
 import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
+import { GlassHeroCarousel } from './components/GlassHeroCarousel';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 interface MovieCardProps {
@@ -702,28 +703,6 @@ function App() {
           {activeTab === 'home' && !selectedMovie && !playingMovie && (
               <ScrollToTopButton />
           )}
-
-          <Modal 
-            movie={selectedMovie} 
-            onClose={() => setSelectedMovie(null)} 
-            onPlay={(m) => handlePlay(m)}
-            onMovieSelect={setSelectedMovie} 
-            onToggleList={handleToggleList}
-            onToggleLike={handleToggleLike}
-            onToggleDislike={handleToggleDislike}
-            isInList={selectedMovie ? myList.some(m => m.id === selectedMovie.id) : false}
-            isLiked={selectedMovie ? likedMovies.includes(selectedMovie.id) : false}
-            isDisliked={selectedMovie ? dislikedMovies.includes(selectedMovie.id) : false}
-            lang={lang}
-          />
-
-          {playingMovie && (
-            <Player 
-              movie={playingMovie} 
-              onClose={() => setPlayingMovie(null)} 
-              userId={user?.id} // Pass UserID for tracking
-            />
-          )}
         </>
       ) : (
         /* GLASS THEME - CLEAN CANVAS */
@@ -744,14 +723,46 @@ function App() {
                 theme={theme}
             />
             
-            <main className="min-h-screen flex items-center justify-center relative z-10">
-                {/* Placeholder for future glass content */}
+            <main className="min-h-screen flex items-center justify-center relative z-10 overflow-hidden bg-[#0f172a]">
+                {movies.length > 0 ? (
+                    <GlassHeroCarousel 
+                        movies={movies} 
+                        onPlay={handlePlay} 
+                        onMoreInfo={handleMovieClick}
+                        lang={lang}
+                    />
+                ) : (
+                    <div className="text-white/50 animate-pulse">Loading...</div>
+                )}
             </main>
         </>
       )}
 
+      {/* COMMON OVERLAYS */}
+      <Modal 
+        movie={selectedMovie} 
+        onClose={() => setSelectedMovie(null)} 
+        onPlay={(m) => handlePlay(m)}
+        onMovieSelect={setSelectedMovie} 
+        onToggleList={handleToggleList}
+        onToggleLike={handleToggleLike}
+        onToggleDislike={handleToggleDislike}
+        isInList={selectedMovie ? myList.some(m => m.id === selectedMovie.id) : false}
+        isLiked={selectedMovie ? likedMovies.includes(selectedMovie.id) : false}
+        isDisliked={selectedMovie ? dislikedMovies.includes(selectedMovie.id) : false}
+        lang={lang}
+      />
+
+      {playingMovie && (
+        <Player 
+          movie={playingMovie} 
+          onClose={() => setPlayingMovie(null)} 
+          userId={user?.id} 
+        />
+      )}
+
       <BottomNav 
-        lang={lang} 
+        lang={lang}  
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onMoreClick={() => setIsMoreMenuOpen(true)}
