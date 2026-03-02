@@ -190,7 +190,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
-  const isLoadingRef = useRef(false);
+  // Theme State
+  const [theme, setTheme] = useState<'default' | 'glass'>('default');
 
   // AUDIO UNLOCK FOR MOBILE BROWSERS - IMPROVED
   useEffect(() => {
@@ -528,9 +529,13 @@ function App() {
   }
 
   return (
-    <div className="relative min-h-screen bg-black overflow-x-hidden font-sans antialiased text-white pb-24">
-      {/* Subtle Background Gradient */}
-      <div className="fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black pointer-events-none" />
+    <div className={`relative min-h-screen overflow-x-hidden font-sans antialiased text-white pb-24 ${theme === 'glass' ? 'bg-[#0f172a]' : 'bg-black'}`}>
+      {/* Background Gradient */}
+      <div className={`fixed inset-0 z-0 pointer-events-none transition-colors duration-500 ${
+          theme === 'glass' 
+            ? 'bg-gradient-to-br from-[#334155] via-[#1e293b] to-[#020617]' 
+            : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black'
+      }`} />
 
       <Navbar 
         user={user} 
@@ -727,6 +732,8 @@ function App() {
           user={user}
           userTickets={tickets} 
           onAdminClick={() => setIsAdminPanelOpen(true)}
+          theme={theme}
+          setTheme={setTheme}
       />
 
       {isAdminPanelOpen && (

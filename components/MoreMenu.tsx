@@ -13,11 +13,13 @@ interface MoreMenuProps {
   onClose: () => void;
   lang: Language;
   user: WebAppUser | null;
-  userTickets?: number; // New prop
+  userTickets?: number;
   onAdminClick: () => void;
+  theme: 'default' | 'glass';
+  setTheme: (theme: 'default' | 'glass') => void;
 }
 
-export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, userTickets = 0, onAdminClick }) => {
+export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, userTickets = 0, onAdminClick, theme, setTheme }) => {
   const t = translations[lang];
   const isUserAdmin = isAdmin(user?.id);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -444,22 +446,47 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
             
             {/* Admin Button (Only if Admin) */}
             {isUserAdmin && (
-                <div 
-                    onClick={() => {
-                        onClose();
-                        onAdminClick();
-                    }}
-                    className="flex items-center gap-4 p-4 rounded-lg bg-[#E50914]/10 border border-[#E50914]/30 cursor-pointer active:scale-95 transition hover:bg-[#E50914]/20 mb-4 group"
-                >
-                    <div className="p-2 bg-[#E50914] rounded-full text-white shadow-lg shadow-red-900/30">
-                        <ShieldAlert className="w-5 h-5" />
+                <>
+                    <div 
+                        onClick={() => {
+                            onClose();
+                            onAdminClick();
+                        }}
+                        className="flex items-center gap-4 p-4 rounded-lg bg-[#E50914]/10 border border-[#E50914]/30 cursor-pointer active:scale-95 transition hover:bg-[#E50914]/20 mb-4 group"
+                    >
+                        <div className="p-2 bg-[#E50914] rounded-full text-white shadow-lg shadow-red-900/30">
+                            <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-white font-bold text-sm">{t.adminPanel}</h4>
+                            <p className="text-[10px] text-gray-400">{t.adminAccess}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition" />
                     </div>
-                    <div className="flex-1">
-                        <h4 className="text-white font-bold text-sm">{t.adminPanel}</h4>
-                        <p className="text-[10px] text-gray-400">{t.adminAccess}</p>
+
+                    {/* DEV: Theme Switcher */}
+                    <div className="mb-6 p-4 rounded-xl bg-gray-900/50 border border-white/5">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Dev: Theme Preview</h4>
+                        <div className="flex bg-black/50 rounded-lg p-1">
+                            <button
+                                onClick={() => { setTheme('default'); Haptics.selection(); }}
+                                className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                    theme === 'default' ? 'bg-white text-black shadow' : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                Default
+                            </button>
+                            <button
+                                onClick={() => { setTheme('glass'); Haptics.selection(); }}
+                                className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                    theme === 'glass' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                Glass (Beta)
+                            </button>
+                        </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition" />
-                </div>
+                </>
             )}
 
             {menuItems.map((item, idx) => (
