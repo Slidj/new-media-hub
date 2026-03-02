@@ -539,163 +539,197 @@ function App() {
             : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black'
       }`} />
 
-      <Navbar 
-        user={user} 
-        lang={lang} 
-        onSearchClick={() => setActiveTab('search')}
-        onHomeClick={() => {
-            setActiveTab('home');
-            handleCategoryChange('trending');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        activeTab={activeTab}
-        unreadCount={unreadCount}
-        onBellClick={() => setIsNotificationsOpen(true)}
-        logoIcon={logoIcon}
-      />
-      
-      <AnimatePresence mode="wait">
-        {activeTab === 'home' && (
-          <motion.div
-            key="home"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full relative z-10"
-          >
-            <CategoryNav 
-                lang={lang} 
-                activeCategory={activeCategory} 
-                onSelectCategory={handleCategoryChange} 
-            />
+      {theme === 'default' ? (
+        <>
+          <Navbar 
+            user={user} 
+            lang={lang} 
+            onSearchClick={() => setActiveTab('search')}
+            onHomeClick={() => {
+                setActiveTab('home');
+                handleCategoryChange('trending');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            activeTab={activeTab}
+            unreadCount={unreadCount}
+            onBellClick={() => setIsNotificationsOpen(true)}
+            logoIcon={logoIcon}
+            theme={theme}
+          />
+          
+          <AnimatePresence mode="wait">
+            {activeTab === 'home' && (
+              <motion.div
+                key="home"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full relative z-10"
+              >
+                <CategoryNav 
+                    lang={lang} 
+                    activeCategory={activeCategory} 
+                    onSelectCategory={handleCategoryChange} 
+                    theme={theme}
+                />
 
-            {featuredMovie ? (
-                 <Hero 
-                    movie={featuredMovie} 
-                    onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                    onPlay={() => handlePlay(featuredMovie)}
-                    lang={lang}
-                 />
-            ) : (
-                <div className="relative h-[75vh] md:h-[90vh] w-full bg-black z-0">
-                   <div className="absolute inset-0 bg-[#0a0a0a]"></div>
-                   <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                </div>
-            )}
-
-            <main className={`relative z-10 w-full bg-black -mt-1`}>
-                {/* NOW WATCHING ROW */}
-                {globalActivities.length > 0 && (
-                    <section className="pt-4 pb-0">
-                        <NowWatchingRow 
-                            title={translations[lang].nowWatching || "Now Watching"} 
-                            activities={globalActivities} 
-                            onMovieClick={handleMovieClick}
-                            lang={lang}
-                        />
-                    </section>
+                {featuredMovie ? (
+                     <Hero 
+                        movie={featuredMovie} 
+                        onMoreInfo={() => setSelectedMovie(featuredMovie)}
+                        onPlay={() => handlePlay(featuredMovie)}
+                        lang={lang}
+                        theme={theme}
+                     />
+                ) : (
+                    <div className={`relative h-[75vh] md:h-[90vh] w-full z-0 ${theme === 'glass' ? 'bg-transparent' : 'bg-black'}`}>
+                       <div className={`absolute inset-0 ${theme === 'glass' ? 'bg-transparent' : 'bg-[#0a0a0a]'}`}></div>
+                       <div className={`absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t ${theme === 'glass' ? 'from-[#0f172a] via-[#0f172a]/40' : 'from-black via-black/40'} to-transparent`}></div>
+                    </div>
                 )}
 
-                <section className="px-2 md:px-12 pb-10 pt-0">
-                    {/* Separator Line */}
-                    <div className="w-full flex justify-center py-2">
-                        <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                    </div>
-                    
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                        {movies.map((movie, index) => (
-                            <MovieCard 
-                                key={`${movie.id}-${index}`}
-                                movie={movie}
-                                index={index}
-                                activeCategory={activeCategory}
-                                onClick={handleMovieClick}
+                <main className={`relative z-10 w-full -mt-1 ${theme === 'glass' ? 'bg-transparent' : 'bg-black'}`}>
+                    {/* NOW WATCHING ROW */}
+                    {globalActivities.length > 0 && (
+                        <section className="pt-4 pb-0">
+                            <NowWatchingRow 
+                                title={translations[lang].nowWatching || "Now Watching"} 
+                                activities={globalActivities} 
+                                onMovieClick={handleMovieClick}
+                                lang={lang}
                             />
-                        ))}
-
-                        {loading && Array.from({ length: 6 }).map((_, i) => (
-                            <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                                <SkeletonCard />
-                            </div>
-                        ))}
-                    </div>
-                    
-                    {!hasMore && movies.length > 0 && (
-                        <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                            <p>{translations[lang].endOfList}</p>
-                        </div>
+                        </section>
                     )}
-                </section>
-            </main>
-          </motion.div>
-        )}
 
-        {activeTab === 'search' && (
-          <motion.div
-            key="search"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full pt-20 relative z-10"
-          >
-            <SearchView 
-              lang={lang} 
-              onMovieSelect={setSelectedMovie} 
+                    <section className="px-2 md:px-12 pb-10 pt-0">
+                        {/* Separator Line */}
+                        <div className="w-full flex justify-center py-2">
+                            <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        </div>
+                        
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                            {movies.map((movie, index) => (
+                                <MovieCard 
+                                    key={`${movie.id}-${index}`}
+                                    movie={movie}
+                                    index={index}
+                                    activeCategory={activeCategory}
+                                    onClick={handleMovieClick}
+                                />
+                            ))}
+
+                            {loading && Array.from({ length: 6 }).map((_, i) => (
+                                <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                                    <SkeletonCard />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {!hasMore && movies.length > 0 && (
+                            <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                                <p>{translations[lang].endOfList}</p>
+                            </div>
+                        )}
+                    </section>
+                </main>
+              </motion.div>
+            )}
+
+            {activeTab === 'search' && (
+              <motion.div
+                key="search"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full pt-20 relative z-10"
+              >
+                <SearchView 
+                  lang={lang} 
+                  onMovieSelect={setSelectedMovie} 
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'coming_soon' && (
+              <motion.div
+                key="coming_soon"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full pt-20 relative z-10"
+              >
+                <ComingSoonView
+                    lang={lang}
+                    onMovieSelect={setSelectedMovie}
+                    user={user}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'my_list' && (
+              <motion.div
+                key="my_list"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="w-full pt-20 relative z-10"
+              >
+                  <MyListView 
+                     myList={myList}
+                     history={watchHistory}
+                     onMovieSelect={setSelectedMovie}
+                     lang={lang}
+                  />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Random Button */}
+          <AnimatePresence>
+            {showRandomButton && activeTab === 'home' && !selectedMovie && !playingMovie && (
+                <RandomButton 
+                    movies={movies} 
+                    onRandomSelect={handleMovieClick} 
+                />
+            )}
+          </AnimatePresence>
+
+          {/* Scroll To Top Button */}
+          {activeTab === 'home' && !selectedMovie && !playingMovie && (
+              <ScrollToTopButton />
+          )}
+
+          <Modal 
+            movie={selectedMovie} 
+            onClose={() => setSelectedMovie(null)} 
+            onPlay={(m) => handlePlay(m)}
+            onMovieSelect={setSelectedMovie} 
+            onToggleList={handleToggleList}
+            onToggleLike={handleToggleLike}
+            onToggleDislike={handleToggleDislike}
+            isInList={selectedMovie ? myList.some(m => m.id === selectedMovie.id) : false}
+            isLiked={selectedMovie ? likedMovies.includes(selectedMovie.id) : false}
+            isDisliked={selectedMovie ? dislikedMovies.includes(selectedMovie.id) : false}
+            lang={lang}
+          />
+
+          {playingMovie && (
+            <Player 
+              movie={playingMovie} 
+              onClose={() => setPlayingMovie(null)} 
+              userId={user?.id} // Pass UserID for tracking
             />
-          </motion.div>
-        )}
-
-        {activeTab === 'coming_soon' && (
-          <motion.div
-            key="coming_soon"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full pt-20 relative z-10"
-          >
-            <ComingSoonView
-                lang={lang}
-                onMovieSelect={setSelectedMovie}
-                user={user}
-            />
-          </motion.div>
-        )}
-
-        {activeTab === 'my_list' && (
-          <motion.div
-            key="my_list"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="w-full pt-20 relative z-10"
-          >
-              <MyListView 
-                 myList={myList}
-                 history={watchHistory}
-                 onMovieSelect={setSelectedMovie}
-                 lang={lang}
-              />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Random Button */}
-      <AnimatePresence>
-        {showRandomButton && activeTab === 'home' && !selectedMovie && !playingMovie && (
-            <RandomButton 
-                movies={movies} 
-                onRandomSelect={handleMovieClick} 
-            />
-        )}
-      </AnimatePresence>
-
-      {/* Scroll To Top Button */}
-      {activeTab === 'home' && !selectedMovie && !playingMovie && (
-          <ScrollToTopButton />
+          )}
+        </>
+      ) : (
+        /* GLASS THEME - CLEAN CANVAS */
+        <main className="min-h-screen flex items-center justify-center relative z-10">
+            {/* Placeholder for future glass content */}
+        </main>
       )}
 
       <BottomNav 
@@ -703,29 +737,8 @@ function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onMoreClick={() => setIsMoreMenuOpen(true)}
+        theme={theme}
       />
-
-      <Modal 
-        movie={selectedMovie} 
-        onClose={() => setSelectedMovie(null)} 
-        onPlay={(m) => handlePlay(m)}
-        onMovieSelect={setSelectedMovie} 
-        onToggleList={handleToggleList}
-        onToggleLike={handleToggleLike}
-        onToggleDislike={handleToggleDislike}
-        isInList={selectedMovie ? myList.some(m => m.id === selectedMovie.id) : false}
-        isLiked={selectedMovie ? likedMovies.includes(selectedMovie.id) : false}
-        isDisliked={selectedMovie ? dislikedMovies.includes(selectedMovie.id) : false}
-        lang={lang}
-      />
-
-      {playingMovie && (
-        <Player 
-          movie={playingMovie} 
-          onClose={() => setPlayingMovie(null)} 
-          userId={user?.id} // Pass UserID for tracking
-        />
-      )}
 
       <MoreMenu 
           isOpen={isMoreMenuOpen}

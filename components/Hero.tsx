@@ -12,9 +12,10 @@ interface HeroProps {
   onMoreInfo: () => void;
   onPlay: () => void;
   lang: Language;
+  theme?: 'default' | 'glass';
 }
 
-export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) => {
+export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang, theme = 'default' }) => {
   const t = translations[lang];
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -43,9 +44,9 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
   };
 
   return (
-    <div ref={containerRef} className="relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden bg-black">
+    <div ref={containerRef} className={`relative h-[75vh] md:h-[90vh] w-full text-white overflow-hidden ${theme === 'glass' ? 'bg-transparent' : 'bg-black'}`}>
       {/* Background Layer - Z-0 */}
-      <div className="absolute inset-0 z-0 bg-[#1a1a1a] overflow-hidden">
+      <div className={`absolute inset-0 z-0 overflow-hidden ${theme === 'glass' ? 'bg-transparent' : 'bg-[#1a1a1a]'}`}>
         
         {/* Skeleton Loader Overlay */}
         {!imageLoaded && (
@@ -83,7 +84,11 @@ export const Hero: React.FC<HeroProps> = ({ movie, onMoreInfo, onPlay, lang }) =
            1. Height increased to 50vh for very smooth transition.
            2. 'from-black' ensures the very bottom is 100% solid black, matching the app background.
         */}
-        <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10"></div>
+        <div className={`absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t pointer-events-none z-10 ${
+            theme === 'glass' 
+                ? 'from-[#0f172a] via-[#0f172a]/40 to-transparent' 
+                : 'from-black via-black/40 to-transparent'
+        }`}></div>
       </div>
 
       {/* Content Layer - Z-20 (Above Gradient) */}

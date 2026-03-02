@@ -11,9 +11,10 @@ interface BottomNavProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   onMoreClick: () => void;
+  theme?: 'default' | 'glass';
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChange, onMoreClick }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChange, onMoreClick, theme = 'default' }) => {
   const t = translations[lang];
 
   const handleTabClick = (tab: TabType) => {
@@ -29,12 +30,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({ lang, activeTab, onTabChan
   };
 
   const btnClass = "flex-1 flex flex-col items-center justify-center gap-1 py-2 cursor-pointer transition active:scale-90 select-none touch-manipulation focus:outline-none";
-  const activeClass = "text-white scale-105";
+  const activeClass = theme === 'glass' ? "text-blue-400 scale-105 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" : "text-white scale-105";
   const inactiveClass = "text-gray-500 hover:text-gray-300";
 
   return (
     // Z-INDEX set to 50 to match Navbar. Will be covered by Modal (z-100) and Player (z-200)
-    <div className="fixed bottom-0 left-0 w-full bg-black border-t border-[#222] px-2 md:hidden z-50 flex justify-between items-center pb-safe safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+    <div className={`fixed bottom-0 left-0 w-full md:hidden z-50 flex justify-between items-center pb-safe safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)] ${
+        theme === 'glass' 
+            ? 'bg-[#0f172a]/80 backdrop-blur-md border-t border-white/10' 
+            : 'bg-black border-t border-[#222]'
+    }`}>
       
       <button 
         type="button"

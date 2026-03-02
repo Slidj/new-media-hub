@@ -14,6 +14,7 @@ interface NavbarProps {
   unreadCount?: number;
   onBellClick: () => void;
   logoIcon?: string;
+  theme?: 'default' | 'glass';
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -24,7 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     activeTab, 
     unreadCount = 0,
     onBellClick,
-    logoIcon = ''
+    logoIcon = '',
+    theme = 'default'
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -50,8 +52,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out
         pt-[calc(env(safe-area-inset-top)+80px)] pb-4
         ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
-          ? 'bg-black shadow-md' 
-          : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
+          ? theme === 'glass' 
+              ? 'bg-[#0f172a]/80 backdrop-blur-md border-b border-white/5 shadow-lg' 
+              : 'bg-black shadow-md'
+          : theme === 'glass'
+              ? 'bg-gradient-to-b from-[#0f172a]/90 via-[#0f172a]/40 to-transparent'
+              : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
         }
       `}
     >
