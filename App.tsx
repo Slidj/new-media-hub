@@ -531,11 +531,11 @@ function App() {
   }
 
   return (
-    <div className={`relative min-h-screen overflow-x-hidden font-sans antialiased text-white pb-24 ${theme === 'glass' ? 'bg-[#0f172a]' : 'bg-black'}`}>
+    <div className={`relative min-h-screen overflow-x-hidden font-sans antialiased text-white pb-24 ${theme === 'glass' ? 'bg-[#020617]' : 'bg-black'}`}>
       {/* Background Gradient */}
       <div className={`fixed inset-0 z-0 pointer-events-none transition-colors duration-500 ${
           theme === 'glass' 
-            ? 'bg-gradient-to-br from-[#334155] via-[#1e293b] to-[#020617]' 
+            ? 'bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1e293b] via-[#020617] to-black' 
             : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black'
       }`} />
 
