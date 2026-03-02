@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Settings, Info, MessageCircle, ShieldAlert, User, ChevronRight, Ticket, Dices, Globe, Star, Image as ImageIcon } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { WebAppUser } from '../types';
-import { isAdmin } from '../utils/adminIds';
+import { isAdmin, isTester } from '../utils/adminIds';
 import { Haptics } from '../utils/haptics';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getHeroQuality, getRowQuality, setHeroQuality, setRowQuality, ImageQuality } from '../utils/settings';
@@ -446,47 +446,47 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
             
             {/* Admin Button (Only if Admin) */}
             {isUserAdmin && (
-                <>
-                    <div 
-                        onClick={() => {
-                            onClose();
-                            onAdminClick();
-                        }}
-                        className="flex items-center gap-4 p-4 rounded-lg bg-[#E50914]/10 border border-[#E50914]/30 cursor-pointer active:scale-95 transition hover:bg-[#E50914]/20 mb-4 group"
-                    >
-                        <div className="p-2 bg-[#E50914] rounded-full text-white shadow-lg shadow-red-900/30">
-                            <ShieldAlert className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="text-white font-bold text-sm">{t.adminPanel}</h4>
-                            <p className="text-[10px] text-gray-400">{t.adminAccess}</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition" />
+                <div 
+                    onClick={() => {
+                        onClose();
+                        onAdminClick();
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-lg bg-[#E50914]/10 border border-[#E50914]/30 cursor-pointer active:scale-95 transition hover:bg-[#E50914]/20 mb-4 group"
+                >
+                    <div className="p-2 bg-[#E50914] rounded-full text-white shadow-lg shadow-red-900/30">
+                        <ShieldAlert className="w-5 h-5" />
                     </div>
+                    <div className="flex-1">
+                        <h4 className="text-white font-bold text-sm">{t.adminPanel}</h4>
+                        <p className="text-[10px] text-gray-400">{t.adminAccess}</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition" />
+                </div>
+            )}
 
-                    {/* DEV: Theme Switcher */}
-                    <div className="mb-6 p-4 rounded-xl bg-gray-900/50 border border-white/5">
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Dev: Theme Preview</h4>
-                        <div className="flex bg-black/50 rounded-lg p-1">
-                            <button
-                                onClick={() => { setTheme('default'); Haptics.selection(); }}
-                                className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
-                                    theme === 'default' ? 'bg-white text-black shadow' : 'text-gray-400 hover:text-white'
-                                }`}
-                            >
-                                Default
-                            </button>
-                            <button
-                                onClick={() => { setTheme('glass'); Haptics.selection(); }}
-                                className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
-                                    theme === 'glass' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
-                                }`}
-                            >
-                                Glass (Beta)
-                            </button>
-                        </div>
+            {/* DEV: Theme Switcher (Admins & Testers) */}
+            {isTester(user?.id) && (
+                <div className="mb-6 p-4 rounded-xl bg-gray-900/50 border border-white/5">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Dev: Theme Preview</h4>
+                    <div className="flex bg-black/50 rounded-lg p-1">
+                        <button
+                            onClick={() => { setTheme('default'); Haptics.selection(); }}
+                            className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                theme === 'default' ? 'bg-white text-black shadow' : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            Default
+                        </button>
+                        <button
+                            onClick={() => { setTheme('glass'); Haptics.selection(); }}
+                            className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
+                                theme === 'glass' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            Glass (Beta)
+                        </button>
                     </div>
-                </>
+                </div>
             )}
 
             {menuItems.map((item, idx) => (
