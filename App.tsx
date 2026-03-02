@@ -727,9 +727,27 @@ function App() {
         </>
       ) : (
         /* GLASS THEME - CLEAN CANVAS */
-        <main className="min-h-screen flex items-center justify-center relative z-10">
-            {/* Placeholder for future glass content */}
-        </main>
+        <>
+            <Navbar 
+                user={user} 
+                lang={lang} 
+                onSearchClick={() => setActiveTab('search')}
+                onHomeClick={() => {
+                    setActiveTab('home');
+                    handleCategoryChange('trending');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                activeTab={activeTab}
+                unreadCount={unreadCount}
+                onBellClick={() => setIsNotificationsOpen(true)}
+                logoIcon={logoIcon}
+                theme={theme}
+            />
+            
+            <main className="min-h-screen flex items-center justify-center relative z-10">
+                {/* Placeholder for future glass content */}
+            </main>
+        </>
       )}
 
       <BottomNav 

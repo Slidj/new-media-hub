@@ -50,14 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav 
       className={`
         fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out
-        pt-[calc(env(safe-area-inset-top)+80px)] pb-4
-        ${isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
-          ? theme === 'glass' 
-              ? 'bg-[#0f172a]/80 backdrop-blur-md border-b border-white/5 shadow-lg' 
-              : 'bg-black shadow-md'
-          : theme === 'glass'
-              ? 'bg-gradient-to-b from-[#0f172a]/90 via-[#0f172a]/40 to-transparent'
-              : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent'
+        pt-[calc(env(safe-area-inset-top)+20px)] pb-4
+        ${theme === 'glass' 
+            ? 'bg-[#1e293b]/30 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
+            : isScrolled || activeTab === 'search' || activeTab === 'coming_soon'
+                ? 'bg-black shadow-md pt-[calc(env(safe-area-inset-top)+20px)]' 
+                : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent pt-[calc(env(safe-area-inset-top)+40px)]'
         }
       `}
     >
