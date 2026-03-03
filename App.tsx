@@ -44,6 +44,7 @@ import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
 import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
+import { SkeletonCard } from './components/SkeletonCard';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 
