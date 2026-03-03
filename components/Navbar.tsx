@@ -47,10 +47,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+24px)] transition-all duration-500 ${
+    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+36px)] transition-all duration-500 ${
       isScrolled 
         ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 shadow-2xl' 
-        : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-transparent'
+        : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b-0'
     }`}>
       
       {/* Left: Logo */}
@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 MEDIA HUB
             </span>
             {logoIcon && (
-                <span className="text-2xl animate-bounce">{logoIcon}</span>
+                <span className="text-2xl animate-wiggle-periodic origin-bottom inline-block">{logoIcon}</span>
             )}
         </div>
       </div>
@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="p-2 text-white hover:opacity-80 transition active:scale-90"
             >
-                <Bell className="w-5 h-5 text-white" strokeWidth={2} />
+                <Bell className="w-6 h-6 text-white" strokeWidth={2.5} />
                 
                 {/* Notification Dot */}
                 {unreadCount > 0 && (
@@ -99,16 +99,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="p-2 text-white hover:opacity-80 transition active:scale-90"
         >
-            <Gift className="w-5 h-5 text-white" strokeWidth={2} />
+            <Gift className="w-6 h-6 text-white" strokeWidth={2.5} />
         </button>
 
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-md overflow-hidden border border-white/10">
-            <img 
-                src={user?.photo_url || "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"} 
-                alt="User" 
-                className="w-full h-full object-cover"
-            />
+        <div className="w-9 h-9 rounded-md overflow-hidden border border-white/10 bg-gradient-to-br from-[#E50914] to-[#8A050C] flex items-center justify-center shrink-0">
+            {user?.photo_url && !imgError ? (
+                <img 
+                    src={user.photo_url} 
+                    alt="User" 
+                    className="w-full h-full object-cover"
+                    onError={() => setImgError(true)}
+                />
+            ) : (
+                <span className="text-white font-bold text-sm">
+                    {user?.first_name?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+            )}
         </div>
 
       </div>
