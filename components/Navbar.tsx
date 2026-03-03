@@ -48,8 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+80px)] transition-all duration-500 ${
-      isScrolled || activeTab === 'coming_soon'
-        ? 'bg-[#0a0a0a] shadow-2xl' 
+      isScrolled || activeTab !== 'home'
+        ? 'bg-black shadow-2xl' 
         : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent'
     }`}>
       
