@@ -47,16 +47,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] bg-black border-b border-[#222] shadow-lg">
+    <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+24px)] bg-black border-b border-[#222] shadow-lg">
       
       {/* Left: Logo */}
       <div className="flex items-center gap-2" onClick={onHomeClick}>
         <div className="flex items-center gap-1">
-            <span className="text-2xl font-bebas tracking-tighter text-transparent bg-clip-text uppercase drop-shadow-logo bg-gradient-to-b from-[#E50914] to-[#8A050C] cursor-pointer" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+            <span className="text-4xl font-bebas tracking-tighter text-transparent bg-clip-text uppercase drop-shadow-logo bg-gradient-to-b from-[#E50914] to-[#8A050C] cursor-pointer" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
                 MEDIA HUB
             </span>
             {logoIcon && (
-                <span className="text-xl animate-bounce">{logoIcon}</span>
+                <span className="text-2xl animate-bounce">{logoIcon}</span>
             )}
         </div>
       </div>
