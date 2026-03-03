@@ -1,7 +1,7 @@
 
 // Update: Navbar with Notifications Support
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, User, Gift } from 'lucide-react';
+import { Bell, Gift } from 'lucide-react';
 import { WebAppUser, TabType } from '../types';
 import { Language, translations } from '../utils/translations';
 import { Haptics } from '../utils/haptics';
@@ -47,14 +47,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] transition-all duration-500 ${
-      isScrolled ? 'bg-black/80 backdrop-blur-md shadow-lg' : 'bg-gradient-to-b from-black/80 to-transparent'
-    }`}>
+    <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] bg-black border-b border-[#222] shadow-lg">
       
       {/* Left: Logo */}
       <div className="flex items-center gap-2" onClick={onHomeClick}>
-        <div className="flex items-center gap-1 text-[#E50914]">
-            <span className="text-2xl font-black tracking-tighter cursor-pointer font-bebas">
+        <div className="flex items-center gap-1">
+            <span className="text-2xl font-bebas tracking-tighter text-transparent bg-clip-text uppercase drop-shadow-logo bg-gradient-to-b from-[#E50914] to-[#8A050C] cursor-pointer" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
                 MEDIA HUB
             </span>
             {logoIcon && (
@@ -66,30 +64,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
         
-        {/* Gift Button */}
-        <button 
-            onClick={() => {
-                Haptics.light();
-                Audio.playClick();
-                // Placeholder for Gift action
-            }}
-            className="p-2 text-white hover:opacity-80 transition active:scale-90"
-        >
-            <Gift className="w-5 h-5 text-white" strokeWidth={2} />
-        </button>
-
-        {/* Search Button */}
-        <button 
-            onClick={() => {
-                Haptics.light();
-                Audio.playClick();
-                onSearchClick();
-            }}
-            className="p-2 text-white hover:opacity-80 transition active:scale-90"
-        >
-            <Search className="w-5 h-5 text-white" strokeWidth={2} />
-        </button>
-
         {/* Notifications Bell */}
         <div className="relative">
             <button 
@@ -111,6 +85,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
             </button>
         </div>
+
+        {/* Gift Button */}
+        <button 
+            onClick={() => {
+                Haptics.light();
+                Audio.playClick();
+                // Placeholder for Gift action
+            }}
+            className="p-2 text-white hover:opacity-80 transition active:scale-90"
+        >
+            <Gift className="w-5 h-5 text-white" strokeWidth={2} />
+        </button>
 
         {/* Avatar */}
         <div className="w-8 h-8 rounded-md overflow-hidden border border-white/10">
