@@ -393,7 +393,8 @@ export const subscribeToPersonalNotifications = (userId: number, onUpdate: (noti
     return onSnapshot(q, (snapshot) => {
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            isGlobal: false
         } as AppNotification));
         
         // Trigger cleanup in background
@@ -416,7 +417,8 @@ export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotificatio
         const notifs: AppNotification[] = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            isRead: false 
+            isRead: false,
+            isGlobal: true
         } as AppNotification));
         
         // Trigger cleanup in background

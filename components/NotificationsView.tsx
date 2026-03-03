@@ -34,7 +34,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
         // A. Handle Personal (Firebase)
         if (userId) {
             notifications.forEach(n => {
-                if (!n.isRead && n.type !== 'admin') {
+                if (!n.isRead && !n.isGlobal) {
                     markNotificationRead(userId, n.id);
                 }
             });
@@ -42,7 +42,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
 
         // B. Handle Global (Local Storage)
         const globalUnread = notifications
-            .filter(n => n.type === 'admin' && !n.isRead)
+            .filter(n => n.isGlobal && !n.isRead)
             .map(n => n.id);
         
         if (globalUnread.length > 0 && onMarkGlobalRead) {

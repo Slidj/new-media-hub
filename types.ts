@@ -67,6 +67,7 @@ export interface AppNotification {
   isRead: boolean;
   movieId?: string;
   posterUrl?: string;
+  isGlobal?: boolean;
 }
 
 export interface SupportMessage {

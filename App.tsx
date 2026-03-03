@@ -208,14 +208,14 @@ function App() {
 
     const unsubscribePersonalNotifs = subscribeToPersonalNotifications(user.id, (personalNotifs) => {
         setRawNotifications(prev => {
-             const globalOnly = prev.filter(n => n.type === 'admin');
+             const globalOnly = prev.filter(n => n.isGlobal);
              return [...globalOnly, ...personalNotifs];
         });
     });
 
     const unsubscribeGlobalNotifs = subscribeToGlobalNotifications((globalNotifs) => {
         setRawNotifications(prev => {
-            const personalOnly = prev.filter(n => n.type !== 'admin');
+            const personalOnly = prev.filter(n => !n.isGlobal);
             return [...personalOnly, ...globalNotifs];
         });
     });
@@ -248,7 +248,7 @@ function App() {
       const now = new Date();
       const processed = rawNotifications
           .filter(n => {
-              if (n.type === 'admin' && deletedGlobalIds.includes(n.id)) return false;
+              if (n.isGlobal && deletedGlobalIds.includes(n.id)) return false;
               if (n.type === 'reminder') {
                   const notificationDate = new Date(n.date);
                   if (notificationDate > now) return false;
@@ -256,7 +256,7 @@ function App() {
               return true;
           })
           .map(n => {
-              if (n.type === 'admin' && readGlobalIds.includes(n.id)) {
+              if (n.isGlobal && readGlobalIds.includes(n.id)) {
                   return { ...n, isRead: true };
               }
               return n;
@@ -293,7 +293,7 @@ function App() {
   };
 
   const handleDeleteNotification = async (notification: AppNotification) => {
-      if (notification.type === 'admin') {
+      if (notification.isGlobal) {
           const newDeletedIds = [...deletedGlobalIds, notification.id];
           setDeletedGlobalIds(newDeletedIds);
           localStorage.setItem('deleted_global_ids', JSON.stringify(newDeletedIds));
