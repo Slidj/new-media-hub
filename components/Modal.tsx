@@ -6,7 +6,7 @@ import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
 import { Haptics } from '../utils/haptics';
 import { Audio } from '../utils/audio';
-import { motion, AnimatePresence, useDragControls, PanInfo, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 
 interface ModalProps {
   movie: Movie | null;
@@ -57,6 +57,10 @@ export const Modal: React.FC<ModalProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
   const dragControls = useDragControls();
+
+  const scrollY = useMotionValue(0);
+  const y = useTransform(scrollY, [0, 500], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
       if (info.offset.y > 100 || info.velocity.y > 500) {
@@ -260,12 +264,13 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Scroll Container */}
             <div 
                 ref={scrollRef} 
+                onScroll={(e) => scrollY.set(e.currentTarget.scrollTop)}
                 className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]"
             >
                 
                 {/* HERO IMAGE AREA */}
                 <div className="relative w-full bg-[#181818]">
-                    <div className="block md:hidden relative w-full aspect-video overflow-hidden bg-[#222]">
+                    <motion.div style={{ y, opacity }} className="block md:hidden relative w-full aspect-video overflow-hidden bg-[#222]">
                         {/* Low Res Placeholder (Blurry) */}
                         <img 
                             src={movie.smallPosterUrl}
@@ -284,9 +289,9 @@ export const Modal: React.FC<ModalProps> = ({
                         />
                         
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
-                    </div>
+                    </motion.div>
 
-                    <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
+                    <motion.div style={{ y, opacity }} className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
                         <img 
                             src={movie.smallPosterUrl}
                             alt=""
@@ -303,7 +308,7 @@ export const Modal: React.FC<ModalProps> = ({
                             onLoad={() => setIsHighResLoaded(true)}
                         />
                         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
-                    </div>
+                    </motion.div>
                 </div>
 
                 {/* CONTENT AREA */}
