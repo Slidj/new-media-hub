@@ -6,7 +6,7 @@ import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
 import { Haptics } from '../utils/haptics';
 import { Audio } from '../utils/audio';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 
 interface ModalProps {
   movie: Movie | null;
@@ -56,6 +56,13 @@ export const Modal: React.FC<ModalProps> = ({
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
+  const dragControls = useDragControls();
+
+  const handleDragEnd = (event: any, info: PanInfo) => {
+      if (info.offset.y > 100 || info.velocity.y > 500) {
+          handleClose();
+      }
+  };
 
   useEffect(() => {
     if (movie) {
@@ -219,23 +226,36 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: "spring", damping: 30, stiffness: 200 }}
+            drag="y"
+            dragControls={dragControls}
+            dragListener={false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
             className="relative w-full h-[calc(100dvh-40px)] md:h-auto md:max-h-[90vh] md:max-w-4xl bg-[#181818] shadow-2xl ring-1 ring-white/10 rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col will-change-transform mt-auto md:mt-0"
         >
             {/* Drag Handle (Mobile) */}
-            <div className="absolute top-0 left-0 right-0 h-8 flex justify-center items-start pt-3 z-[60] md:hidden pointer-events-none">
-                <div className="w-12 h-1.5 bg-white/40 rounded-full shadow-sm"></div>
+            <div 
+                className="absolute top-0 left-0 right-0 h-12 flex justify-center items-start pt-3 z-[60] md:hidden cursor-grab active:cursor-grabbing"
+                onPointerDown={(e) => dragControls.start(e)}
+                style={{ touchAction: "none" }}
+            >
+                <div className="w-12 h-1.5 bg-white/40 rounded-full shadow-sm pointer-events-none"></div>
             </div>
 
             {/* Close Button */}
-            <button 
-            onClick={(e) => {
-                e.stopPropagation();
-                handleClose();
-            }}
-            className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-all duration-300 top-4 right-4 hover:scale-110 active:scale-95"
+            <motion.button 
+                initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ delay: 0.3, duration: 0.7, type: "spring", bounce: 0.4 }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleClose();
+                }}
+                className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-colors duration-300 top-12 right-4 md:top-4 md:right-4 hover:scale-110 active:scale-95"
             >
-            <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </button>
+                <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
+            </motion.button>
 
             {/* Scroll Container */}
             <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
