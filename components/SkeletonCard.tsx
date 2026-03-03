@@ -1,8 +1,12 @@
 import React from 'react';
 
-export const SkeletonCard: React.FC = () => {
+interface SkeletonCardProps {
+  className?: string;
+}
+
+export const SkeletonCard: React.FC<SkeletonCardProps> = ({ className = "aspect-[2/3]" }) => {
   return (
-    <div className="relative aspect-[2/3] rounded-md overflow-hidden bg-[#181818]">
+    <div className={`relative w-full h-full rounded-md overflow-hidden bg-[#181818] ${className}`}>
       {/* Shimmer effect */}
       <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
       

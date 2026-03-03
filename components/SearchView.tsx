@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Search, X, Star, Tv } from 'lucide-react';
 import { Movie } from '../types';
 import { API } from '../services/tmdb';
@@ -73,9 +74,15 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
           {loading ? (
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={`skeleton-search-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                    <motion.div 
+                        key={`skeleton-search-${i}`} 
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "0px 0px -50px 0px" }}
+                        transition={{ duration: 0.5, delay: (i % 6) * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+                    >
                         <SkeletonCard />
-                    </div>
+                    </motion.div>
                 ))}
             </div>
           ) : results.length > 0 ? (

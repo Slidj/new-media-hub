@@ -531,9 +531,15 @@ function App() {
                           ))}
 
                           {loading && Array.from({ length: 6 }).map((_, i) => (
-                              <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                              <motion.div 
+                                  key={`skeleton-${i}`} 
+                                  initial={{ opacity: 0, y: 30 }}
+                                  whileInView={{ opacity: 1, y: 0 }}
+                                  viewport={{ once: true, margin: "0px 0px -50px 0px" }}
+                                  transition={{ duration: 0.5, delay: (i % 6) * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
+                              >
                                   <SkeletonCard />
-                              </div>
+                              </motion.div>
                           ))}
                       </div>
                       

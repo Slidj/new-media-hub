@@ -2,6 +2,7 @@ import React, { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Movie, Category } from '../types';
 import { Star, Tv } from 'lucide-react';
+import { SkeletonCard } from './SkeletonCard';
 
 interface MovieCardProps {
     movie: Movie;
@@ -17,9 +18,10 @@ export const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieC
 
     return (
         <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: (index % 20) * 0.05, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "0px 0px -50px 0px" }}
+            transition={{ duration: 0.5, delay: (index % 6) * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative"
         >
             <div 
@@ -28,8 +30,8 @@ export const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieC
             >
                 {/* Skeleton Overlay - Behind Image */}
                 {!imageLoaded && (
-                    <div className="absolute inset-0 z-0 bg-[#181818]">
-                        <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer"></div>
+                    <div className="absolute inset-0 z-0">
+                        <SkeletonCard className="" />
                     </div>
                 )}
 
