@@ -247,7 +247,7 @@ export const Modal: React.FC<ModalProps> = ({
             <motion.button 
                 initial={{ opacity: 0, scale: 0, rotate: -180 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3, duration: 0.7, type: "spring", bounce: 0.4 }}
+                transition={{ delay: 0.6, duration: 0.7, type: "spring", bounce: 0.4 }}
                 onClick={(e) => {
                     e.stopPropagation();
                     handleClose();
