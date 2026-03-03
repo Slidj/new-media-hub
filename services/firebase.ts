@@ -277,13 +277,7 @@ const cleanUpNotifications = async (userId: number, notifications: AppNotificati
     const batch = writeBatch(db);
     let hasChanges = false;
 
-    // 1. Identify Expired Items
-    const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
-    const expiredIds = notifications
-        .filter(n => new Date(n.date).getTime() < validTime)
-        .map(n => n.id);
-
-    // 2. Identify Excess Items (FIFO - delete oldest)
+    // 1. Identify Excess Items (FIFO - delete oldest)
     // We assume 'notifications' is already sorted by date desc from the query
     const excessIds: string[] = [];
     if (notifications.length > MAX_ITEMS) {
@@ -292,7 +286,7 @@ const cleanUpNotifications = async (userId: number, notifications: AppNotificati
         itemsToRemove.forEach(n => excessIds.push(n.id));
     }
 
-    const idsToDelete = new Set([...expiredIds, ...excessIds]);
+    const idsToDelete = new Set([...excessIds]);
 
     idsToDelete.forEach(id => {
         // Only delete real docs (not admin/global ones handled locally)
@@ -307,39 +301,55 @@ const cleanUpNotifications = async (userId: number, notifications: AppNotificati
     if (hasChanges) {
         try {
             await batch.commit();
-            console.log("Cleanup: Deleted old notifications");
+            console.log("Cleanup: Deleted excess notifications");
         } catch (e) {
             console.error("Cleanup failed", e);
         }
     }
+
+    // 2. Query and delete ALL expired items directly from the database
+    try {
+        const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
+        const validTimeISO = new Date(validTime).toISOString();
+        const notifsRef = collection(db, "users", userId.toString(), "notifications");
+        const oldQ = query(notifsRef, where("date", "<", validTimeISO));
+        const oldSnapshot = await getDocs(oldQ);
+        
+        if (!oldSnapshot.empty) {
+            const oldBatch = writeBatch(db);
+            oldSnapshot.docs.forEach(doc => {
+                oldBatch.delete(doc.ref);
+            });
+            await oldBatch.commit();
+            console.log("Cleanup: Deleted expired personal notifications");
+        }
+    } catch (e) {
+        console.error("Expired cleanup failed", e);
+    }
 };
 
 // Helper: Clean up old GLOBAL notifications (Max 7 days old)
-const cleanUpGlobalNotifications = async (notifications: AppNotification[]) => {
-    if (!notifications || notifications.length === 0) return;
-
+const cleanUpGlobalNotifications = async () => {
     const MAX_DAYS = 7;
     const now = new Date();
-    const batch = writeBatch(db);
-    let hasChanges = false;
-
-    const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
     
-    notifications.forEach(n => {
-        if (new Date(n.date).getTime() < validTime) {
-             const ref = doc(db, "global_notifications", n.id);
-             batch.delete(ref);
-             hasChanges = true;
-        }
-    });
-
-    if (hasChanges) {
-        try {
+    try {
+        const validTime = now.getTime() - (MAX_DAYS * 24 * 60 * 60 * 1000);
+        const validTimeISO = new Date(validTime).toISOString();
+        const globalRef = collection(db, "global_notifications");
+        const oldQ = query(globalRef, where("date", "<", validTimeISO));
+        const oldSnapshot = await getDocs(oldQ);
+        
+        if (!oldSnapshot.empty) {
+            const batch = writeBatch(db);
+            oldSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
             await batch.commit();
-            console.log("Cleanup: Deleted old global notifications");
-        } catch (e) {
-            console.error("Global cleanup failed", e);
+            console.log("Cleanup: Deleted expired global notifications");
         }
+    } catch (e) {
+        console.error("Global cleanup failed", e);
     }
 };
 
@@ -422,7 +432,7 @@ export const subscribeToGlobalNotifications = (onUpdate: (notifs: AppNotificatio
         } as AppNotification));
         
         // Trigger cleanup in background
-        cleanUpGlobalNotifications(notifs);
+        cleanUpGlobalNotifications();
 
         onUpdate(notifs);
     }, (error) => {
