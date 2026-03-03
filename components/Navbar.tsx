@@ -47,10 +47,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+48px)] transition-all duration-500 ${
+    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+64px)] transition-all duration-500 ${
       isScrolled 
-        ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 shadow-2xl' 
-        : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b-0'
+        ? 'bg-[#0a0a0a] shadow-2xl' 
+        : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent'
     }`}>
       
       {/* Left: Logo */}
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         
         {/* Notifications Bell */}
         <div className="relative">
@@ -76,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     Audio.playClick();
                     onBellClick();
                 }}
-                className="p-2 text-white hover:opacity-80 transition active:scale-90"
+                className="w-9 h-9 flex items-center justify-center text-white hover:opacity-80 transition active:scale-90"
             >
                 <Bell className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
                 
@@ -97,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Audio.playClick();
                 // Placeholder for Gift action
             }}
-            className="p-2 text-white hover:opacity-80 transition active:scale-90"
+            className="w-9 h-9 flex items-center justify-center text-white hover:opacity-80 transition active:scale-90"
         >
             <Gift className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
         </button>
