@@ -6,7 +6,7 @@ import { Language, translations } from '../utils/translations';
 import { API } from '../services/tmdb';
 import { Haptics } from '../utils/haptics';
 import { Audio } from '../utils/audio';
-import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls, PanInfo, useMotionValue } from 'framer-motion';
 
 interface ModalProps {
   movie: Movie | null;
@@ -252,13 +252,16 @@ export const Modal: React.FC<ModalProps> = ({
                     e.stopPropagation();
                     handleClose();
                 }}
-                className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-colors duration-300 top-12 right-4 md:top-4 md:right-4 hover:scale-110 active:scale-95"
+                className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/50 grid place-items-center transition-colors duration-300 top-12 right-4 md:top-4 md:right-4 hover:scale-110 active:scale-95"
             >
                 <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </motion.button>
 
             {/* Scroll Container */}
-            <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]">
+            <div 
+                ref={scrollRef} 
+                className="overflow-y-auto overflow-x-hidden h-full no-scrollbar overscroll-contain pb-safe bg-[#181818]"
+            >
                 
                 {/* HERO IMAGE AREA */}
                 <div className="relative w-full bg-[#181818]">
