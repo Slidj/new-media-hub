@@ -60,7 +60,7 @@ export const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieC
                 )}
 
                 {/* TV Show Badge */}
-                {movie.mediaType === 'tv' && !isTop10 && (
+                {movie.mediaType === 'tv' && (
                     <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
                         <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
                             <path d={ribbonPath} />

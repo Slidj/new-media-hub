@@ -47,30 +47,37 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 py-3 transition-all duration-500 ${
+    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+12px)] transition-all duration-500 ${
       isScrolled ? 'bg-black/80 backdrop-blur-md shadow-lg' : 'bg-gradient-to-b from-black/80 to-transparent'
     }`}>
       
       {/* Left: Logo */}
       <div className="flex items-center gap-2" onClick={onHomeClick}>
-        {logoIcon ? (
-            <img 
-                src={logoIcon} 
-                alt="Logo" 
-                className="h-8 w-auto object-contain transition-transform active:scale-90" 
-            />
-        ) : (
-            <div className="flex items-center gap-1 text-[#E50914]">
-                <span className="text-2xl font-black tracking-tighter cursor-pointer">
-                    NETFLIX
-                </span>
-            </div>
-        )}
+        <div className="flex items-center gap-1 text-[#E50914]">
+            <span className="text-2xl font-black tracking-tighter cursor-pointer font-bebas">
+                MEDIA HUB
+            </span>
+            {logoIcon && (
+                <span className="text-xl animate-bounce">{logoIcon}</span>
+            )}
+        </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
         
+        {/* Gift Button */}
+        <button 
+            onClick={() => {
+                Haptics.light();
+                Audio.playClick();
+                // Placeholder for Gift action
+            }}
+            className="p-2 text-white hover:opacity-80 transition active:scale-90"
+        >
+            <Gift className="w-5 h-5 text-white" strokeWidth={2} />
+        </button>
+
         {/* Search Button */}
         <button 
             onClick={() => {
