@@ -43,6 +43,7 @@ export const Modal: React.FC<ModalProps> = ({
   // Content States
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   
   // Extended Content States
   const [cast, setCast] = useState<Cast[]>([]);
@@ -63,6 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
       
       setDuration(null);
       setTagline(null);
+      setLogoUrl(null);
       setCast([]);
       setVideos([]);
       setRecommendations([]);
@@ -80,11 +82,12 @@ export const Modal: React.FC<ModalProps> = ({
       // 2. Load Secondary Data
       const loadData = async () => {
           try {
-              const [detailsData, castData, videoData, recData] = await Promise.all([
+              const [detailsData, castData, videoData, recData, fetchedLogo] = await Promise.all([
                   API.fetchMovieDetails(movie.id, movie.mediaType),
                   API.fetchCredits(movie.id, movie.mediaType),
                   API.fetchVideos(movie.id, movie.mediaType),
                   API.fetchRecommendations(movie.id, movie.mediaType, lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US'),
+                  API.fetchMovieLogo(movie.id, movie.mediaType === 'tv')
               ]);
 
               if (!isMounted) return;
@@ -94,6 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
 
               if (detailsData.tagline) setTagline(detailsData.tagline);
               
+              setLogoUrl(movie.logoUrl || fetchedLogo || null);
               setCast(castData);
               setVideos(videoData);
               setRecommendations(recData);
@@ -233,25 +237,25 @@ export const Modal: React.FC<ModalProps> = ({
                 
                 {/* HERO IMAGE AREA */}
                 <div className="relative w-full bg-[#181818]">
-                    <div className="block md:hidden relative w-full aspect-[2/3] overflow-hidden bg-[#222]">
+                    <div className="block md:hidden relative w-full aspect-video overflow-hidden bg-[#222]">
                         {/* Low Res Placeholder (Blurry) */}
                         <img 
                             src={movie.smallPosterUrl}
                             alt=""
-                            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100'} blur-sm scale-105`}
+                            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100'} blur-sm scale-105`}
                         />
                         
                         {/* High Res Image (Fade In) */}
                         <img 
-                            src={movie.posterUrl}
+                            src={movie.bannerUrl || movie.posterUrl}
                             alt={movie.title}
-                            className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
+                            className={`absolute inset-0 w-full h-full object-cover object-top z-10 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
                             loading="eager"
                             decoding="async"
                             onLoad={() => setIsHighResLoaded(true)}
                         />
                         
-                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/60 to-transparent z-20 pointer-events-none"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                     </div>
 
                     <div className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
@@ -276,7 +280,7 @@ export const Modal: React.FC<ModalProps> = ({
 
                 {/* CONTENT AREA */}
                 <motion.div 
-                    className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-0 md:-mt-32"
+                    className="relative z-20 px-4 md:px-10 pb-8 space-y-6 pt-4 md:pt-0 md:-mt-32"
                     initial="hidden"
                     animate="visible"
                     variants={{
@@ -290,6 +294,28 @@ export const Modal: React.FC<ModalProps> = ({
                         }
                     }}
                 >
+
+                    {/* Title / Logo */}
+                    <motion.div 
+                        variants={{
+                            hidden: { opacity: 0, scale: 0.95, y: 20 },
+                            visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                        }}
+                        className="flex justify-center items-center w-full min-h-[60px]"
+                    >
+                        {logoUrl ? (
+                            <img 
+                                src={logoUrl} 
+                                alt={movie.title} 
+                                className="max-h-20 md:max-h-28 max-w-[80%] object-contain drop-shadow-2xl"
+                                loading="lazy"
+                            />
+                        ) : (
+                            <h2 className="text-3xl md:text-4xl font-black text-white text-center drop-shadow-lg">
+                                {movie.title}
+                            </h2>
+                        )}
+                    </motion.div>
 
                     {/* Metadata Row */}
                     <motion.div 
