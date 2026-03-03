@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+36px)] transition-all duration-500 ${
+    <nav className={`fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+48px)] transition-all duration-500 ${
       isScrolled 
         ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 shadow-2xl' 
         : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b-0'
@@ -78,13 +78,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="p-2 text-white hover:opacity-80 transition active:scale-90"
             >
-                <Bell className="w-6 h-6 text-white" strokeWidth={2.5} />
+                <Bell className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
                 
                 {/* Notification Dot */}
                 {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5 drop-shadow-md">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-red-500"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600 border border-black/50"></span>
                     </span>
                 )}
             </button>
@@ -99,11 +99,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="p-2 text-white hover:opacity-80 transition active:scale-90"
         >
-            <Gift className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <Gift className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
         </button>
 
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-md overflow-hidden border border-white/10 bg-gradient-to-br from-[#E50914] to-[#8A050C] flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-md overflow-hidden border border-white/20 bg-gradient-to-br from-[#E50914] to-[#8A050C] flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.5)]">
             {user?.photo_url && !imgError ? (
                 <img 
                     src={user.photo_url} 
