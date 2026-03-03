@@ -219,15 +219,20 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: "spring", damping: 30, stiffness: 200 }}
-            className="relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl bg-[#181818] shadow-2xl ring-1 ring-white/10 rounded-t-xl md:rounded-lg overflow-hidden flex flex-col will-change-transform"
+            className="relative w-full h-[calc(100dvh-40px)] md:h-auto md:max-h-[90vh] md:max-w-4xl bg-[#181818] shadow-2xl ring-1 ring-white/10 rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col will-change-transform mt-auto md:mt-0"
         >
+            {/* Drag Handle (Mobile) */}
+            <div className="absolute top-0 left-0 right-0 h-8 flex justify-center items-start pt-3 z-[60] md:hidden pointer-events-none">
+                <div className="w-12 h-1.5 bg-white/40 rounded-full shadow-sm"></div>
+            </div>
+
             {/* Close Button */}
             <button 
             onClick={(e) => {
                 e.stopPropagation();
                 handleClose();
             }}
-            className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-all duration-300 top-16 right-4 md:top-4 md:right-4 hover:scale-110 active:scale-95"
+            className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-all duration-300 top-4 right-4 hover:scale-110 active:scale-95"
             >
             <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </button>
