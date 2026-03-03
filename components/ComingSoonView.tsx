@@ -147,11 +147,11 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
   }
 
   return (
-    <div className="fixed inset-0 z-30 w-full bg-black pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-y-auto overflow-x-hidden overscroll-contain no-scrollbar">
+    <div className="fixed inset-0 z-30 w-full pt-[calc(170px+env(safe-area-inset-top))] pb-32 md:pb-12 overflow-y-auto overflow-x-hidden overscroll-contain no-scrollbar bg-black">
       
       {/* Header */}
       <div className="px-4 md:px-12 mb-6 flex items-center gap-3">
-          <div className="p-2 bg-[#E50914] rounded-full shadow-lg shadow-red-900/20">
+          <div className="p-2 rounded-full shadow-lg bg-[#E50914] shadow-red-900/20">
             <Bell className="w-5 h-5 text-white fill-white" />
           </div>
           <h2 className="text-xl font-bold text-white">{t.comingSoon}</h2>
@@ -182,7 +182,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
 
                         <div className="flex-1 pr-2 md:pr-12 cursor-pointer" onClick={() => onMovieSelect(movie)}>
                             
-                            <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-[#181818] mb-4 shadow-2xl border border-white/5 group-hover:border-white/20 transition-all duration-300">
+                            <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-4 shadow-2xl transition-all duration-300 bg-[#181818] border border-white/5 group-hover:border-white/20">
                                 <img 
                                     src={movie.bannerUrl || movie.posterUrl} 
                                     alt={movie.title}
@@ -191,7 +191,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 />
                                 
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-14 h-14 rounded-full bg-black/60 border border-white/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl">
+                                    <div className="w-14 h-14 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300 shadow-xl bg-black/60 border border-white/30">
                                         <Play className="w-6 h-6 text-white fill-white ml-1" />
                                     </div>
                                 </div>
@@ -231,7 +231,7 @@ export const ComingSoonView: React.FC<ComingSoonViewProps> = ({ onMovieSelect, l
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                     {movie.genre.slice(0, 3).map((g, idx) => (
-                                        <span key={idx} className="text-[10px] px-2.5 py-1 bg-[#181818] rounded-full text-gray-300 border border-white/10">
+                                        <span key={idx} className="text-[10px] px-2.5 py-1 rounded-full text-gray-300 border bg-[#181818] border-white/10">
                                             {g}
                                         </span>
                                     ))}

@@ -10,10 +10,9 @@ interface CategoryNavProps {
   lang: Language;
   activeCategory: Category;
   onSelectCategory: (category: Category) => void;
-  theme?: 'default' | 'glass';
 }
 
-export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory, theme = 'default' }) => {
+export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, onSelectCategory }) => {
   const [isVisible, setIsVisible] = useState(true);
   
   const t = translations[lang];
@@ -68,9 +67,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({ lang, activeCategory, 
                             transition-all duration-300 active:scale-95 border shadow-lg
                             ${activeCategory === cat.id 
                                 ? 'bg-white text-black border-white' 
-                                : theme === 'glass'
-                                    ? 'bg-[#0f172a]/80 text-white border-white/10 hover:bg-[#1e293b] backdrop-blur-sm'
-                                    : 'bg-black/80 text-white border-white/20 hover:bg-black'
+                                : 'bg-black/80 text-white border-white/20 hover:bg-black'
                             }
                         `}
                         style={{ 

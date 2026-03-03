@@ -5,6 +5,7 @@ import { Movie } from '../types';
 import { API } from '../services/tmdb';
 import { Language, translations } from '../utils/translations';
 import { SkeletonCard } from './SkeletonCard';
+import { MovieCard } from './MovieCard';
 
 interface SearchViewProps {
   onMovieSelect: (movie: Movie) => void;
@@ -40,17 +41,17 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
   return (
     // Updated padding-top to account for taller navbar + safe area (safe-area + 80px base + search bar height)
     // 230px ensures the search input is clearly below the navbar gradient
-    <div className="fixed inset-0 z-40 bg-black flex flex-col pt-[calc(230px+env(safe-area-inset-top))] pb-[80px]">
+    <div className="fixed inset-0 z-40 flex flex-col pt-[calc(230px+env(safe-area-inset-top))] pb-[80px] bg-black">
       
       {/* Static Search Bar Area */}
-      <div className="w-full px-4 md:px-12 py-2 shrink-0 bg-black z-50">
+      <div className="w-full px-4 md:px-12 py-2 shrink-0 z-50 bg-black">
         <div className="relative max-w-2xl mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
                 type="text"
-                className="block w-full pl-12 pr-12 py-3.5 border border-gray-800 rounded bg-[#1a1a1a] text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-[#222] focus:border-gray-600 sm:text-sm transition-all"
+                className="block w-full pl-12 pr-12 py-3.5 border rounded sm:text-sm transition-all outline-none bg-[#1a1a1a] border-gray-800 text-gray-100 placeholder-gray-500 focus:bg-[#222] focus:border-gray-600"
                 placeholder={t.search}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -80,46 +81,13 @@ export const SearchView: React.FC<SearchViewProps> = ({ onMovieSelect, lang }) =
           ) : results.length > 0 ? (
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
                 {results.map((movie, index) => (
-                  <div 
-                    key={movie.id} 
-                    className="opacity-0 animate-fade-in-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div 
-                        className="
-                            relative cursor-pointer aspect-[2/3] rounded overflow-hidden bg-[#181818] group
-                            transition-transform duration-200 ease-out
-                            hover:scale-105 hover:z-10 hover:shadow-xl hover:shadow-black/80
-                            active:scale-95 active:brightness-75
-                        "
-                        onClick={() => onMovieSelect(movie)}
-                    >
-                        <img
-                        src={movie.posterUrl || movie.bannerUrl}
-                        className="w-full h-full object-cover"
-                        alt={movie.title}
-                        loading="lazy"
-                        />
-                        
-                        {movie.mediaType === 'tv' && (
-                            <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
-                                <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
-                                    <path d={ribbonPath} />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center pb-1">
-                                    <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="absolute bottom-2 right-2 z-20">
-                            <div className="bg-black/80 px-1.5 py-0.5 rounded flex items-center gap-1 border border-white/10 shadow-lg">
-                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                            <span className="text-[10px] font-bold text-white">{movie.rating}</span>
-                            </div>
-                        </div>
-                    </div>
-                  </div>
+                  <MovieCard
+                    key={movie.id}
+                    movie={movie}
+                    index={index}
+                    activeCategory="movies"
+                    onClick={onMovieSelect}
+                  />
                 ))}
               </div>
           ) : query.length > 1 ? (

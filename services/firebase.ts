@@ -64,14 +64,14 @@ export const syncUser = async (user: WebAppUser) => {
     } else {
       // Update last active
       await updateDoc(userRef, {
-        "profile.first_name": user.first_name,
-        "profile.username": user.username,
-        "profile.photo_url": user.photo_url,
+        "profile.first_name": user.first_name || "",
+        "profile.username": user.username || "",
+        "profile.photo_url": user.photo_url || "",
         lastActive: new Date().toISOString()
       });
     }
   } catch (error: any) {
-    console.error("Error syncing user:", error?.message || error);
+    console.error("Error syncing user:", error?.message || "Unknown error");
   }
 };
 
@@ -364,8 +364,8 @@ export const sendPersonalNotification = async (
             movieId: movie?.id || null,
             posterUrl: movie?.posterUrl || null
         });
-    } catch (e) {
-        console.error("Failed to send personal notification", e);
+    } catch (e: any) {
+        console.error("Failed to send personal notification", e?.message || "Unknown error");
     }
 };
 
@@ -461,16 +461,16 @@ export const recordGlobalActivity = async (
             username: user.username || user.first_name || "Anonymous",
             userPhoto: user.photo_url || "",
             movieId: movie.id,
-            movieTitle: movie.title,
-            moviePoster: movie.posterUrl,
-            movieBackdrop: movie.bannerUrl,
+            movieTitle: movie.title || "Unknown Title",
+            moviePoster: movie.posterUrl || "",
+            movieBackdrop: movie.bannerUrl || "",
             mediaType: movie.mediaType || 'movie',
             action,
             timestamp: new Date().toISOString()
         });
-    } catch (e) {
+    } catch (e: any) {
         // Silent fail
-        console.error("Error recording activity", e);
+        console.error("Error recording activity", e?.message || "Unknown error");
     }
 };
 

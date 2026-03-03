@@ -15,11 +15,9 @@ interface MoreMenuProps {
   user: WebAppUser | null;
   userTickets?: number;
   onAdminClick: () => void;
-  theme: 'default' | 'glass';
-  setTheme: (theme: 'default' | 'glass') => void;
 }
 
-export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, userTickets = 0, onAdminClick, theme, setTheme }) => {
+export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user, userTickets = 0, onAdminClick }) => {
   const t = translations[lang];
   const isUserAdmin = isAdmin(user?.id);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -406,14 +404,14 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
       {/* Sidebar Drawer */}
       <div 
         className={`
-            fixed top-0 right-0 h-full w-[80%] max-w-sm bg-[#121212] z-[70] 
+            fixed top-0 right-0 h-full w-[80%] max-w-sm z-[70] 
             transform transition-transform duration-300 ease-out shadow-2xl border-l border-white/10
-            flex flex-col
+            flex flex-col bg-[#121212]
             ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
         {/* Header - UPDATED PADDING to safe-area + 80px */}
-        <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 bg-[#1a1a1a] flex items-center justify-between border-b border-white/5">
+        <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
             <div className="flex items-center gap-3">
                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center border border-white/10 shrink-0">
                     {user?.photo_url ? (
@@ -461,31 +459,6 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
                         <p className="text-[10px] text-gray-400">{t.adminAccess}</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white transition" />
-                </div>
-            )}
-
-            {/* DEV: Theme Switcher (Admins & Testers) */}
-            {isTester(user?.id) && (
-                <div className="mb-6 p-4 rounded-xl bg-gray-900/50 border border-white/5">
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Dev: Theme Preview</h4>
-                    <div className="flex bg-black/50 rounded-lg p-1">
-                        <button
-                            onClick={() => { setTheme('default'); Haptics.selection(); }}
-                            className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
-                                theme === 'default' ? 'bg-white text-black shadow' : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                            Default
-                        </button>
-                        <button
-                            onClick={() => { setTheme('glass'); Haptics.selection(); }}
-                            className={`flex-1 py-2 text-xs font-bold rounded-md transition ${
-                                theme === 'glass' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                            Glass (Beta)
-                        </button>
-                    </div>
                 </div>
             )}
 

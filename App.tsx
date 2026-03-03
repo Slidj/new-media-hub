@@ -6,7 +6,7 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Modal } from './components/Modal';
 import { BottomNav } from './components/BottomNav';
-import { SkeletonCard } from './components/SkeletonCard';
+import { MovieCard } from './components/MovieCard';
 import { Preloader } from './components/Preloader';
 import { SearchView } from './components/SearchView';
 import { ComingSoonView } from './components/ComingSoonView';
@@ -44,88 +44,9 @@ import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
 import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
-import { GlassHeroCarousel } from './components/GlassHeroCarousel';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
-interface MovieCardProps {
-    movie: Movie;
-    index: number;
-    activeCategory: Category;
-    onClick: (movie: Movie) => void;
-}
 
-const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieCardProps) => {
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const isTop10 = activeCategory === 'trending' && index < 10;
-    const ribbonPath = "M0 0H28V36C28 36 14 26 0 36V0Z";
-
-    return (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: (index % 20) * 0.05, ease: "easeOut" }}
-            className="relative"
-        >
-            <div 
-                className="
-                    relative cursor-pointer aspect-[2/3] rounded-md overflow-hidden bg-[#181818] group
-                    transform-gpu transition-transform duration-300 ease-out
-                    hover:scale-105 hover:z-50 hover:shadow-2xl hover:shadow-black/50
-                    active:scale-95 active:brightness-75
-                "
-                onClick={() => onClick(movie)}
-            >
-                {/* Skeleton Overlay - Behind Image */}
-                {!imageLoaded && (
-                    <div className="absolute inset-0 z-0 bg-[#181818]">
-                        <div className="w-full h-full bg-gradient-to-r from-[#181818] via-[#2a2a2a] to-[#181818] animate-shimmer"></div>
-                    </div>
-                )}
-
-                <img
-                    src={movie.smallPosterUrl || movie.posterUrl}
-                    className={`relative z-10 w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    alt={movie.title}
-                    loading="lazy"
-                    decoding="async"
-                    onLoad={() => setImageLoaded(true)}
-                />
-                
-                {isTop10 && (
-                <div className="absolute top-0 right-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
-                        <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
-                        <path d={ribbonPath} />
-                        </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pb-1">
-                        <span className="text-[6px] font-bold leading-none text-white/90 mb-0.5">TOP</span>
-                        <span className="text-sm font-black leading-none text-white">10</span>
-                        </div>
-                </div>
-                )}
-
-                {movie.mediaType === 'tv' && (
-                <div className="absolute top-0 left-0 z-20 w-7 h-9 drop-shadow-[0_2px_4px_rgba(229,9,20,0.5)]">
-                        <svg viewBox="0 0 28 36" className="absolute inset-0 w-full h-full text-[#E50914]" fill="currentColor">
-                        <path d={ribbonPath} />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center pb-1">
-                        <Tv className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
-                        </div>
-                </div>
-                )}
-
-                <div className="absolute bottom-2 right-2 z-20">
-                <div className="bg-black/80 px-1 py-0.5 rounded flex items-center gap-1 border border-white/10">
-                    <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                    <span className="text-[10px] font-bold text-white">{movie.rating}</span>
-                </div>
-                </div>
-
-                <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-        </motion.div>
-    );
-});
 
 // --- MAIN APP COMPONENT ---
 
@@ -190,9 +111,6 @@ function App() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  
-  // Theme State
-  const [theme, setTheme] = useState<'default' | 'glass'>('default');
   
   const isLoadingRef = useRef(false);
 
@@ -532,161 +450,152 @@ function App() {
   }
 
   return (
-    <div className={`relative min-h-screen overflow-x-hidden font-sans antialiased text-white pb-24 ${theme === 'glass' ? 'bg-[#020617]' : 'bg-black'}`}>
+    <div className="relative min-h-screen overflow-x-hidden font-sans antialiased text-white pb-24 bg-black">
       {/* Background Gradient */}
-      <div className={`fixed inset-0 z-0 pointer-events-none transition-colors duration-500 ${
-          theme === 'glass' 
-            ? 'bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#1e293b] via-[#020617] to-black' 
-            : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black'
-      }`} />
+      <div className="fixed inset-0 z-0 pointer-events-none transition-colors duration-500 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a1a1a] via-black to-black" />
 
-      {theme === 'default' ? (
-        <>
-          <Navbar 
-            user={user} 
-            lang={lang} 
-            onSearchClick={() => setActiveTab('search')}
-            onHomeClick={() => {
-                setActiveTab('home');
-                handleCategoryChange('trending');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            activeTab={activeTab}
-            unreadCount={unreadCount}
-            onBellClick={() => setIsNotificationsOpen(true)}
-            logoIcon={logoIcon}
-            theme={theme}
-          />
-          
-          <AnimatePresence mode="wait">
-            {activeTab === 'home' && (
-              <motion.div
-                key="home"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="w-full relative z-10"
-              >
-                <CategoryNav 
-                    lang={lang} 
-                    activeCategory={activeCategory} 
-                    onSelectCategory={handleCategoryChange} 
-                    theme={theme}
-                />
-
-                {featuredMovie ? (
-                     <Hero 
-                        movie={featuredMovie} 
-                        onMoreInfo={() => setSelectedMovie(featuredMovie)}
-                        onPlay={() => handlePlay(featuredMovie)}
-                        lang={lang}
-                        theme={theme}
-                     />
-                ) : (
-                    <div className={`relative h-[75vh] md:h-[90vh] w-full z-0 ${theme === 'glass' ? 'bg-transparent' : 'bg-black'}`}>
-                       <div className={`absolute inset-0 ${theme === 'glass' ? 'bg-transparent' : 'bg-[#0a0a0a]'}`}></div>
-                       <div className={`absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t ${theme === 'glass' ? 'from-[#0f172a] via-[#0f172a]/40' : 'from-black via-black/40'} to-transparent`}></div>
-                    </div>
-                )}
-
-                <main className={`relative z-10 w-full -mt-1 ${theme === 'glass' ? 'bg-transparent' : 'bg-black'}`}>
-                    {/* NOW WATCHING ROW */}
-                    {globalActivities.length > 0 && (
-                        <section className="pt-4 pb-0">
-                            <NowWatchingRow 
-                                title={translations[lang].nowWatching || "Now Watching"} 
-                                activities={globalActivities} 
-                                onMovieClick={handleMovieClick}
-                                lang={lang}
-                            />
-                        </section>
-                    )}
-
-                    <section className="px-2 md:px-12 pb-10 pt-0">
-                        {/* Separator Line */}
-                        <div className="w-full flex justify-center py-2">
-                            <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                        </div>
-                        
-                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                            {movies.map((movie, index) => (
-                                <MovieCard 
-                                    key={`${movie.id}-${index}`}
-                                    movie={movie}
-                                    index={index}
-                                    activeCategory={activeCategory}
-                                    onClick={handleMovieClick}
-                                />
-                            ))}
-
-                            {loading && Array.from({ length: 6 }).map((_, i) => (
-                                <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                                    <SkeletonCard />
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {!hasMore && movies.length > 0 && (
-                            <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                                <p>{translations[lang].endOfList}</p>
-                            </div>
-                        )}
-                    </section>
-                </main>
-              </motion.div>
-            )}
-
-            {activeTab === 'search' && (
-              <motion.div
-                key="search"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="w-full pt-20 relative z-10"
-              >
-                <SearchView 
+      <Navbar 
+        user={user} 
+        lang={lang} 
+          onSearchClick={() => setActiveTab('search')}
+          onHomeClick={() => {
+              setActiveTab('home');
+              handleCategoryChange('trending');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          activeTab={activeTab}
+          unreadCount={unreadCount}
+          onBellClick={() => setIsNotificationsOpen(true)}
+          logoIcon={logoIcon}
+        />
+        
+        <AnimatePresence mode="wait">
+          {activeTab === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full relative z-10"
+            >
+              <CategoryNav 
                   lang={lang} 
-                  onMovieSelect={setSelectedMovie} 
-                />
-              </motion.div>
-            )}
+                  activeCategory={activeCategory} 
+                  onSelectCategory={handleCategoryChange} 
+              />
 
-            {activeTab === 'coming_soon' && (
-              <motion.div
-                key="coming_soon"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3 }}
-                className="w-full pt-20 relative z-10"
-              >
-                <ComingSoonView
-                    lang={lang}
-                    onMovieSelect={setSelectedMovie}
-                    user={user}
-                />
-              </motion.div>
-            )}
+              {featuredMovie ? (
+                   <Hero 
+                      movie={featuredMovie} 
+                      onMoreInfo={() => setSelectedMovie(featuredMovie)}
+                      onPlay={() => handlePlay(featuredMovie)}
+                      lang={lang}
+                   />
+              ) : (
+                  <div className="relative h-[75vh] md:h-[90vh] w-full z-0 bg-black">
+                     <div className="absolute inset-0 bg-[#0a0a0a]"></div>
+                     <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                  </div>
+              )}
 
-            {activeTab === 'my_list' && (
-              <motion.div
-                key="my_list"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                className="w-full pt-20 relative z-10"
-              >
-                  <MyListView 
-                     myList={myList}
-                     history={watchHistory}
-                     onMovieSelect={setSelectedMovie}
-                     lang={lang}
-                  />
-              </motion.div>
-            )}
+              <main className="relative z-10 w-full -mt-1 bg-black">
+                  {/* NOW WATCHING ROW */}
+                  {globalActivities.length > 0 && (
+                      <section className="pt-4 pb-0">
+                          <NowWatchingRow 
+                              title={translations[lang].nowWatching || "Now Watching"} 
+                              activities={globalActivities} 
+                              onMovieClick={handleMovieClick}
+                              lang={lang}
+                          />
+                      </section>
+                  )}
+
+                  <section className="px-2 md:px-12 pb-10 pt-0">
+                      {/* Separator Line */}
+                      <div className="w-full flex justify-center py-2">
+                          <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                      </div>
+                      
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                          {movies.map((movie, index) => (
+                              <MovieCard 
+                                  key={`${movie.id}-${index}`}
+                                  movie={movie}
+                                  index={index}
+                                  activeCategory={activeCategory}
+                                  onClick={handleMovieClick}
+                              />
+                          ))}
+
+                          {loading && Array.from({ length: 6 }).map((_, i) => (
+                              <div key={`skeleton-${i}`} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                                  <SkeletonCard />
+                              </div>
+                          ))}
+                      </div>
+                      
+                      {!hasMore && movies.length > 0 && (
+                          <div className="text-center text-gray-500 py-10 opacity-0 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                              <p>{translations[lang].endOfList}</p>
+                          </div>
+                      )}
+                  </section>
+              </main>
+            </motion.div>
+          )}
+
+          {activeTab === 'search' && (
+            <motion.div
+              key="search"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full pt-20 relative z-10"
+            >
+              <SearchView 
+                lang={lang} 
+                onMovieSelect={setSelectedMovie} 
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'coming_soon' && (
+            <motion.div
+              key="coming_soon"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full pt-20 relative z-10"
+            >
+              <ComingSoonView
+                  lang={lang}
+                  onMovieSelect={setSelectedMovie}
+                  user={user}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'my_list' && (
+            <motion.div
+              key="my_list"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full pt-20 relative z-10"
+            >
+                <MyListView 
+                   myList={myList}
+                   history={watchHistory}
+                   onMovieSelect={setSelectedMovie}
+                   lang={lang}
+                />
+            </motion.div>
+          )}
           </AnimatePresence>
 
           {/* Random Button */}
@@ -703,40 +612,6 @@ function App() {
           {activeTab === 'home' && !selectedMovie && !playingMovie && (
               <ScrollToTopButton />
           )}
-        </>
-      ) : (
-        /* GLASS THEME - CLEAN CANVAS */
-        <>
-            <Navbar 
-                user={user} 
-                lang={lang} 
-                onSearchClick={() => setActiveTab('search')}
-                onHomeClick={() => {
-                    setActiveTab('home');
-                    handleCategoryChange('trending');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                activeTab={activeTab}
-                unreadCount={unreadCount}
-                onBellClick={() => setIsNotificationsOpen(true)}
-                logoIcon={logoIcon}
-                theme={theme}
-            />
-            
-            <main className="min-h-screen flex items-center justify-center relative z-10 overflow-hidden bg-[#0f172a]">
-                {movies.length > 0 ? (
-                    <GlassHeroCarousel 
-                        movies={movies} 
-                        onPlay={handlePlay} 
-                        onMoreInfo={handleMovieClick}
-                        lang={lang}
-                    />
-                ) : (
-                    <div className="text-white/50 animate-pulse">Loading...</div>
-                )}
-            </main>
-        </>
-      )}
 
       {/* COMMON OVERLAYS */}
       <Modal 
@@ -766,7 +641,6 @@ function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onMoreClick={() => setIsMoreMenuOpen(true)}
-        theme={theme}
       />
 
       <MoreMenu 
@@ -776,8 +650,6 @@ function App() {
           user={user}
           userTickets={tickets} 
           onAdminClick={() => setIsAdminPanelOpen(true)}
-          theme={theme}
-          setTheme={setTheme}
       />
 
       {isAdminPanelOpen && (

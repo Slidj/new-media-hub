@@ -35,7 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
     isInList = false, 
     isLiked = false, 
     isDisliked = false,
-    lang 
+    lang
 }) => {
   const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [platform, setPlatform] = useState('');
@@ -215,12 +215,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: "spring", damping: 30, stiffness: 200 }}
-            className={`
-            relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl 
-            bg-[#181818] rounded-t-xl md:rounded-lg overflow-hidden shadow-2xl 
-            flex flex-col ring-1 ring-white/10
-            will-change-transform
-            `}
+            className="relative w-full h-[98vh] md:h-auto md:max-h-[90vh] md:max-w-4xl bg-[#181818] shadow-2xl ring-1 ring-white/10 rounded-t-xl md:rounded-lg overflow-hidden flex flex-col will-change-transform"
         >
             {/* Close Button */}
             <button 
@@ -228,13 +223,7 @@ export const Modal: React.FC<ModalProps> = ({
                 e.stopPropagation();
                 handleClose();
             }}
-            className={`
-                absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80
-                grid place-items-center hover:bg-[#2a2a2a] border border-white/10
-                transition-all duration-300
-                top-16 right-4 md:top-4 md:right-4
-                hover:scale-110 active:scale-95
-            `}
+            className="absolute z-50 h-8 w-8 md:h-10 md:w-10 rounded-full bg-black/80 hover:bg-[#2a2a2a] border border-white/10 grid place-items-center transition-all duration-300 top-16 right-4 md:top-4 md:right-4 hover:scale-110 active:scale-95"
             >
             <X className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </button>
@@ -328,7 +317,7 @@ export const Modal: React.FC<ModalProps> = ({
                     >
                         <button 
                             onClick={handlePlayClick}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold rounded-[4px] hover:bg-white/90 active:scale-[0.98] transition shadow-xl"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 font-bold rounded-[4px] active:scale-[0.98] transition shadow-xl bg-white text-black hover:bg-white/90"
                         >
                             <Play className="w-7 h-7 fill-black" />
                             <span className="text-lg font-bold">{t.play}</span>
@@ -349,7 +338,7 @@ export const Modal: React.FC<ModalProps> = ({
                                 Audio.playClick();
                                 onToggleList?.(movie);
                             }}
-                            className="relative flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10 overflow-hidden"
+                            className="relative flex items-center justify-center h-10 rounded-[4px] active:scale-[0.98] transition border overflow-hidden bg-[#2a2a2a] text-white/90 hover:bg-[#333] border-white/10"
                         >
                             <div className={`
                                 absolute inset-0 flex items-center justify-center 
@@ -374,7 +363,7 @@ export const Modal: React.FC<ModalProps> = ({
                                 Audio.playClick();
                                 onToggleLike?.(movie);
                             }}
-                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            className="flex items-center justify-center h-10 rounded-[4px] active:scale-[0.98] transition border bg-[#2a2a2a] text-white/90 hover:bg-[#333] border-white/10"
                         >
                             <ThumbsUp className={`w-5 h-5 ${isLiked ? 'text-white fill-white' : ''}`} />
                         </button>
@@ -385,13 +374,13 @@ export const Modal: React.FC<ModalProps> = ({
                                 Audio.playClick();
                                 onToggleDislike?.(movie);
                             }}
-                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            className="flex items-center justify-center h-10 rounded-[4px] active:scale-[0.98] transition border bg-[#2a2a2a] text-white/90 hover:bg-[#333] border-white/10"
                         >
                             <ThumbsDown className={`w-5 h-5 ${isDisliked ? 'text-white fill-white' : ''}`} />
                         </button>
                         <button 
                             onClick={handleShare}
-                            className="flex items-center justify-center h-10 bg-[#2a2a2a] text-white/90 rounded-[4px] hover:bg-[#333] active:scale-[0.98] transition border border-white/10"
+                            className="flex items-center justify-center h-10 rounded-[4px] active:scale-[0.98] transition border bg-[#2a2a2a] text-white/90 hover:bg-[#333] border-white/10"
                         >
                             <Share2 className="w-5 h-5" />
                         </button>
@@ -408,19 +397,31 @@ export const Modal: React.FC<ModalProps> = ({
                         <div className="flex gap-6 border-b border-white/20 mb-4 overflow-x-auto no-scrollbar">
                             <button 
                                 onClick={() => handleTabChange('overview')}
-                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${
+                                    activeTab === 'overview' 
+                                    ? 'text-white border-b-2 border-[#E50914]' 
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
                             >
                                 {t.overview}
                             </button>
                             <button 
                                 onClick={() => handleTabChange('trailers')}
-                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'trailers' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${
+                                    activeTab === 'trailers' 
+                                    ? 'text-white border-b-2 border-[#E50914]' 
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
                             >
                                 {t.trailers}
                             </button>
                             <button 
                                 onClick={() => handleTabChange('more_like_this')}
-                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${activeTab === 'more_like_this' ? 'text-white border-b-2 border-[#E50914]' : 'text-gray-400'}`}
+                                className={`pb-3 text-sm md:text-base font-bold uppercase transition-colors whitespace-nowrap ${
+                                    activeTab === 'more_like_this' 
+                                    ? 'text-white border-b-2 border-[#E50914]' 
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
                             >
                                 {t.moreLikeThis}
                             </button>
