@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className="w-9 h-9 flex items-center justify-center text-white hover:opacity-80 transition active:scale-90"
             >
-                <Bell className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
+                <Bell className={`w-6 h-6 text-white drop-shadow-md origin-top ${unreadCount > 0 ? 'animate-bell-ring' : ''}`} strokeWidth={2.5} />
                 
                 {/* Notification Dot */}
                 {unreadCount > 0 && (
