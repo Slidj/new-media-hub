@@ -44,6 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
   const [duration, setDuration] = useState<string | null>(null);
   const [tagline, setTagline] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isLogoLoading, setIsLogoLoading] = useState(true);
   
   // Extended Content States
   const [cast, setCast] = useState<Cast[]>([]);
@@ -72,6 +73,7 @@ export const Modal: React.FC<ModalProps> = ({
     if (movie) {
       // 1. Reset Everything
       setIsHighResLoaded(false);
+      setIsLogoLoading(!movie.logoUrl);
       
       setDuration(null);
       setTagline(null);
@@ -115,6 +117,8 @@ export const Modal: React.FC<ModalProps> = ({
 
           } catch (e) {
               console.error("Modal data error", e);
+          } finally {
+              if (isMounted) setIsLogoLoading(false);
           }
       };
 
@@ -336,13 +340,15 @@ export const Modal: React.FC<ModalProps> = ({
                         }}
                         className="flex justify-center items-center w-full min-h-[60px]"
                     >
-                        {logoUrl ? (
+                        {logoUrl || movie.logoUrl ? (
                             <img 
-                                src={logoUrl} 
+                                src={logoUrl || movie.logoUrl} 
                                 alt={movie.title} 
                                 className="max-h-20 md:max-h-28 max-w-[80%] object-contain drop-shadow-2xl"
                                 loading="lazy"
                             />
+                        ) : isLogoLoading ? (
+                            <div className="h-12 md:h-16 w-1/2 bg-white/5 rounded-lg animate-pulse" />
                         ) : (
                             <h2 className="text-3xl md:text-4xl font-black text-white text-center drop-shadow-lg">
                                 {movie.title}
