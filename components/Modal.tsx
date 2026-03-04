@@ -37,7 +37,6 @@ export const Modal: React.FC<ModalProps> = ({
     isDisliked = false,
     lang
 }) => {
-  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
   const [platform, setPlatform] = useState('');
   
   // Content States
@@ -72,7 +71,6 @@ export const Modal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (movie) {
       // 1. Reset Everything
-      setIsHighResLoaded(false);
       setIsLogoLoading(!movie.logoUrl);
       
       setDuration(null);
@@ -275,41 +273,21 @@ export const Modal: React.FC<ModalProps> = ({
                 {/* HERO IMAGE AREA */}
                 <div className="relative w-full bg-[#181818]">
                     <motion.div style={{ y, opacity }} className="block md:hidden relative w-full aspect-video overflow-hidden bg-[#222]">
-                        {/* Low Res Placeholder (Blurry) */}
-                        <img 
-                            src={movie.smallPosterUrl}
-                            alt=""
-                            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100'} blur-sm scale-105`}
-                        />
-                        
-                        {/* High Res Image (Fade In) */}
                         <img 
                             src={movie.bannerUrl || movie.posterUrl}
                             alt={movie.title}
-                            className={`absolute inset-0 w-full h-full object-cover object-top z-10 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
+                            className="absolute inset-0 w-full h-full object-cover object-top z-10"
                             loading="eager"
                             decoding="async"
-                            onLoad={() => setIsHighResLoaded(true)}
                         />
-                        
                         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                     </motion.div>
 
                     <motion.div style={{ y, opacity }} className="hidden md:block relative w-full h-[55vh] overflow-hidden bg-[#222]">
                         <img 
-                            src={movie.smallPosterUrl}
-                            alt=""
-                            className="absolute inset-0 w-full h-full object-cover object-top"
-                        />
-                        <img 
                             src={movie.bannerUrl || movie.posterUrl}
                             alt={movie.title}
-                            className={`
-                                absolute inset-0 w-full h-full object-cover object-top z-10
-                                transition-opacity duration-700 ease-in-out
-                                ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}
-                            `}
-                            onLoad={() => setIsHighResLoaded(true)}
+                            className="absolute inset-0 w-full h-full object-cover object-top z-10"
                         />
                         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#181818] via-[#181818]/80 to-transparent z-20 pointer-events-none"></div>
                     </motion.div>
