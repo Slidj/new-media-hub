@@ -41,6 +41,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
 
   // Global Settings State
   const [logoIcon, setLogoIcon] = useState('');
+  const [ticketRewardRatePerHour, setTicketRewardRatePerHour] = useState<number>(0.5);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // PAGINATION STATE
@@ -57,6 +58,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
           const unsubscribe = subscribeToGlobalSettings((settings) => {
               if (settings?.logoIcon !== undefined) {
                   setLogoIcon(settings.logoIcon);
+              }
+              if (settings?.ticketRewardRatePerHour !== undefined) {
+                  setTicketRewardRatePerHour(settings.ticketRewardRatePerHour);
               }
           });
           return () => unsubscribe();
@@ -86,7 +90,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       setIsSavingSettings(true);
       try {
           const { updateGlobalSettings } = await import('../services/firebase');
-          await updateGlobalSettings({ logoIcon });
+          await updateGlobalSettings({ logoIcon, ticketRewardRatePerHour });
           alert('Settings saved successfully!');
       } catch (e) {
           console.error("Failed to save settings", e);
@@ -433,7 +437,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                             <Gift className="w-4 h-4 text-gray-400" />
                             <h3 className="text-white font-bold text-sm uppercase">Global Settings</h3>
                         </div>
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Holiday Logo Icon (Emoji)</label>
                                 <div className="flex gap-2">
@@ -444,15 +448,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                         placeholder="e.g. 🎄, 🎃, ❄️"
                                         className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#E50914] transition"
                                     />
-                                    <button 
-                                        onClick={handleSaveSettings}
-                                        disabled={isSavingSettings}
-                                        className="bg-[#E50914] hover:bg-[#B20710] text-white px-4 py-2 rounded-lg font-bold transition disabled:opacity-50"
-                                    >
-                                        {isSavingSettings ? 'Saving...' : 'Save'}
-                                    </button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">This icon will appear next to the "MEDIA HUB" logo for all users.</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Ticket Reward Rate (per hour)</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        min="0"
+                                        value={ticketRewardRatePerHour}
+                                        onChange={(e) => setTicketRewardRatePerHour(parseFloat(e.target.value) || 0)}
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#E50914] transition"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Set to 0 to disable rewards. Default is 0.5.</p>
+                            </div>
+
+                            <div className="pt-2 border-t border-white/5">
+                                <button 
+                                    onClick={handleSaveSettings}
+                                    disabled={isSavingSettings}
+                                    className="w-full bg-[#E50914] hover:bg-[#B20710] text-white px-4 py-3 rounded-lg font-bold transition disabled:opacity-50"
+                                >
+                                    {isSavingSettings ? 'Saving Settings...' : 'Save All Settings'}
+                                </button>
                             </div>
                         </div>
                     </div>

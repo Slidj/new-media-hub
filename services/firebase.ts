@@ -106,19 +106,27 @@ export const addWatchTimeReward = async (userId: number, secondsWatched: number 
                 newSeconds = (currentStats.watchedSeconds || 0) + secondsWatched;
             }
 
-            // Calculation: 0.5 tickets per hour (3600s)
-            // Ticket per second = 0.5 / 3600 = 0.0001388
-            // For 60s: 0.00833
-            const ticketReward = (0.5 / 3600) * secondsWatched;
+            // Calculation: dynamic tickets per hour (3600s)
+            const ratePerHour = cachedGlobalSettings.ticketRewardRatePerHour !== undefined 
+                ? cachedGlobalSettings.ticketRewardRatePerHour 
+                : 0.5;
+            
+            const ticketReward = (ratePerHour / 3600) * secondsWatched;
 
-            await updateDoc(userRef, {
-                tickets: increment(ticketReward), 
+            // Only update tickets if the rate is > 0
+            const updates: any = {
                 totalWatchedSeconds: increment(secondsWatched), // Always increment total history
                 dailyStats: {
                     date: today,
                     watchedSeconds: newSeconds
                 }
-            });
+            };
+            
+            if (ticketReward > 0) {
+                updates.tickets = increment(ticketReward);
+            }
+
+            await updateDoc(userRef, updates);
         }
     } catch (e: any) {
         console.error("Error adding reward", e?.message || e);
@@ -555,13 +563,17 @@ export const deleteSupportMessage = async (messageId: string) => {
     }
 };
 
+let cachedGlobalSettings: any = {};
+
 export const subscribeToGlobalSettings = (onUpdate: (settings: any) => void) => {
     try {
         const ref = doc(db, "settings", "global");
         return onSnapshot(ref, (doc) => {
             if (doc.exists()) {
+                cachedGlobalSettings = doc.data();
                 onUpdate(doc.data());
             } else {
+                cachedGlobalSettings = {};
                 onUpdate({});
             }
         });
