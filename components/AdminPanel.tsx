@@ -4,7 +4,7 @@ import {
     X, Users, Activity, Server, Send, MessageSquare, 
     Ban, CheckCircle, Search, User, Ticket, Clock, 
     Menu, LayoutDashboard, ChevronRight, ChevronLeft, Trash2, RotateCcw,
-    Wifi, HelpCircle, Copy, Check, Gift
+    Wifi, HelpCircle, Copy, Check, Gift, Megaphone
 } from 'lucide-react';
 import { Language, translations } from '../utils/translations';
 import { sendGlobalNotification, sendPersonalNotification, getAllUsers, toggleUserBan, deleteUserAccount, fetchSupportMessages, updateSupportMessageStatus, deleteSupportMessage } from '../services/firebase';
@@ -15,7 +15,7 @@ interface AdminPanelProps {
   lang: Language;
 }
 
-type AdminView = 'dashboard' | 'users' | 'broadcast' | 'support';
+type AdminView = 'dashboard' | 'users' | 'broadcast' | 'support' | 'popup';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   const t = translations[lang];
@@ -42,6 +42,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
   // Global Settings State
   const [logoIcon, setLogoIcon] = useState('');
   const [ticketRewardRatePerHour, setTicketRewardRatePerHour] = useState<number>(0.5);
+  
+  // Popup State
+  const [popupTitle, setPopupTitle] = useState('');
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupImage, setPopupImage] = useState('');
+  const [popupIsActive, setPopupIsActive] = useState(false);
+  const [popupId, setPopupId] = useState('');
+
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // PAGINATION STATE
@@ -61,6 +69,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
               }
               if (settings?.ticketRewardRatePerHour !== undefined) {
                   setTicketRewardRatePerHour(settings.ticketRewardRatePerHour);
+              }
+              if (settings?.popup) {
+                  setPopupTitle(settings.popup.title || '');
+                  setPopupMessage(settings.popup.message || '');
+                  setPopupImage(settings.popup.imageUrl || '');
+                  setPopupIsActive(settings.popup.isActive || false);
+                  setPopupId(settings.popup.id || '');
               }
           });
           return () => unsubscribe();
@@ -95,6 +110,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       } catch (e) {
           console.error("Failed to save settings", e);
           alert('Failed to save settings.');
+      } finally {
+          setIsSavingSettings(false);
+      }
+  };
+
+  const handleSavePopup = async () => {
+      setIsSavingSettings(true);
+      try {
+          const { updateGlobalSettings } = await import('../services/firebase');
+          const newPopupId = popupIsActive && !popupId ? Date.now().toString() : popupId;
+          // If they turn it on and it didn't have an ID, generate one so it shows to users.
+          // If they turn it off, we can keep the ID. If they change text and want to re-show, they should toggle off then on, or we can just update the ID whenever they save if it's active.
+          // Let's generate a new ID every time they save while active, so it forces a re-show if changed.
+          const finalId = popupIsActive ? Date.now().toString() : '';
+          
+          await updateGlobalSettings({ 
+              popup: {
+                  id: finalId,
+                  title: popupTitle,
+                  message: popupMessage,
+                  imageUrl: popupImage,
+                  isActive: popupIsActive
+              }
+          });
+          setPopupId(finalId);
+          alert('Popup settings saved successfully!');
+      } catch (e) {
+          console.error("Failed to save popup", e);
+          alert('Failed to save popup settings.');
       } finally {
           setIsSavingSettings(false);
       }
@@ -256,6 +300,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'users', label: t.users, icon: Users },
       { id: 'broadcast', label: t.sendMessage, icon: MessageSquare },
+      { id: 'popup', label: t.adminPopup || 'Popup', icon: Megaphone },
       { id: 'support', label: t.support || 'Support', icon: HelpCircle },
   ];
 
@@ -795,6 +840,75 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                     </div>
                 </div>
             )}
+            {/* --- POPUP VIEW --- */}
+            {activeView === 'popup' && (
+                <div className="space-y-4 animate-fade-in-up">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Megaphone className="w-5 h-5 text-[#E50914]" />
+                            {t.adminPopup || 'Popup Announcement'}
+                        </h3>
+                    </div>
+
+                    <div className="bg-[#1f1f1f] border border-white/5 rounded-xl overflow-hidden">
+                        <div className="p-5 space-y-5">
+                             <div>
+                                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1.5">Popup Title</label>
+                                 <input 
+                                    type="text" 
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm font-bold focus:border-[#E50914] outline-none transition select-text"
+                                    value={popupTitle}
+                                    onChange={(e) => setPopupTitle(e.target.value)}
+                                    placeholder="e.g., Happy New Year!"
+                                 />
+                             </div>
+                             
+                             <div>
+                                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1.5">Message</label>
+                                 <textarea 
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm h-32 resize-none focus:border-[#E50914] outline-none transition select-text"
+                                    value={popupMessage}
+                                    onChange={(e) => setPopupMessage(e.target.value)}
+                                    placeholder="Write your announcement here..."
+                                 />
+                             </div>
+
+                             <div>
+                                 <label className="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1.5">Image URL (Optional)</label>
+                                 <input 
+                                    type="text" 
+                                    className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-[#E50914] outline-none transition select-text"
+                                    value={popupImage}
+                                    onChange={(e) => setPopupImage(e.target.value)}
+                                    placeholder="https://example.com/image.jpg"
+                                 />
+                             </div>
+
+                             <div className="flex items-center justify-between bg-black/30 p-4 rounded-lg border border-white/5">
+                                 <div>
+                                     <div className="text-sm font-bold text-white">Enable Popup</div>
+                                     <div className="text-xs text-gray-400 mt-0.5">Show this popup to all users when they open the app.</div>
+                                 </div>
+                                 <button 
+                                     onClick={() => setPopupIsActive(!popupIsActive)}
+                                     className={`w-12 h-6 rounded-full transition-colors relative ${popupIsActive ? 'bg-[#E50914]' : 'bg-gray-600'}`}
+                                 >
+                                     <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${popupIsActive ? 'translate-x-7' : 'translate-x-1'}`} />
+                                 </button>
+                             </div>
+
+                             <button 
+                                disabled={isSavingSettings}
+                                onClick={handleSavePopup}
+                                className="w-full bg-[#E50914] text-white font-bold py-3.5 rounded-lg hover:bg-red-700 active:scale-[0.98] transition flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 mt-4"
+                             >
+                                 {isSavingSettings ? 'Saving...' : 'Save & Apply'}
+                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- SUPPORT VIEW --- */}
             {activeView === 'support' && (
                 <div className="space-y-4 animate-fade-in-up">

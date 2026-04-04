@@ -45,6 +45,7 @@ import { NowWatchingRow } from './components/NowWatchingRow';
 import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 import { SkeletonCard } from './components/SkeletonCard';
+import { GlobalPopup } from './components/GlobalPopup';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 
@@ -92,6 +93,10 @@ function App() {
   const isFirstNotificationLoadRef = useRef(true);
 
   const [logoIcon, setLogoIcon] = useState('');
+  
+  // Global Popup State
+  const [globalPopup, setGlobalPopup] = useState<any>(null);
+  const [showGlobalPopup, setShowGlobalPopup] = useState(false);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -259,6 +264,11 @@ function App() {
         if (settings?.logoIcon !== undefined) {
             setLogoIcon(settings.logoIcon);
         }
+        if (settings?.popup) {
+            setGlobalPopup(settings.popup);
+        } else {
+            setGlobalPopup(null);
+        }
     });
 
     return () => {
@@ -334,6 +344,27 @@ function App() {
           localStorage.setItem('deleted_global_ids', JSON.stringify(newDeletedIds));
       } else if (user?.id) {
           await deletePersonalNotification(user.id, notification.id);
+      }
+  };
+
+  // Global Popup Trigger Logic
+  useEffect(() => {
+      if (globalPopup?.isActive && globalPopup?.id && !showSplash) {
+          const seenId = localStorage.getItem('seen_popup_id');
+          if (seenId !== globalPopup.id) {
+              const timer = setTimeout(() => {
+                  setShowGlobalPopup(true);
+                  Haptics.success();
+              }, 2500); // 2.5s delay after splash screen
+              return () => clearTimeout(timer);
+          }
+      }
+  }, [globalPopup, showSplash]);
+
+  const handleCloseGlobalPopup = () => {
+      setShowGlobalPopup(false);
+      if (globalPopup?.id) {
+          localStorage.setItem('seen_popup_id', globalPopup.id);
       }
   };
 
@@ -711,6 +742,14 @@ function App() {
             userId={user?.id}
             onMarkGlobalRead={handleMarkGlobalRead}
             onDelete={handleDeleteNotification}
+          />
+      )}
+
+      {showGlobalPopup && globalPopup && (
+          <GlobalPopup 
+              data={globalPopup}
+              onClose={handleCloseGlobalPopup}
+              lang={lang}
           />
       )}
     </div>

@@ -120,7 +120,10 @@ export const translations = {
     qualityLow: "Low",
     qualityMedium: "Medium",
     qualityHigh: "High",
-    settingsRestart: "Changes will take effect after restarting the app."
+    settingsRestart: "Changes will take effect after restarting the app.",
+    // Popup
+    adminPopup: "Popup Announcement",
+    popupClose: "Close"
   },
   uk: {
     home: "Головна",
@@ -237,7 +240,10 @@ export const translations = {
     qualityLow: "Низька",
     qualityMedium: "Середня",
     qualityHigh: "Висока",
-    settingsRestart: "Зміни набудуть чинності після перезапуску додатку."
+    settingsRestart: "Зміни набудуть чинності після перезапуску додатку.",
+    // Popup
+    adminPopup: "Спливаюче сповіщення",
+    popupClose: "Закрити"
   },
   ru: {
     home: "Главная",
@@ -354,7 +360,10 @@ export const translations = {
     qualityLow: "Низкое",
     qualityMedium: "Среднее",
     qualityHigh: "Высокое",
-    settingsRestart: "Изменения вступят в силу после перезапуска приложения."
+    settingsRestart: "Изменения вступят в силу после перезапуска приложения.",
+    // Popup
+    adminPopup: "Всплывающее уведомление",
+    popupClose: "Закрыть"
   }
 };
 
