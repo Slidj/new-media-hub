@@ -25,7 +25,7 @@ export const MovieCard = memo(({ movie, index, activeCategory, onClick }: MovieC
             className="relative"
         >
             <div 
-                className="relative cursor-pointer aspect-[2/3] overflow-hidden group transform-gpu ease-out hover:scale-105 hover:z-50 active:scale-95 active:brightness-75 rounded-md bg-[#181818] hover:shadow-2xl hover:shadow-black transition-transform duration-200"
+                className="relative cursor-pointer aspect-[2/3] overflow-hidden group transform-gpu ease-out hover:scale-105 hover:z-50 active:scale-95 active:brightness-75 rounded-md bg-[#181818] border border-white/10 hover:border-white/25 hover:shadow-2xl hover:shadow-black transition-all duration-200"
                 onClick={() => onClick(movie)}
             >
                 {/* Skeleton Overlay - Behind Image */}
