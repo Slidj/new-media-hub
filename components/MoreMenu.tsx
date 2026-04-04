@@ -396,22 +396,31 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
       </AnimatePresence>
 
       {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black/80 z-[60] transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      />
+      <AnimatePresence>
+          {isOpen && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-black/80 z-[60]"
+                onClick={onClose}
+              />
+          )}
+      </AnimatePresence>
 
       {/* Sidebar Drawer */}
-      <div 
-        className={`
-            fixed top-0 right-0 h-full w-[80%] max-w-sm z-[70] 
-            transform transition-transform duration-300 ease-out shadow-2xl border-l border-white/10
-            flex flex-col bg-[#121212]
-            ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-        `}
-      >
-        {/* Header - UPDATED PADDING to safe-area + 80px */}
-        <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
+      <AnimatePresence>
+          {isOpen && (
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed top-0 right-0 h-full w-[80%] max-w-sm z-[70] shadow-2xl border-l border-white/10 flex flex-col bg-[#121212]"
+              >
+                {/* Header - UPDATED PADDING to safe-area + 80px */}
+                <div className="pt-[calc(env(safe-area-inset-top)+80px)] pb-6 px-6 flex items-center justify-between border-b border-white/5 bg-[#1a1a1a]">
             <div className="flex items-center gap-3">
                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden flex items-center justify-center border border-white/10 shrink-0">
                     {user?.photo_url ? (
@@ -490,7 +499,9 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
              <h3 className="text-lg font-bebas text-gray-600 tracking-wider">MEDIA HUB</h3>
              <p className="text-[10px] text-gray-700 mt-1">Version 9.2 (BETA)</p>
         </div>
-      </div>
+              </motion.div>
+          )}
+      </AnimatePresence>
     </>
   );
 };
