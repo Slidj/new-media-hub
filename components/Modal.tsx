@@ -175,7 +175,7 @@ export const Modal: React.FC<ModalProps> = ({
       Haptics.medium();
       Audio.playClick();
       
-      const shareUrl = `https://t.me/my_mediahub_bot/app?startapp=${movie?.id}`;
+      const shareUrl = `https://t.me/my_mediahub_bot/app?startapp=${movie?.mediaType}_${movie?.id}`;
       const shareText = `${t.watchOn} "${movie?.title}"`;
 
       if (window.Telegram?.WebApp?.showPopup) {

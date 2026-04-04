@@ -18,7 +18,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { NotificationsView } from './components/NotificationsView'; 
 import { BannedView } from './components/BannedView'; 
 import { Movie, WebAppUser, TabType, AppNotification, Activity } from './types';
-import { API } from './services/tmdb';
+import { API, fetchMovieById } from './services/tmdb';
 import { 
     syncUser, 
     subscribeToUserData, 
@@ -162,6 +162,41 @@ function App() {
            }
         }
       }
+
+      // --- DEEP LINKING (startapp) ---
+      const startParam = tg.initDataUnsafe.start_param;
+      if (startParam) {
+          const processDeepLink = async () => {
+              try {
+                  let mediaType: 'movie' | 'tv' = 'movie';
+                  let idStr = startParam;
+
+                  if (startParam.startsWith('movie_')) {
+                      mediaType = 'movie';
+                      idStr = startParam.replace('movie_', '');
+                  } else if (startParam.startsWith('tv_')) {
+                      mediaType = 'tv';
+                      idStr = startParam.replace('tv_', '');
+                  }
+
+                  const id = parseInt(idStr, 10);
+                  if (!isNaN(id)) {
+                      // Use current language for the fetch
+                      const currentLang = tgUser?.language_code ? getLanguage(tgUser.language_code) : lang;
+                      const locale = currentLang === 'uk' ? 'uk-UA' : currentLang === 'ru' ? 'ru-RU' : 'en-US';
+                      
+                      const movieData = await fetchMovieById(id.toString(), mediaType, locale);
+                      if (movieData) {
+                          setSelectedMovie(movieData);
+                      }
+                  }
+              } catch (error) {
+                  console.error("Failed to process deep link:", error);
+              }
+          };
+          processDeepLink();
+      }
+
     } else {
         // --- FALLBACK FOR BROWSER / GUEST (STATIC DEV USER) ---
         const STATIC_TEST_ID = 999999;
