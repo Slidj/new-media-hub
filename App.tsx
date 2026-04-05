@@ -46,6 +46,7 @@ import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 import { SkeletonCard } from './components/SkeletonCard';
 import { GlobalPopup } from './components/GlobalPopup';
+import { PopupButton } from './components/PopupButton';
 
 // --- OPTIMIZED MOVIE CARD COMPONENT ---
 
@@ -97,6 +98,7 @@ function App() {
   // Global Popup State
   const [globalPopup, setGlobalPopup] = useState<any>(null);
   const [showGlobalPopup, setShowGlobalPopup] = useState(false);
+  const [showPopupButton, setShowPopupButton] = useState(false);
 
   const [lang, setLang] = useState<Language>(() => {
     try {
@@ -353,13 +355,18 @@ function App() {
           const seenId = localStorage.getItem('seen_popup_id');
           if (seenId !== globalPopup.id) {
               const timer = setTimeout(() => {
-                  setShowGlobalPopup(true);
+                  setShowPopupButton(true);
                   Haptics.success();
               }, 2500); // 2.5s delay after splash screen
               return () => clearTimeout(timer);
           }
       }
   }, [globalPopup, showSplash]);
+
+  const handlePopupButtonClick = () => {
+      setShowPopupButton(false);
+      setShowGlobalPopup(true);
+  };
 
   const handleCloseGlobalPopup = () => {
       setShowGlobalPopup(false);
@@ -742,6 +749,13 @@ function App() {
             userId={user?.id}
             onMarkGlobalRead={handleMarkGlobalRead}
             onDelete={handleDeleteNotification}
+          />
+      )}
+
+      {showPopupButton && (
+          <PopupButton 
+              onClick={handlePopupButtonClick}
+              lang={lang}
           />
       )}
 

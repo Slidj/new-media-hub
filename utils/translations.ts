@@ -123,7 +123,8 @@ export const translations = {
     settingsRestart: "Changes will take effect after restarting the app.",
     // Popup
     adminPopup: "Popup Announcement",
-    popupClose: "Close"
+    popupClose: "Close",
+    newAnnouncement: "New Announcement!"
   },
   uk: {
     home: "Головна",
@@ -243,7 +244,8 @@ export const translations = {
     settingsRestart: "Зміни набудуть чинності після перезапуску додатку.",
     // Popup
     adminPopup: "Спливаюче сповіщення",
-    popupClose: "Закрити"
+    popupClose: "Закрити",
+    newAnnouncement: "Нова подія!"
   },
   ru: {
     home: "Главная",
@@ -363,7 +365,8 @@ export const translations = {
     settingsRestart: "Изменения вступят в силу после перезапуска приложения.",
     // Popup
     adminPopup: "Всплывающее уведомление",
-    popupClose: "Закрыть"
+    popupClose: "Закрыть",
+    newAnnouncement: "Новое событие!"
   }
 };
 
