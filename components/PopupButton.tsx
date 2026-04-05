@@ -57,7 +57,7 @@ export const PopupButton: React.FC<PopupButtonProps> = ({ onClick, lang }) => {
         },
         expanding: {
             y: 0,
-            width: 180, // Expanded width
+            width: 'auto', // Expanded width adapts to content
             height: 56,
             borderRadius: 28,
             opacity: 1,
@@ -65,7 +65,7 @@ export const PopupButton: React.FC<PopupButtonProps> = ({ onClick, lang }) => {
         },
         idle: {
             y: [0, -8, 0],
-            width: 180,
+            width: 'auto',
             height: 56,
             borderRadius: 28,
             opacity: 1,
@@ -103,7 +103,7 @@ export const PopupButton: React.FC<PopupButtonProps> = ({ onClick, lang }) => {
                 className="bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.3)] flex items-center justify-center overflow-hidden pointer-events-auto border border-white/40"
                 whileTap={phase === 'idle' ? { scale: 0.95 } : {}}
             >
-                <div className="flex items-center justify-center gap-2 whitespace-nowrap px-4">
+                <div className="flex items-center justify-center whitespace-nowrap px-4">
                     <Bell className="w-6 h-6 shrink-0 text-[#E50914] fill-[#E50914]" />
                     <AnimatePresence>
                         {(phase === 'expanding' || phase === 'idle') && (
