@@ -17,6 +17,8 @@ export const PopupButton: React.FC<PopupButtonProps> = ({ onClick, lang }) => {
     useEffect(() => {
         // Sequence: hidden -> rising -> expanding -> idle
         const sequence = async () => {
+            // Small delay to ensure the initial hidden state is rendered before animating
+            await new Promise(resolve => setTimeout(resolve, 50));
             setPhase('rising');
             await new Promise(resolve => setTimeout(resolve, 600)); // wait for rise
             setPhase('expanding');
@@ -43,16 +45,21 @@ export const PopupButton: React.FC<PopupButtonProps> = ({ onClick, lang }) => {
         exitSequence();
     };
 
-    if (phase === 'hidden') return null;
-
     // Variants for the container
     const containerVariants = {
-        rising: {
-            y: [100, 0],
+        hidden: {
+            y: 100,
             width: 56,
             height: 56,
             borderRadius: 28,
-            opacity: [0, 1],
+            opacity: 0
+        },
+        rising: {
+            y: 0,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            opacity: 1,
             transition: { type: 'spring', damping: 20, stiffness: 200 }
         },
         expanding: {
