@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import './index.css';
 
 // FORCE CACHE CLEAR v9.0
 const CURRENT_VERSION = '9.0';
