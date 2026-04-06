@@ -15,11 +15,24 @@
     <script>
       // Global error handler to catch module loading errors
       window.onerror = function(message, source, lineno, colno, error) {
-        if (message && message.toString().includes('ResizeObserver')) return true;
+        var msg = message ? message.toString() : '';
+        if (msg.includes('ResizeObserver')) return true;
+        if (msg.includes('import.meta.resolve')) return true; // Ignore Vite's intentional feature detection error
         
+        showFatalError(msg, error && error.stack ? error.stack : 'No stack trace');
+        return false;
+      };
+
+      window.addEventListener('error', function(e) {
+        if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+          showFatalError('Failed to load resource: ' + e.target.src || e.target.href, 'Network Error');
+        }
+      }, true);
+
+      function showFatalError(message, stack) {
         var errDiv = document.createElement('div');
         errDiv.style.cssText = 'background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 999999;';
-        errDiv.innerHTML = '<h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Fatal Load Error</h1><p style="color: #ccc; margin-bottom: 20px;">' + message + '</p><pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">' + (error && error.stack ? error.stack : 'No stack trace') + '</pre><button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px;">Force Reset</button>';
+        errDiv.innerHTML = '<h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Fatal Load Error</h1><p style="color: #ccc; margin-bottom: 20px;">' + message + '</p><pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">' + stack + '</pre><button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px;">Force Reset</button>';
         
         if (document.body) {
             document.body.appendChild(errDiv);
@@ -28,10 +41,23 @@
                 document.body.appendChild(errDiv);
             });
         }
-        return false;
-      };
+      }
       window.onunhandledrejection = function(event) {
         console.warn("Unhandled Promise Rejection:", event.reason);
+        var message = event.reason ? (event.reason.message || event.reason.toString()) : "Unknown Promise Rejection";
+        var stack = event.reason ? event.reason.stack : "";
+        
+        var errDiv = document.createElement('div');
+        errDiv.style.cssText = 'background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 999999;';
+        errDiv.innerHTML = '<h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Promise Error</h1><p style="color: #ccc; margin-bottom: 20px;">' + message + '</p><pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">' + (stack ? stack : 'No stack trace') + '</pre><button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px;">Force Reset</button>';
+        
+        if (document.body) {
+            document.body.appendChild(errDiv);
+        } else {
+            window.addEventListener('DOMContentLoaded', function() {
+                document.body.appendChild(errDiv);
+            });
+        }
       };
 
       // Ініціалізація глобального об'єкта для ключів
@@ -44,7 +70,7 @@
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       
       body { 
-        background-color: #000000; 
+        background-color: #0000FF; /* Bright blue to verify HTML load */
         color: white; 
         margin: 0; 
         padding: 0;
@@ -64,7 +90,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="color: white; text-align: center; margin-top: 50px; font-family: sans-serif; font-size: 48px; font-weight: bold;">
+        LOADING APP...
+      </div>
+    </div>
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
