@@ -68,12 +68,22 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("React ErrorBoundary caught an error:", error, errorInfo);
-    renderError(error.message, error.stack);
   }
 
   render() {
     if (this.state.hasError) {
-      return null; // renderError will manipulate the DOM directly
+      return (
+        <div style={{ background: '#000', color: '#fff', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', textAlign: 'center', position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 99999 }}>
+          <h1 style={{ color: '#E50914', fontSize: '24px', marginBottom: '10px' }}>React Render Error</h1>
+          <p style={{ color: '#ccc', marginBottom: '20px' }}>{this.state.error?.message}</p>
+          <pre style={{ background: '#111', padding: '10px', borderRadius: '5px', fontSize: '10px', textAlign: 'left', overflow: 'auto', maxWidth: '100%', color: '#888' }}>
+            {this.state.error?.stack || 'No stack trace'}
+          </pre>
+          <button onClick={() => { localStorage.clear(); window.location.reload(); }} style={{ background: '#E50914', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', marginTop: '20px' }}>
+            Force Reset
+          </button>
+        </div>
+      );
     }
     return this.props.children;
   }

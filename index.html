@@ -15,10 +15,18 @@
     <script>
       // Global error handler to catch module loading errors
       window.onerror = function(message, source, lineno, colno, error) {
-        if (message.toString().includes('ResizeObserver')) return true;
-        var rootElement = document.getElementById('root');
-        if (rootElement) {
-          rootElement.innerHTML = '<div style="background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif; text-align: center;"><h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Fatal Load Error</h1><p style="color: #ccc; margin-bottom: 20px;">' + message + '</p><pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">' + (error && error.stack ? error.stack : 'No stack trace') + '</pre><button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">Force Reset</button></div>';
+        if (message && message.toString().includes('ResizeObserver')) return true;
+        
+        var errDiv = document.createElement('div');
+        errDiv.style.cssText = 'background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; font-family: sans-serif; text-align: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 999999;';
+        errDiv.innerHTML = '<h1 style="color: #E50914; font-size: 24px; margin-bottom: 10px;">Fatal Load Error</h1><p style="color: #ccc; margin-bottom: 20px;">' + message + '</p><pre style="background: #111; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; overflow: auto; max-width: 100%; color: #888;">' + (error && error.stack ? error.stack : 'No stack trace') + '</pre><button onclick="localStorage.clear(); window.location.reload()" style="background: #E50914; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 20px;">Force Reset</button>';
+        
+        if (document.body) {
+            document.body.appendChild(errDiv);
+        } else {
+            window.addEventListener('DOMContentLoaded', function() {
+                document.body.appendChild(errDiv);
+            });
         }
         return false;
       };
