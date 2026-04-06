@@ -31,6 +31,7 @@
         window.fullUA = ua;
         var version = 0;
         
+        // Better Chrome detection
         var chromeMatch = ua.match(/(Chrome|Chromium|CriOS)\/([0-9]+)\./);
         if (chromeMatch) {
           version = parseInt(chromeMatch[2], 10);
@@ -46,14 +47,6 @@
         if (version > 0 && version < 100) {
           window.isLegacyBrowser = true;
         }
-
-        // Safe polyfill attempt without syntax errors
-        try {
-          // Use string check to avoid syntax errors in very old engines
-          if (typeof URL !== 'undefined') {
-             console.log("URL API supported");
-          }
-        } catch (e) {}
       })();
 
       // Ініціалізація глобального об'єкта для ключів

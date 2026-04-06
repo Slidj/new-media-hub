@@ -24,7 +24,15 @@ export default defineConfig({
     terserOptions: {
       compress: {
         drop_console: false,
-        drop_debugger: true
+        drop_debugger: true,
+        ecma: 5
+      },
+      mangle: {
+        safari10: true
+      },
+      output: {
+        ecma: 5,
+        safari10: true
       }
     },
     rollupOptions: {
