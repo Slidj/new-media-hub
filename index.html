@@ -13,6 +13,22 @@
     <title>Media Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+      // Early Telegram initialization
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+
+      // Global error handler for early detection
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Global Error:", message, "at", source, ":", lineno);
+        var root = document.getElementById('root');
+        if (root && !root.innerHTML) {
+          root.innerHTML = '<div style="background:#000;color:#fff;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;text-align:center;"><h1 style="color:#E50914;font-size:20px;">Помилка завантаження</h1><p style="color:#ccc;font-size:14px;">' + message + '</p><button onclick="location.reload()" style="background:#E50914;color:white;border:none;padding:10px 20px;border-radius:4px;margin-top:20px;">Оновити</button></div>';
+        }
+        return false;
+      };
+
       // Detect browser version for old device support
       (function() {
         var ua = navigator.userAgent;
@@ -24,7 +40,6 @@
         
         if (version < 100) {
           console.warn("Running in compatibility mode for older browser (v" + version + ")");
-          // We can use this flag later in React to disable heavy animations if needed
           window.isLegacyBrowser = true;
         }
       })();
@@ -46,7 +61,7 @@
         padding: 0;
         min-height: 100vh;
         width: 100%;
-        overscroll-behavior-y: none; /* Запобігає "гумовому" ефекту всієї сторінки */
+        overscroll-behavior-y: none;
       }
 
       .pt-safe {
@@ -56,10 +71,41 @@
       .pb-safe {
         padding-bottom: env(safe-area-inset-bottom, 20px);
       }
+
+      /* Loading indicator styles */
+      #initial-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      .loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(229, 9, 20, 0.3);
+        border-radius: 50%;
+        border-top-color: #E50914;
+        animation: spin 1s ease-in-out infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   </head>
   <body>
+    <div id="initial-loader">
+      <div class="loader-spinner"></div>
+      <p style="margin-top: 15px; font-family: sans-serif; font-size: 14px; color: #888;">Завантаження...</p>
+    </div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>

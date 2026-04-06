@@ -84,6 +84,16 @@ const init = () => {
         <App />
       </React.StrictMode>
     );
+
+    // Remove initial loader after a small delay to ensure React has started rendering
+    setTimeout(() => {
+      const loader = document.getElementById('initial-loader');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+      }
+      console.log("App initialized successfully");
+    }, 100);
   } catch (error: any) {
     console.error("Critical boot error:", error);
     renderError(error.message, error.stack);
