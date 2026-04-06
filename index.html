@@ -13,42 +13,6 @@
     <title>Media Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-      // Safe logging for old browsers
-      function debugLog(msg) {
-        console.log(msg);
-        var d = document.getElementById('debug-test');
-        if (d) d.innerHTML = msg;
-      }
-
-      window.onerror = function(message, source, lineno, colno, error) {
-        debugLog("ERR: " + message + " (line " + lineno + ")");
-        return false;
-      };
-
-      // Detect browser version safely
-      (function() {
-        var ua = navigator.userAgent;
-        window.fullUA = ua;
-        var version = 0;
-        
-        // Better Chrome detection
-        var chromeMatch = ua.match(/(Chrome|Chromium|CriOS)\/([0-9]+)\./);
-        if (chromeMatch) {
-          version = parseInt(chromeMatch[2], 10);
-        } else {
-          // Try to find any version-like number if Chrome is not found
-          var versionMatch = ua.match(/Version\/([0-9]+)\./) || ua.match(/rv:([0-9]+)\./);
-          if (versionMatch) version = parseInt(versionMatch[1], 10);
-        }
-        
-        window.browserVersion = version;
-        window.isTelegram = !!(window.Telegram && window.Telegram.WebApp);
-        
-        if (version > 0 && version < 100) {
-          window.isLegacyBrowser = true;
-        }
-      })();
-
       // Ініціалізація глобального об'єкта для ключів
       window.process = window.process || {};
       window.process.env = window.process.env || {};
@@ -106,30 +70,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   </head>
   <body>
-    <h1 style="color:red; font-size:12px; position:absolute; top:0; left:0; z-index:10001;">HTML LOADED</h1>
-    <!-- Visual test for very old browsers -->
-    <div id="debug-test" style="position:fixed; top:15px; left:10px; color:#E50914; font-size:10px; z-index:10000; font-family:monospace; background: rgba(0,0,0,0.7); padding: 2px;">System Booting...</div>
-    <script>
-      // Early Telegram initialization
-      try {
-        if (window.Telegram && window.Telegram.WebApp) {
-          window.Telegram.WebApp.ready();
-          window.Telegram.WebApp.expand();
-          console.log("Telegram Ready");
-        }
-      } catch (e) {
-        console.error("TG Init Error", e);
-      }
-
-      // If JS runs, change the debug text
-      var status = "JS OK (v" + (window.browserVersion || "?") + ")";
-      if (window.isTelegram) status += " TG:YES";
-      document.getElementById('debug-test').innerHTML = status;
-    </script>
-
     <div id="initial-loader">
       <div class="loader-spinner"></div>
-      <p style="margin-top: 15px; font-family: sans-serif; font-size: 14px; color: #888;">Завантаження...</p>
+      <p style="margin-top: 15px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: #E50914; letter-spacing: 2px;">MEDIA HUB</p>
     </div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
