@@ -1,10 +1,18 @@
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    legacy({
+      // Chrome 95+ supports almost everything, but legacy plugin will ensure 
+      // polyfills for things like top-level await or newer JS features if needed.
+      targets: ['Chrome >= 95', 'Safari >= 13', 'iOS >= 13', 'Android >= 9'],
+      // We don't need heavy polyfills for Chrome 95, so we keep it light
+      polyfills: ['es.promise.finally', 'es/map', 'es/set'],
+    })
   ],
   base: './', // Важливо для GitHub Pages та Mini Apps
   build: {

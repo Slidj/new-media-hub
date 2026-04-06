@@ -13,6 +13,22 @@
     <title>Media Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+      // Detect browser version for old device support
+      (function() {
+        var ua = navigator.userAgent;
+        var match = ua.match(/(Chrome|Chromium|CriOS)\/([0-9]+)\./);
+        var version = match ? parseInt(match[2], 10) : 999;
+        
+        console.log("Browser version detected:", version);
+        window.browserVersion = version;
+        
+        if (version < 100) {
+          console.warn("Running in compatibility mode for older browser (v" + version + ")");
+          // We can use this flag later in React to disable heavy animations if needed
+          window.isLegacyBrowser = true;
+        }
+      })();
+
       // Ініціалізація глобального об'єкта для ключів
       window.process = window.process || {};
       window.process.env = window.process.env || {};
