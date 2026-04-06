@@ -3,10 +3,12 @@ import React from 'react';
 
 export const Preloader: React.FC = () => {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' }}>
-      <h1 style={{ color: '#E50914', fontSize: '48px', fontWeight: 'bold', fontFamily: 'sans-serif' }}>
-        MEDIA HUB
-      </h1>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden bg-black">
+      <div className="text-center">
+        <h1 className="text-6xl md:text-8xl font-bebas tracking-normal text-[#E50914] uppercase drop-shadow-logo flex items-center justify-center gap-3" style={{ color: '#E50914' }}>
+          MEDIA HUB
+        </h1>
+      </div>
     </div>
   );
 };
