@@ -16,9 +16,17 @@ export default defineConfig({
   ],
   base: './', // Важливо для GitHub Pages та Mini Apps
   build: {
+    target: 'es2015',
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true
+      }
+    },
     rollupOptions: {
       output: {
         // Force unique filenames for every build to kill cache

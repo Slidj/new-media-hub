@@ -47,6 +47,18 @@
           console.warn("Running in compatibility mode for older browser (v" + version + ")");
           window.isLegacyBrowser = true;
         }
+
+        // Polyfill import.meta.resolve for middle-ground browsers (like Chrome 95)
+        try {
+          if (typeof import.meta !== 'undefined' && !import.meta.resolve) {
+            import.meta.resolve = function(specifier) {
+              return new URL(specifier, import.meta.url).href;
+            };
+            console.log("Polyfilled import.meta.resolve");
+          }
+        } catch (e) {
+          console.warn("Could not polyfill import.meta.resolve:", e);
+        }
       })();
 
       // Ініціалізація глобального об'єкта для ключів
