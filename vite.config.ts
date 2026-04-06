@@ -7,11 +7,11 @@ export default defineConfig({
   plugins: [
     react(),
     legacy({
-      // Chrome 95+ supports almost everything, but legacy plugin will ensure 
-      // polyfills for things like top-level await or newer JS features if needed.
-      targets: ['Chrome >= 95', 'Safari >= 13', 'iOS >= 13', 'Android >= 9'],
-      // We don't need heavy polyfills for Chrome 95, so we keep it light
-      polyfills: ['es.promise.finally', 'es/map', 'es/set'],
+      // Lowering targets to support very old Android 5 WebViews (Chrome 38+)
+      targets: ['Android >= 5', 'Chrome >= 38', 'Safari >= 10', 'iOS >= 10'],
+      // Add more comprehensive polyfills for older engines
+      polyfills: true,
+      modernPolyfills: true
     })
   ],
   base: './', // Важливо для GitHub Pages та Mini Apps

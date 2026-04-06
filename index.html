@@ -13,8 +13,10 @@
     <title>Media Hub</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+      console.log("HTML Head Script Start");
       // Early Telegram initialization
       if (window.Telegram && window.Telegram.WebApp) {
+        console.log("Telegram WebApp found");
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
       }
@@ -23,6 +25,8 @@
       window.onerror = function(message, source, lineno, colno, error) {
         console.error("Global Error:", message, "at", source, ":", lineno);
         var root = document.getElementById('root');
+        var debug = document.getElementById('debug-test');
+        if (debug) debug.innerHTML = "ERR: " + message;
         if (root && !root.innerHTML) {
           root.innerHTML = '<div style="background:#000;color:#fff;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;font-family:sans-serif;text-align:center;"><h1 style="color:#E50914;font-size:20px;">Помилка завантаження</h1><p style="color:#ccc;font-size:14px;">' + message + '</p><button onclick="location.reload()" style="background:#E50914;color:white;border:none;padding:10px 20px;border-radius:4px;margin-top:20px;">Оновити</button></div>';
         }
@@ -32,6 +36,7 @@
       // Detect browser version for old device support
       (function() {
         var ua = navigator.userAgent;
+        console.log("User Agent:", ua);
         var match = ua.match(/(Chrome|Chromium|CriOS)\/([0-9]+)\./);
         var version = match ? parseInt(match[2], 10) : 999;
         
@@ -49,6 +54,7 @@
       window.process.env = window.process.env || {};
       // Вставте сюди ваш робочий ключ API
       window.process.env.API_KEY = "AIzaSyA_ioxPIvGX4WI6jK_lXlrxVq8Qpf3o2xE";
+      console.log("HTML Head Script End");
     </script>
     <style>
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -102,6 +108,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   </head>
   <body>
+    <h1 style="color:red; font-size:12px; position:absolute; top:0; left:0; z-index:10001;">HTML LOADED</h1>
+    <!-- Visual test for very old browsers -->
+    <div id="debug-test" style="position:fixed; top:15px; left:10px; color:#E50914; font-size:10px; z-index:10000; font-family:monospace;">System Booting...</div>
+    <script>
+      // If JS runs, change the debug text
+      document.getElementById('debug-test').innerHTML = "JS OK (v" + (window.browserVersion || "?") + ")";
+    </script>
+
     <div id="initial-loader">
       <div class="loader-spinner"></div>
       <p style="margin-top: 15px; font-family: sans-serif; font-size: 14px; color: #888;">Завантаження...</p>
