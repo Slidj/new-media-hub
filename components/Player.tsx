@@ -102,12 +102,16 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         }, 1000);
     }
 
-    // Request Telegram Fullscreen
-    if (window.Telegram?.WebApp?.requestFullscreen) {
+    // Request Telegram Fullscreen or Expand
+    if (window.Telegram?.WebApp) {
         try {
-            window.Telegram.WebApp.requestFullscreen();
+            if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.requestFullscreen) {
+                window.Telegram.WebApp.requestFullscreen();
+            } else if (window.Telegram.WebApp.expand) {
+                window.Telegram.WebApp.expand(); // Fallback for older versions
+            }
         } catch (e) {
-            console.error("Failed to request fullscreen:", e);
+            console.error("Failed to request fullscreen/expand:", e);
         }
     }
 
@@ -119,9 +123,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       
       // Exit Telegram Fullscreen
-      if (window.Telegram?.WebApp?.exitFullscreen) {
+      if (window.Telegram?.WebApp) {
           try {
-              window.Telegram.WebApp.exitFullscreen();
+              if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.exitFullscreen) {
+                  window.Telegram.WebApp.exitFullscreen();
+              }
           } catch (e) {
               console.error("Failed to exit fullscreen:", e);
           }
