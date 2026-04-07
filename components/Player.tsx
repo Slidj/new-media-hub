@@ -121,17 +121,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      
-      // Exit Telegram Fullscreen
-      if (window.Telegram?.WebApp) {
-          try {
-              if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.exitFullscreen) {
-                  window.Telegram.WebApp.exitFullscreen();
-              }
-          } catch (e) {
-              console.error("Failed to exit fullscreen:", e);
-          }
-      }
     };
   }, [movie, userId]);
 

@@ -36,7 +36,13 @@ clearCacheSafe();
 if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
   try {
       window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
+      
+      // Request Fullscreen if supported (v8.0+), otherwise expand
+      if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.requestFullscreen) {
+          window.Telegram.WebApp.requestFullscreen();
+      } else if (window.Telegram.WebApp.expand) {
+          window.Telegram.WebApp.expand();
+      }
   } catch (e) {
       console.warn("Telegram Init Warning:", e);
   }
