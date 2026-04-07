@@ -88,6 +88,11 @@ export interface WebAppUser {
   language_code?: string;
   photo_url?: string;
   tickets?: number; // New Reward System
+  location?: {
+    country: string;
+    city: string;
+    ip?: string;
+  };
 }
 
 export type TabType = 'home' | 'search' | 'coming_soon' | 'my_list';

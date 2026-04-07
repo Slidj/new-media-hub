@@ -677,6 +677,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, lang }) => {
                                                         </div>
                                                     )}
 
+                                                    {/* Location */}
+                                                    {u.profile?.location && (
+                                                        <div className="flex items-center gap-1.5 mb-1 text-gray-400 text-xs">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                            <span className="truncate">{u.profile.location.city}, {u.profile.location.country}</span>
+                                                        </div>
+                                                    )}
+
                                                     {/* ID Box */}
                                                     <div className="inline-flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 mt-0.5 max-w-full">
                                                         <span className="text-[10px] text-gray-500 font-mono flex-shrink-0">ID</span>

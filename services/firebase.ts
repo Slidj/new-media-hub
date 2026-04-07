@@ -44,10 +44,32 @@ export const syncUser = async (user: WebAppUser) => {
   try {
     const userSnap = await getDoc(userRef);
     
+    // Fetch location if we don't have it (either new user, or existing user without location)
+    let locationData = userSnap.exists() ? userSnap.data().profile?.location : null;
+    
+    if (!locationData) {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            if (res.ok) {
+                const data = await res.json();
+                locationData = {
+                    country: data.country_name || 'Unknown',
+                    city: data.city || 'Unknown',
+                    ip: data.ip || 'Unknown'
+                };
+            }
+        } catch (e) {
+            console.error("Location fetch failed", e);
+        }
+    }
+
     if (!userSnap.exists()) {
       // Create new user profile
+      const userProfile = { ...user };
+      if (locationData) userProfile.location = locationData;
+
       await setDoc(userRef, {
-        profile: user,
+        profile: userProfile,
         myList: [],
         likedMovies: [], 
         dislikedMovies: [], // Init dislikes
@@ -63,12 +85,18 @@ export const syncUser = async (user: WebAppUser) => {
       await sendPersonalNotification(user.id, "Welcome to Media Hub!", "Explore the best movies and TV shows.", "system");
     } else {
       // Update last active
-      await updateDoc(userRef, {
+      const updates: any = {
         "profile.first_name": user.first_name || "",
         "profile.username": user.username || "",
         "profile.photo_url": user.photo_url || "",
         lastActive: new Date().toISOString()
-      });
+      };
+      
+      if (locationData && !userSnap.data().profile?.location) {
+          updates["profile.location"] = locationData;
+      }
+
+      await updateDoc(userRef, updates);
     }
   } catch (error: any) {
     console.error("Error syncing user:", error?.message || "Unknown error");
