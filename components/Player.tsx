@@ -102,12 +102,30 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
         }, 1000);
     }
 
+    // Request Telegram Fullscreen
+    if (window.Telegram?.WebApp?.requestFullscreen) {
+        try {
+            window.Telegram.WebApp.requestFullscreen();
+        } catch (e) {
+            console.error("Failed to request fullscreen:", e);
+        }
+    }
+
     return () => {
       document.body.style.overflow = 'unset';
       clearTimeout(dimTimer);
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      
+      // Exit Telegram Fullscreen
+      if (window.Telegram?.WebApp?.exitFullscreen) {
+          try {
+              window.Telegram.WebApp.exitFullscreen();
+          } catch (e) {
+              console.error("Failed to exit fullscreen:", e);
+          }
+      }
     };
   }, [movie, userId]);
 
