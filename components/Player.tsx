@@ -190,8 +190,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       primaryParams.append('d', 'media-hub.app');
       setEmbedUrl(`${SERVER_BASE}?${primaryParams.toString()}`);
     } else if (server === 'backup' && imdbId) {
-      // Backup Server (vidsrc embed)
-      const backupUrl = `https://vidsrc.to/embed/${resolvedMediaType}/${imdbId}`;
+      // Backup Server (vidsrc.pm embed - does not block sandboxed frames unlike vidsrc.to)
+      const backupUrl = resolvedMediaType === 'tv'
+        ? `https://vidsrc.pm/embed/tv?imdb=${imdbId}`
+        : `https://vidsrc.pm/embed/movie?imdb=${imdbId}`;
       setEmbedUrl(backupUrl);
     } else if (server === 'trailer' && trailerKey) {
       setEmbedUrl(`https://www.youtube.com/embed/${trailerKey}?autoplay=1`);
