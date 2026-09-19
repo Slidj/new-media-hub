@@ -218,12 +218,15 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
           tg.BackButton.offClick(handleTgBack);
           tg.BackButton.hide();
         }
-        if (tg.isVersionAtLeast && tg.isVersionAtLeast('8.0') && tg.exitFullscreen) {
-          try {
-            tg.exitFullscreen();
-          } catch (e) {
-            // ignore
+        // Keep the app in fullscreen / expanded state when closing player
+        try {
+          if (tg.isVersionAtLeast && tg.isVersionAtLeast('8.0') && tg.requestFullscreen) {
+            tg.requestFullscreen();
+          } else if (tg.expand) {
+            tg.expand();
           }
+        } catch (e) {
+          // ignore
         }
       }
     };
@@ -265,11 +268,6 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   };
 
   const handleClose = () => {
-    if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.exitFullscreen) {
-      try {
-        window.Telegram.WebApp.exitFullscreen();
-      } catch (e) {}
-    }
     onClose();
   };
 
@@ -356,8 +354,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
         className="fixed left-0 right-0 z-[10000] px-3 sm:px-6 pointer-events-none transition-all duration-300 ease-out"
         style={{
           top: isLandscape 
-            ? 'calc(env(safe-area-inset-top, 0px) + 10px)' 
-            : 'calc(env(safe-area-inset-top, 0px) + 54px)',
+            ? 'calc(env(safe-area-inset-top, 0px) + 14px)' 
+            : 'calc(env(safe-area-inset-top, 0px) + 86px)',
         }}
       >
         <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
