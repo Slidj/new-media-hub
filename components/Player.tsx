@@ -28,6 +28,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
   const dimTimerRef = useRef<any>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // --- SERVER CONFIGURATION ---
   const SERVER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
@@ -129,13 +131,24 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       }, 1000);
     }
 
-    // Request Telegram Fullscreen or Expand
+    // Telegram BackButton handler
+    const handleTgBack = () => {
+      onCloseRef.current();
+    };
+
+    // Request Telegram Fullscreen or Expand & show BackButton
     if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
       try {
-        if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.requestFullscreen) {
-          window.Telegram.WebApp.requestFullscreen();
-        } else if (window.Telegram.WebApp.expand) {
-          window.Telegram.WebApp.expand();
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('8.0') && tg.requestFullscreen) {
+          tg.requestFullscreen();
+        } else if (tg.expand) {
+          tg.expand();
+        }
+
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
+          tg.BackButton.show();
+          tg.BackButton.onClick(handleTgBack);
         }
       } catch (e) {
         console.error("Failed to request fullscreen/expand:", e);
@@ -149,6 +162,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
+          tg.BackButton.offClick(handleTgBack);
+          tg.BackButton.hide();
+        }
+      }
     };
   }, [movie, userId]);
 
@@ -231,22 +252,22 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       onTouchStart={resetDimTimer}
       onMouseMove={resetDimTimer}
     >
-      {/* Top Controls Overlay */}
+      {/* Top Controls Overlay: Title & Server Badges */}
       <div 
         className={`
-          absolute top-0 left-0 right-0 z-[9999] px-4 py-3
+          absolute top-0 left-0 right-0 z-[9998] px-4 py-3
           flex items-center justify-between
           bg-gradient-to-b from-black/90 via-black/50 to-transparent
-          transition-opacity duration-500 ease-in-out
-          ${isControlsDimmed ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}
+          transition-opacity duration-500 ease-in-out pointer-events-none
+          ${isControlsDimmed ? 'opacity-0' : 'opacity-100'}
         `}
         style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}
       >
         {/* Title & Server Badges */}
-        <div className="flex items-center gap-2 max-w-[70%]">
+        <div className={`flex items-center gap-2 max-w-[calc(100%-64px)] ${isControlsDimmed ? 'pointer-events-none' : 'pointer-events-auto'}`}>
           <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-xs font-semibold text-white/90">
             {movie.mediaType === 'tv' ? <Tv className="w-3.5 h-3.5 text-[#E50914]" /> : <Film className="w-3.5 h-3.5 text-[#E50914]" />}
-            <span className="truncate max-w-[140px] md:max-w-[260px]">{movie.title}</span>
+            <span className="truncate max-w-[130px] sm:max-w-[220px] md:max-w-[320px]">{movie.title}</span>
           </div>
 
           {/* Server Switchers (Only show if movie has imdb source) */}
@@ -288,16 +309,27 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
             </div>
           )}
         </div>
-
-        {/* Close Button */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="p-2 bg-black/70 hover:bg-[#E50914] text-white rounded-full border border-white/15 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-          aria-label="Close Player"
-        >
-          <X className="w-6 h-6" />
-        </button>
       </div>
+
+      {/* Close Button - Stays accessible! Dims to semi-transparent when controls idle, full on hover/active */}
+      <button 
+        id="player-close-btn"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className={`
+          fixed top-3 right-4 md:top-4 md:right-4 z-[10000]
+          p-2.5 rounded-full border shadow-2xl backdrop-blur-md
+          transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto
+          ${isControlsDimmed 
+            ? 'opacity-30 hover:opacity-100 bg-black/40 text-white/75 border-white/10 hover:bg-[#E50914] hover:text-white hover:border-white/20' 
+            : 'opacity-100 bg-black/75 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
+          }
+        `}
+        style={{ top: 'calc(12px + env(safe-area-inset-top))' }}
+        aria-label="Close Player"
+        title={labels.closePlayer}
+      >
+        <X className="w-5 h-5 md:w-6 md:h-6 stroke-[2.5]" />
+      </button>
 
       {/* Loading State */}
       {isLoading && !noSourceAvailable && (
