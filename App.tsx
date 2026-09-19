@@ -386,6 +386,7 @@ function App() {
           likedMovieIds: likedMovies,
           dislikedMovieIds: dislikedMovies,
           myList,
+          catalogMovies: movies,
           lang
         });
         if (isMounted) {
@@ -409,7 +410,7 @@ function App() {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [watchHistory, likedMovies, dislikedMovies, myList, lang]);
+  }, [watchHistory, likedMovies, dislikedMovies, myList, movies, lang]);
 
   const handleCloseGlobalPopup = () => {
       setShowGlobalPopup(false);

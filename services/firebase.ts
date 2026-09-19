@@ -49,6 +49,7 @@ const sanitizeMovie = (movie: Movie): Movie => {
     posterUrl: String(movie.posterUrl || ''),
     smallPosterUrl: String(movie.smallPosterUrl || movie.posterUrl || ''),
     genre: Array.isArray(movie.genre) ? [...movie.genre] : [],
+    genreIds: Array.isArray(movie.genreIds) ? [...movie.genreIds] : [],
     duration: String(movie.duration || ''),
     rating: String(movie.rating || 'N/A'),
     year: Number(movie.year) || 0,

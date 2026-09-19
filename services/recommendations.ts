@@ -6,6 +6,7 @@ interface UserTasteProfile {
   likedMovieIds: string[];
   dislikedMovieIds: string[];
   myList: Movie[];
+  catalogMovies?: Movie[];
   lang: string;
 }
 
@@ -16,14 +17,66 @@ export interface SmartRecommendationsData {
   subtitle: string;
 }
 
-// Reverse map localized genre name to TMDB ID if needed
+// Comprehensive synonym mapping for all TMDB Genres across Ukrainian, Russian and English
+const GENRE_SYNONYMS: Record<string, number> = {
+  // Action (28)
+  'бойовик': 28, 'бойовики': 28, 'екшн': 28, 'екшн і пригоди': 28, 'екшн та пригоди': 28, 'боевик': 28, 'боевики': 28, 'экшн': 28, 'экшн и приключения': 28, 'action': 28, 'action & adventure': 28,
+  // Adventure (12)
+  'пригоди': 12, 'пригода': 12, 'приключения': 12, 'приключение': 12, 'adventure': 12,
+  // Animation (16)
+  'мультфільм': 16, 'мультфільми': 16, 'мультик': 16, 'мультики': 16, 'анімація': 16, 'мультфильм': 16, 'мультфильмы': 16, 'анимация': 16, 'animation': 16, 'cartoon': 16,
+  // Comedy (35)
+  'комедія': 35, 'комедії': 35, 'комедия': 35, 'комедии': 35, 'comedy': 35,
+  // Crime (80)
+  'кримінал': 80, 'кримінальний': 80, 'криминал': 80, 'криминальный': 80, 'crime': 80,
+  // Documentary (99)
+  'документальний': 99, 'документальні': 99, 'документалка': 99, 'документальный': 99, 'документальные': 99, 'documentary': 99,
+  // Drama (18)
+  'драма': 18, 'драми': 18, 'драмы': 18, 'drama': 18,
+  // Family (10751)
+  'сімейний': 10751, 'сімейні': 10751, 'для сім’ї': 10751, 'для сім\'ї': 10751, 'семейный': 10751, 'семейные': 10751, 'для семьи': 10751, 'family': 10751,
+  // Fantasy (14)
+  'фентезі': 14, 'фэнтези': 14, 'fantasy': 14,
+  // History (36)
+  'історичний': 36, 'історичні': 36, 'історія': 36, 'исторический': 36, 'исторические': 36, 'история': 36, 'history': 36,
+  // Horror (27)
+  'жахи': 27, 'жах': 27, 'хоррор': 27, 'хоррори': 27, 'ужасы': 27, 'ужас': 27, 'horror': 27,
+  // Music (10402)
+  'музика': 10402, 'музичний': 10402, 'музыка': 10402, 'музыкальный': 10402, 'music': 10402,
+  // Mystery (9648)
+  'містика': 9648, 'детектив': 9648, 'детективи': 9648, 'таємниця': 9648, 'мистика': 9648, 'тайна': 9648, 'mystery': 9648,
+  // Romance (10749)
+  'мелодрама': 10749, 'мелодрами': 10749, 'романтика': 10749, 'романтичний': 10749, 'любов': 10749, 'любовний': 10749, 'мелодрамы': 10749, 'любовный': 10749, 'romance': 10749,
+  // Sci-Fi (878)
+  'фантастика': 878, 'наукова фантастика': 878, 'научная фантастика': 878, 'sci-fi': 878, 'scifi': 878, 'science fiction': 878, 'фантастика і фентезі': 878, 'фантастика и фэнтези': 878,
+  // Thriller (53)
+  'трилер': 53, 'трилери': 53, 'триллер': 53, 'триллеры': 53, 'thriller': 53,
+  // War (10752)
+  'військовий': 10752, 'військові': 10752, 'війна': 10752, 'про війну': 10752, 'военный': 10752, 'военные': 10752, 'война': 10752, 'war': 10752,
+  // Western (37)
+  'вестерн': 37, 'вестерни': 37, 'вестерны': 37, 'western': 37
+};
+
+// Map localized genre name or subparts to TMDB ID
 const getGenreIdFromName = (name: string): number | null => {
   if (!name) return null;
-  const clean = name.trim().toLowerCase();
+  const clean = name.trim().toLowerCase().replace(/[,/]/g, ' ');
+  
+  if (GENRE_SYNONYMS[clean]) {
+    return GENRE_SYNONYMS[clean];
+  }
+
+  for (const [synonym, id] of Object.entries(GENRE_SYNONYMS)) {
+    if (clean.includes(synonym) || synonym.includes(clean)) {
+      return id;
+    }
+  }
+
+  // Fallback to genreMap checking
   for (const localeKey of Object.keys(genreMap)) {
     const map = genreMap[localeKey];
     for (const [idStr, gName] of Object.entries(map)) {
-      if (gName.toLowerCase() === clean) {
+      if (gName.toLowerCase() === clean || clean.includes(gName.toLowerCase())) {
         return parseInt(idStr, 10);
       }
     }
@@ -45,15 +98,44 @@ export const generateSmartRecommendations = async ({
   likedMovieIds = [],
   dislikedMovieIds = [],
   myList = [],
+  catalogMovies = [],
   lang = 'uk'
 }: UserTasteProfile): Promise<SmartRecommendationsData> => {
   const locale = lang === 'uk' ? 'uk-UA' : lang === 'ru' ? 'ru-RU' : 'en-US';
   const localizedGenres = genreMap[locale] || genreMap['en-US'];
 
-  // Sets for exclusions
+  // Sets for fast checks
   const watchedSet = new Set<string>(watchHistory.map(m => m.id.toString()));
   const dislikedSet = new Set<string>(dislikedMovieIds.map(id => id.toString()));
   const likedSet = new Set<string>(likedMovieIds.map(id => id.toString()));
+
+  // Pool of known movie objects from current state
+  const knownMovieMap = new Map<string, Movie>();
+  [...catalogMovies, ...watchHistory, ...myList].forEach(m => {
+    if (m && m.id) {
+      knownMovieMap.set(m.id.toString(), m);
+    }
+  });
+
+  // Fetch missing liked/disliked movies from TMDB to ensure 100% taste accuracy
+  const missingIds = [...likedMovieIds, ...dislikedMovieIds]
+    .filter(id => id && !knownMovieMap.has(id.toString()))
+    .slice(0, 10);
+
+  if (missingIds.length > 0) {
+    const fetchPromises = missingIds.map(async (id) => {
+      // Try movie endpoint first, then tv if not found
+      let data = await safeFetchJson(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${locale}`);
+      if (!data || !data.id) {
+        data = await safeFetchJson(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${locale}`);
+      }
+      if (data && data.id) {
+        const mapped = mapResultToMovie(data, locale);
+        knownMovieMap.set(id.toString(), mapped);
+      }
+    });
+    await Promise.allSettled(fetchPromises);
+  }
 
   // 1. ANALYZE USER TASTE PROFILE
   const genreWeights: Record<number, number> = {};
@@ -77,11 +159,21 @@ export const generateSmartRecommendations = async ({
     else movieCount += 1;
 
     // Collect genre IDs
-    let ids: number[] = movie.genreIds || [];
-    if (ids.length === 0 && movie.genre && movie.genre.length > 0) {
-      ids = movie.genre
-        .map(g => getGenreIdFromName(g))
-        .filter((id): id is number => id !== null);
+    let ids: number[] = Array.isArray(movie.genreIds) && movie.genreIds.length > 0 
+      ? [...movie.genreIds] 
+      : [];
+
+    if (ids.length === 0 && Array.isArray(movie.genre)) {
+      movie.genre.forEach(gStr => {
+        if (!gStr) return;
+        const subParts = gStr.split(/[,/|•]/);
+        subParts.forEach(part => {
+          const matchedId = getGenreIdFromName(part);
+          if (matchedId && !ids.includes(matchedId)) {
+            ids.push(matchedId);
+          }
+        });
+      });
     }
 
     ids.forEach(id => {
@@ -90,37 +182,46 @@ export const generateSmartRecommendations = async ({
     });
   };
 
-  // Weight 1: Liked movies (highest explicit signal +4)
-  const allKnownMovies = [...watchHistory, ...myList];
-  likedMovieIds.forEach(likedId => {
-    const known = allKnownMovies.find(m => m.id.toString() === likedId);
+  // Weight 1: Liked movies (strongest explicit taste signal: +5.0)
+  likedMovieIds.forEach((likedId, index) => {
+    const known = knownMovieMap.get(likedId.toString());
     if (known) {
-      processMovieTastes(known, 4.0);
+      // Recent likes have higher immediate priority
+      const weight = Math.max(2.5, 5.0 - index * 0.2);
+      processMovieTastes(known, weight);
     }
   });
 
-  // Weight 2: Watchlist (+2.5)
-  myList.forEach(movie => {
-    processMovieTastes(movie, 2.5);
+  // Weight 2: Watchlist (+3.0)
+  myList.forEach((movie, index) => {
+    const weight = Math.max(1.5, 3.0 - index * 0.1);
+    processMovieTastes(movie, weight);
   });
 
-  // Weight 3: Watch History (Recency weighted: recent items up to +3.5)
+  // Weight 3: Watch History (Recency weighted: recent items +4.0 down to +1.5)
   watchHistory.forEach((movie, index) => {
-    const recencyWeight = Math.max(1.0, 3.5 - index * 0.15);
+    const recencyWeight = Math.max(1.5, 4.0 - index * 0.2);
     processMovieTastes(movie, recencyWeight);
   });
 
-  // Weight 4: Disliked movies (negative signal -3.0)
+  // Weight 4: Disliked movies (negative signal -4.0)
   dislikedMovieIds.forEach(dislikedId => {
-    const known = allKnownMovies.find(m => m.id.toString() === dislikedId);
-    if (known && known.genreIds) {
-      known.genreIds.forEach(id => {
-        genreWeights[id] = (genreWeights[id] || 0) - 3.0;
+    const known = knownMovieMap.get(dislikedId.toString());
+    if (known) {
+      let ids: number[] = Array.isArray(known.genreIds) && known.genreIds.length > 0 ? known.genreIds : [];
+      if (ids.length === 0 && Array.isArray(known.genre)) {
+        known.genre.forEach(g => {
+          const gId = getGenreIdFromName(g);
+          if (gId) ids.push(gId);
+        });
+      }
+      ids.forEach(id => {
+        genreWeights[id] = (genreWeights[id] || 0) - 4.0;
       });
     }
   });
 
-  // Sort top genres
+  // Sort top genres by weighted score
   const sortedGenreEntries = Object.entries(genreWeights)
     .map(([id, weight]) => ({ id: parseInt(id, 10), weight }))
     .filter(g => g.weight > 0)
@@ -129,7 +230,7 @@ export const generateSmartRecommendations = async ({
   const topGenreIds = sortedGenreEntries.slice(0, 3).map(g => g.id);
   const primaryGenreId = topGenreIds[0];
   const secondaryGenreId = topGenreIds[1];
-  const primaryGenreName = primaryGenreId ? localizedGenres[primaryGenreId] : undefined;
+  const primaryGenreName = primaryGenreId ? (localizedGenres[primaryGenreId] || 'Фільми') : undefined;
 
   const hasPersonalData = watchHistory.length > 0 || likedMovieIds.length > 0 || myList.length > 0;
   const userAvgRating = totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 7.2;
@@ -146,18 +247,28 @@ export const generateSmartRecommendations = async ({
   const candidatePool: Candidate[] = [];
 
   if (hasPersonalData && topGenreIds.length > 0) {
-    // Pick 1-3 seed movies for direct TMDB recommendations
-    const seedCandidates = [
-      ...watchHistory.filter(m => likedSet.has(m.id.toString())),
-      ...watchHistory,
-      ...myList
-    ].slice(0, 3);
+    // Pick 1-3 seed movies for direct TMDB recommendations (prioritize liked movies first)
+    const seedCandidates: Movie[] = [];
+    likedMovieIds.forEach(id => {
+      const m = knownMovieMap.get(id.toString());
+      if (m && seedCandidates.length < 3) seedCandidates.push(m);
+    });
+    watchHistory.forEach(m => {
+      if (m && seedCandidates.length < 3 && !seedCandidates.some(s => s.id === m.id)) {
+        seedCandidates.push(m);
+      }
+    });
+    myList.forEach(m => {
+      if (m && seedCandidates.length < 3 && !seedCandidates.some(s => s.id === m.id)) {
+        seedCandidates.push(m);
+      }
+    });
 
     const minRating = userAvgRating >= 7.5 ? '7.0' : '6.4';
     const queries: Promise<any>[] = [];
 
     // 2.1 Direct Seed Recommendations (Films similar to what this user explicitly loved/watched)
-    seedCandidates.forEach(seed => {
+    seedCandidates.slice(0, 3).forEach(seed => {
       const endpoint = seed.mediaType === 'tv' ? 'tv' : 'movie';
       queries.push(
         safeFetchJson(`${BASE_URL}/${endpoint}/${seed.id}/recommendations?api_key=${API_KEY}&language=${locale}&page=1`)
@@ -173,7 +284,7 @@ export const generateSmartRecommendations = async ({
       );
     }
 
-    // 2.3 Hits in User's #2 Favorite Genre (adds varied taste dimensions)
+    // 2.3 Hits in User's #2 Favorite Genre
     if (secondaryGenreId) {
       queries.push(
         safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${secondaryGenreId}&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=${minRating}&page=1`)
@@ -181,7 +292,7 @@ export const generateSmartRecommendations = async ({
       );
     }
 
-    // 2.4 Golden Classics / Masterpieces in User's #1 Genre (Release <= 2017, High Rating)
+    // 2.4 Golden Classics in User's #1 Genre (Release <= 2017, High Rating)
     if (primaryGenreId) {
       queries.push(
         safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${primaryGenreId}&sort_by=vote_average.desc&vote_count.gte=700&vote_average.gte=7.5&primary_release_date.lte=2017-12-31&page=1`)
@@ -189,7 +300,7 @@ export const generateSmartRecommendations = async ({
       );
     }
 
-    // 2.5 If user watches TV series or likes Animation, discover them specifically
+    // 2.5 TV Series or Animation if relevant
     if (prefersTv && primaryGenreId) {
       queries.push(
         safeFetchJson(`${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${locale}&with_genres=${primaryGenreId}&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=7.0&page=1`)
@@ -260,7 +371,7 @@ export const generateSmartRecommendations = async ({
     seenIds.add(movieId);
 
     // Calculate precision match percentage (85% - 99%)
-    let matchScore = 76;
+    let matchScore = 78;
 
     // Genre overlap bonus (up to +14%)
     const movieGenres = movie.genreIds || [];

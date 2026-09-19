@@ -218,7 +218,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
           tg.BackButton.offClick(handleTgBack);
           tg.BackButton.hide();
         }
-        if (tg.exitFullscreen) {
+        if (tg.isVersionAtLeast && tg.isVersionAtLeast('8.0') && tg.exitFullscreen) {
           try {
             tg.exitFullscreen();
           } catch (e) {
@@ -265,7 +265,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   };
 
   const handleClose = () => {
-    if (window.Telegram?.WebApp?.exitFullscreen) {
+    if (window.Telegram?.WebApp?.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.exitFullscreen) {
       try {
         window.Telegram.WebApp.exitFullscreen();
       } catch (e) {}
