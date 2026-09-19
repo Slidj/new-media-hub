@@ -25,6 +25,9 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [noSourceAvailable, setNoSourceAvailable] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false
+  );
   
   // Watch Time Tracking Refs
   const accumulatedTimeRef = useRef(0); 
@@ -187,9 +190,19 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       }
     }
 
+    // Orientation change listener for responsive layout
+    const handleOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    handleOrientation();
+    window.addEventListener('resize', handleOrientation);
+    window.addEventListener('orientationchange', handleOrientation);
+
     return () => {
       isMounted = false;
       document.body.style.overflow = 'unset';
+      window.removeEventListener('resize', handleOrientation);
+      window.removeEventListener('orientationchange', handleOrientation);
       if (dimTimer1Ref.current) clearTimeout(dimTimer1Ref.current);
       if (dimTimer2Ref.current) clearTimeout(dimTimer2Ref.current);
       if (hintTimer1Ref.current) clearTimeout(hintTimer1Ref.current);
@@ -204,6 +217,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
           tg.BackButton.offClick(handleTgBack);
           tg.BackButton.hide();
+        }
+        if (tg.exitFullscreen) {
+          try {
+            tg.exitFullscreen();
+          } catch (e) {
+            // ignore
+          }
         }
       }
     };
@@ -244,6 +264,15 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     handleSwitchServer('backup');
   };
 
+  const handleClose = () => {
+    if (window.Telegram?.WebApp?.exitFullscreen) {
+      try {
+        window.Telegram.WebApp.exitFullscreen();
+      } catch (e) {}
+    }
+    onClose();
+  };
+
   // Localized UI labels
   const labels = {
     uk: {
@@ -254,8 +283,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       closePlayer: "Повернутися назад",
       primaryServer: "Основний",
       primarySub: "Дубляж",
+      primaryBadgeShort: "UA",
       backupServer: "Резервний",
       backupSub: "Eng / Ориг",
+      backupBadgeShort: "ENG",
       trailer: "Трейлер",
       hintTitle: "English / Мова оригіналу?",
       hintDesc: "Увімкніть Резервний сервер",
@@ -269,8 +300,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       closePlayer: "Вернуться назад",
       primaryServer: "Основной",
       primarySub: "Дубляж",
+      primaryBadgeShort: "UA",
       backupServer: "Резервный",
       backupSub: "Eng / Ориг",
+      backupBadgeShort: "ENG",
       trailer: "Трейлер",
       hintTitle: "English / Язык оригинала?",
       hintDesc: "Включите Резервный сервер",
@@ -284,8 +317,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       closePlayer: "Go Back",
       primaryServer: "Primary",
       primarySub: "Dubbed",
+      primaryBadgeShort: "DUB",
       backupServer: "Backup",
       backupSub: "Original / Eng",
+      backupBadgeShort: "ORIG",
       trailer: "Trailer",
       hintTitle: "Prefer Original / English audio?",
       hintDesc: "Switch to Backup server",
@@ -299,8 +334,10 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     closePlayer: "Повернутися назад",
     primaryServer: "Основний",
     primarySub: "Дубляж",
+    primaryBadgeShort: "UA",
     backupServer: "Резервний",
     backupSub: "Eng / Ориг",
+    backupBadgeShort: "ENG",
     trailer: "Трейлер",
     hintTitle: "English / Мова оригіналу?",
     hintDesc: "Увімкніть Резервний сервер",
@@ -309,113 +346,125 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
 
   return (
     <div 
-      className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto select-none"
+      className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto select-none overflow-hidden"
       onClick={resetDimTimer}
       onTouchStart={resetDimTimer}
       onMouseMove={resetDimTimer}
     >
-      {/* Top Controls: Sleek Server Switchers (Movie title removed as requested) */}
-      {imdbId && (
-        <div 
-          className={`
-            fixed left-4 z-[10000]
-            transition-all duration-700 ease-in-out
-            ${
-              serverMenuState === 'visible'
-                ? 'opacity-100 scale-100 pointer-events-auto'
-                : serverMenuState === 'semi'
-                ? 'opacity-40 hover:opacity-100 scale-100 pointer-events-auto'
-                : 'opacity-0 scale-95 pointer-events-none'
-            }
-          `}
-          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
-        >
-          <div className="flex items-center gap-1 p-1 bg-black/80 hover:bg-black/95 backdrop-blur-xl border border-white/15 rounded-full shadow-2xl shadow-black/90 transition-colors">
-            {/* Primary Server Button */}
-            <button
-              onClick={(e) => { e.stopPropagation(); handleSwitchServer('primary'); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
-                activeServer === 'primary' 
-                  ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Server className="w-3.5 h-3.5" />
-              <span>{labels.primaryServer}</span>
-              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${
-                activeServer === 'primary' ? 'bg-black/30 text-white/90' : 'bg-white/10 text-gray-400'
-              }`}>
-                {labels.primarySub}
-              </span>
-            </button>
-
-            {/* Backup Server Button */}
-            <button
-              onClick={(e) => { e.stopPropagation(); handleSwitchServer('backup'); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
-                activeServer === 'backup' 
-                  ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
-                  : 'text-gray-300 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5 text-sky-400" />
-              <span>{labels.backupServer}</span>
-              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${
-                activeServer === 'backup' ? 'bg-black/30 text-white/90' : 'bg-white/10 text-sky-300'
-              }`}>
-                {labels.backupSub}
-              </span>
-            </button>
-
-            {/* Trailer Button */}
-            {trailerKey && (
-              <button
-                onClick={(e) => { e.stopPropagation(); handleSwitchServer('trailer'); }}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
-                  activeServer === 'trailer' 
-                    ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60' 
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Youtube className="w-3.5 h-3.5 text-red-400" />
-                <span className="hidden sm:inline">{labels.trailer}</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Close Button - Located comfortably BELOW Telegram top bar (right: 4, top: safe-area + 100px). Dims to semi-transparent when idle */}
-      <button 
-        id="player-close-btn"
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
-        className={`
-          fixed right-4 z-[10000]
-          p-2.5 rounded-full border shadow-2xl backdrop-blur-md
-          transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto
-          ${isControlsDimmed 
-            ? 'opacity-35 hover:opacity-100 bg-black/50 text-white/80 border-white/10 hover:bg-[#E50914] hover:text-white hover:border-white/20' 
-            : 'opacity-100 bg-black/80 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
-          }
-        `}
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
-        aria-label="Close Player"
-        title={labels.closePlayer}
+      {/* Top Floating Controls: Rubber/Adaptive Header with Server Switcher & Close Button */}
+      <header 
+        className="fixed left-0 right-0 z-[10000] px-3 sm:px-6 pointer-events-none transition-all duration-300 ease-out"
+        style={{
+          top: isLandscape 
+            ? 'calc(env(safe-area-inset-top, 0px) + 10px)' 
+            : 'calc(env(safe-area-inset-top, 0px) + 54px)',
+        }}
       >
-        <X className="w-5 h-5 md:w-6 md:h-6 stroke-[2.5]" />
-      </button>
+        <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
+          {/* Server Switchers Pill Container */}
+          {imdbId ? (
+            <div 
+              className={`
+                transition-all duration-500 ease-out pointer-events-auto min-w-0
+                ${
+                  serverMenuState === 'visible'
+                    ? 'opacity-100 scale-100'
+                    : serverMenuState === 'semi'
+                    ? 'opacity-40 hover:opacity-100 scale-100'
+                    : 'opacity-0 scale-95 pointer-events-none'
+                }
+              `}
+            >
+              <div className="flex items-center gap-1 p-1 bg-black/85 hover:bg-black/95 backdrop-blur-xl border border-white/15 rounded-full shadow-2xl shadow-black/95 transition-all">
+                {/* Primary Server Button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSwitchServer('primary'); }}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 shrink-0 cursor-pointer ${
+                    activeServer === 'primary' 
+                      ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Server className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-[11px] sm:text-xs font-medium whitespace-nowrap">{labels.primaryServer}</span>
+                  <span className={`text-[9px] sm:text-[10px] uppercase px-1 sm:px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                    activeServer === 'primary' ? 'bg-black/35 text-white/95' : 'bg-white/10 text-gray-400'
+                  }`}>
+                    <span className="hidden sm:inline">{labels.primarySub}</span>
+                    <span className="sm:hidden">{labels.primaryBadgeShort}</span>
+                  </span>
+                </button>
+
+                {/* Backup Server Button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSwitchServer('backup'); }}
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 shrink-0 cursor-pointer ${
+                    activeServer === 'backup' 
+                      ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span className="text-[11px] sm:text-xs font-medium whitespace-nowrap">{labels.backupServer}</span>
+                  <span className={`text-[9px] sm:text-[10px] uppercase px-1 sm:px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                    activeServer === 'backup' ? 'bg-black/35 text-white/95' : 'bg-white/10 text-sky-300'
+                  }`}>
+                    <span className="hidden sm:inline">{labels.backupSub}</span>
+                    <span className="sm:hidden">{labels.backupBadgeShort}</span>
+                  </span>
+                </button>
+
+                {/* Trailer Button */}
+                {trailerKey && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSwitchServer('trailer'); }}
+                    className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 shrink-0 cursor-pointer ${
+                      activeServer === 'trailer' 
+                        ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    }`}
+                    title={labels.trailer}
+                  >
+                    <Youtube className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    <span className="hidden md:inline text-[11px] sm:text-xs whitespace-nowrap">{labels.trailer}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : <div />}
+
+          {/* Close Button - Located in the same flex row, guaranteeing zero overlapping */}
+          <button 
+            id="player-close-btn"
+            onClick={(e) => { e.stopPropagation(); handleClose(); }}
+            className={`
+              pointer-events-auto shrink-0
+              w-9 h-9 sm:w-10 sm:h-10 rounded-full border shadow-2xl backdrop-blur-md flex items-center justify-center
+              transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer
+              ${isControlsDimmed 
+                ? 'opacity-40 hover:opacity-100 bg-black/60 text-white/80 border-white/10 hover:bg-[#E50914] hover:text-white hover:border-white/20' 
+                : 'opacity-100 bg-black/80 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
+              }
+            `}
+            aria-label="Close Player"
+            title={labels.closePlayer}
+          >
+            <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+          </button>
+        </div>
+      </header>
 
       {/* Loading State */}
       {isLoading && !noSourceAvailable && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-black">
-          <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-black pointer-events-none">
+          <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
             {labels.loading}
           </p>
         </div>
       )}
 
-      {/* Friendly Fallback / Unavailable State (Never show broken Russian balancer error) */}
+      {/* Friendly Fallback / Unavailable State */}
       {noSourceAvailable && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-gradient-to-b from-[#141414] to-black text-center px-6">
           <div className="relative mb-6">
@@ -424,11 +473,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
             </div>
           </div>
 
-          <h3 className="text-white text-2xl font-bold mb-3 tracking-tight">
+          <h3 className="text-white text-xl sm:text-2xl font-bold mb-3 tracking-tight">
             {labels.unavailableTitle}
           </h3>
 
-          <p className="text-gray-400 text-sm max-w-md leading-relaxed mb-8">
+          <p className="text-gray-400 text-xs sm:text-sm max-w-md leading-relaxed mb-8">
             {labels.unavailableDesc}
           </p>
 
@@ -444,7 +493,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
             )}
 
             <button 
-              onClick={onClose}
+              onClick={handleClose}
               className="w-full px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg border border-white/10 transition-all active:scale-95"
             >
               {labels.closePlayer}
@@ -455,14 +504,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
 
       {/* Iframe Video Player */}
       {embedUrl && !noSourceAvailable && (
-        <div className="w-full h-full relative z-10 bg-black">
+        <div className="w-full h-full relative z-10 bg-black flex items-center justify-center">
           <iframe
             key={embedUrl}
             src={embedUrl}
             title={movie.title}
             width="100%"
             height="100%"
-            className="w-full h-full border-none"
+            className="w-full h-full border-none block"
             allowFullScreen
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             referrerPolicy="origin"
@@ -473,75 +522,83 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
           <AnimatePresence>
             {activeServer === 'primary' && (hintState === 'circle' || hintState === 'expanded') && (
               <div 
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed left-0 right-0 z-30 pointer-events-none px-3 sm:px-4 flex justify-center transition-all duration-300"
+                style={{
+                  bottom: isLandscape
+                    ? 'calc(env(safe-area-inset-bottom, 0px) + 12px)'
+                    : 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+                }}
               >
-                {hintState === 'circle' ? (
-                  <motion.button
-                    key="circle-hint"
-                    initial={{ y: 50, opacity: 0, scale: 0.6 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 25 }}
-                    onClick={() => setHintState('expanded')}
-                    className="relative w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl shadow-black/80 hover:scale-105 active:scale-95 border-2 border-white/80 cursor-pointer"
-                    aria-label="Language options"
-                  >
-                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E50914] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#E50914]"></span>
-                    </span>
-                    <Globe className="w-5 h-5 text-[#E50914]" />
-                  </motion.button>
-                ) : (
-                  <motion.div
-                    key="expanded-hint"
-                    initial={{ y: 30, opacity: 0, scale: 0.9 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: 20, opacity: 0, scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 350, damping: 26 }}
-                    className="flex items-center gap-3 p-2 pl-3.5 pr-2 bg-white/95 hover:bg-white text-neutral-900 rounded-full border border-white/40 shadow-2xl shadow-black/90 backdrop-blur-xl max-w-[92vw] sm:max-w-md"
-                  >
-                    {/* Icon container */}
-                    <div className="w-8 h-8 rounded-full bg-red-100 text-[#E50914] flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4" />
-                    </div>
-
-                    {/* Text block */}
-                    <div 
-                      className="flex flex-col text-left cursor-pointer select-none"
-                      onClick={handleHintSwitch}
+                <div className="pointer-events-auto w-full max-w-sm sm:max-w-md flex justify-center" onClick={(e) => e.stopPropagation()}>
+                  {hintState === 'circle' ? (
+                    <motion.button
+                      key="circle-hint"
+                      initial={{ y: 40, opacity: 0, scale: 0.7 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 25 }}
+                      onClick={() => setHintState('expanded')}
+                      className="relative w-11 h-11 rounded-full bg-black/85 text-white flex items-center justify-center shadow-2xl shadow-black hover:scale-105 active:scale-95 border border-white/20 backdrop-blur-xl cursor-pointer"
+                      aria-label="Language options"
                     >
-                      <span className="text-[12px] font-bold tracking-tight text-neutral-900 leading-tight flex items-center gap-1.5">
-                        {labels.hintTitle}
-                        <span className="text-[9px] bg-red-600 text-white px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wide">
-                          ORIG / ENG
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E50914] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-[#E50914]"></span>
+                      </span>
+                      <Globe className="w-4 h-4 text-[#E50914]" />
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      key="expanded-hint"
+                      initial={{ y: 30, opacity: 0, scale: 0.95 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ y: 20, opacity: 0, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 350, damping: 26 }}
+                      className="w-full flex items-center gap-2 sm:gap-2.5 p-1.5 sm:p-2 pl-2.5 sm:pl-3.5 pr-2 bg-neutral-900/95 hover:bg-neutral-900 text-white rounded-full border border-white/15 shadow-2xl shadow-black/95 backdrop-blur-2xl"
+                    >
+                      {/* Red globe icon container */}
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-500/15 text-[#E50914] flex items-center justify-center shrink-0 border border-red-500/20">
+                        <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+
+                      {/* Text block */}
+                      <div 
+                        className="flex flex-col text-left cursor-pointer select-none min-w-0 flex-1"
+                        onClick={handleHintSwitch}
+                      >
+                        <div className="flex items-center gap-1.5 flex-nowrap">
+                          <span className="text-[11px] sm:text-xs font-bold tracking-tight text-white leading-tight truncate">
+                            {labels.hintTitle}
+                          </span>
+                          <span className="text-[8px] sm:text-[9px] bg-red-600/90 text-white px-1 sm:px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0 whitespace-nowrap">
+                            ORIG / ENG
+                          </span>
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium leading-tight truncate">
+                          {labels.hintDesc}
                         </span>
-                      </span>
-                      <span className="text-[10px] text-neutral-600 font-medium leading-tight">
-                        {labels.hintDesc}
-                      </span>
-                    </div>
+                      </div>
 
-                    {/* Action button */}
-                    <button
-                      onClick={handleHintSwitch}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-[#E50914] hover:bg-[#b80710] text-white text-[11px] font-bold rounded-full shadow transition-all active:scale-95 shrink-0 ml-1 cursor-pointer"
-                    >
-                      <span>{labels.hintAction}</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                      {/* Action button */}
+                      <button
+                        onClick={handleHintSwitch}
+                        className="flex items-center gap-0.5 sm:gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#E50914] hover:bg-[#b80710] text-white text-[10px] sm:text-[11px] font-bold rounded-full shadow-lg shadow-red-950/50 transition-all active:scale-95 shrink-0 whitespace-nowrap cursor-pointer"
+                      >
+                        <span>{labels.hintAction}</span>
+                        <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      </button>
 
-                    {/* Dismiss cross */}
-                    <button
-                      onClick={() => setHintState('dismissed')}
-                      className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer"
-                      aria-label="Dismiss hint"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
-                )}
+                      {/* Dismiss cross */}
+                      <button
+                        onClick={() => setHintState('dismissed')}
+                        className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+                        aria-label="Dismiss hint"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             )}
           </AnimatePresence>
