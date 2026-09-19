@@ -109,6 +109,8 @@ export const translations = {
     nowWatching: "Now Watching",
     recommendedForYou: "Recommended for You",
     recommendedSubtitle: "Curated based on your watch history & tastes",
+    popularToday: "Popular Today",
+    popularTodaySubtitle: "Trending movies and top releases worldwide",
     // Donate
     donate: "Donate",
     donateDescription: "Support the development of MediaHub by donating Telegram Stars. Your support helps us improve the app and add new features!",
@@ -232,6 +234,8 @@ export const translations = {
     nowWatching: "Зараз дивляться",
     recommendedForYou: "Рекомендовано для вас",
     recommendedSubtitle: "Підібрано на основі вашої історії та вподобань",
+    popularToday: "Популярне сьогодні",
+    popularTodaySubtitle: "Головні тренди та хіти кінематографа",
     // Donate
     donate: "Підтримати",
     donateDescription: "Підтримайте розробку MediaHub, задонативши Telegram Stars. Ваша підтримка допомагає нам покращувати додаток та додавати нові функції!",
@@ -355,6 +359,8 @@ export const translations = {
     nowWatching: "Сейчас смотрят",
     recommendedForYou: "Рекомендовано для вас",
     recommendedSubtitle: "Подобрано на основе вашей истории и предпочтений",
+    popularToday: "Популярное сегодня",
+    popularTodaySubtitle: "Главные тренды и хиты кинематографа",
     // Donate
     donate: "Поддержать",
     donateDescription: "Поддержите разработку MediaHub, задонатив Telegram Stars. Ваша поддержка помогает нам улучшать приложение и добавлять новые функции!",

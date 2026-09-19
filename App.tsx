@@ -36,7 +36,7 @@ import {
     subscribeToGlobalSettings
 } from './services/firebase';
 import { Language, getLanguage, translations } from './utils/translations';
-import { Star, Tv } from 'lucide-react';
+import { Star, Tv, Flame } from 'lucide-react';
 import { Haptics } from './utils/haptics';
 import { Audio } from './utils/audio';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -641,10 +641,30 @@ function App() {
                       />
                   </section>
 
-                  <section className="px-2 md:px-12 pb-10 pt-0">
-                      {/* Separator Line */}
-                      <div className="w-full flex justify-center py-2">
-                          <div className="w-1/3 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                  <section className="px-3 md:px-12 pb-10 pt-0">
+                      {/* Section Header: Популярне сьогодні */}
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-3.5 mt-1 gap-1">
+                          <div>
+                              <div className="flex items-center gap-2">
+                                  <span className="p-1 rounded-md bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                                      <Flame className="w-4 h-4 animate-pulse" />
+                                  </span>
+                                  <h2 className="text-lg md:text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                                      {activeCategory === 'trending' ? (translations[lang].popularToday || "Популярне сьогодні") :
+                                       activeCategory === 'movies' ? translations[lang].movies :
+                                       activeCategory === 'tv' ? translations[lang].tvShows :
+                                       translations[lang].cartoons}
+                                  </h2>
+                                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-600/30 to-red-600/20 text-amber-300 border border-amber-500/20">
+                                      {activeCategory === 'trending' ? "TOP" : translations[lang].trending}
+                                  </span>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-1 pl-7 line-clamp-1">
+                                  {activeCategory === 'trending'
+                                      ? (translations[lang].popularTodaySubtitle || "Головні тренди та хіти кінематографа")
+                                      : `${translations[lang].trending} • ${translations[lang][activeCategory] || ''}`}
+                              </p>
+                          </div>
                       </div>
                       
                       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
