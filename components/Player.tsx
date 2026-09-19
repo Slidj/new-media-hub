@@ -261,7 +261,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
           transition-opacity duration-500 ease-in-out pointer-events-none
           ${isControlsDimmed ? 'opacity-0' : 'opacity-100'}
         `}
-        style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
       >
         {/* Title & Server Badges */}
         <div className={`flex items-center gap-2 max-w-[calc(100%-64px)] ${isControlsDimmed ? 'pointer-events-none' : 'pointer-events-auto'}`}>
@@ -311,20 +311,20 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
         </div>
       </div>
 
-      {/* Close Button - Stays accessible! Dims to semi-transparent when controls idle, full on hover/active */}
+      {/* Close Button - Located comfortably BELOW Telegram top bar (right: 4, top: safe-area + 56px). Dims to semi-transparent when idle */}
       <button 
         id="player-close-btn"
         onClick={(e) => { e.stopPropagation(); onClose(); }}
         className={`
-          fixed top-3 right-4 md:top-4 md:right-4 z-[10000]
+          fixed right-4 z-[10000]
           p-2.5 rounded-full border shadow-2xl backdrop-blur-md
           transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto
           ${isControlsDimmed 
-            ? 'opacity-30 hover:opacity-100 bg-black/40 text-white/75 border-white/10 hover:bg-[#E50914] hover:text-white hover:border-white/20' 
-            : 'opacity-100 bg-black/75 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
+            ? 'opacity-35 hover:opacity-100 bg-black/50 text-white/80 border-white/10 hover:bg-[#E50914] hover:text-white hover:border-white/20' 
+            : 'opacity-100 bg-black/80 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
           }
         `}
-        style={{ top: 'calc(12px + env(safe-area-inset-top))' }}
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
         aria-label="Close Player"
         title={labels.closePlayer}
       >
