@@ -22,14 +22,14 @@ if (typeof JSON !== 'undefined' && JSON.stringify) {
       return val;
     };
     try {
-      return nativeStringify(
+      return (nativeStringify as any)(
         value,
         typeof replacer === 'function' ? safeReplacer : (Array.isArray(replacer) ? replacer : safeReplacer),
         space
       );
     } catch {
       try {
-        return nativeStringify(value, safeReplacer, space);
+        return (nativeStringify as any)(value, safeReplacer, space);
       } catch {
         return '"[Unserializable Object]"';
       }

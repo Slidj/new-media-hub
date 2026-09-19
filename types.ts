@@ -98,6 +98,7 @@ export interface WebAppUser {
 }
 
 export type TabType = 'home' | 'search' | 'coming_soon' | 'my_list';
+export type Category = 'trending' | 'movies' | 'tv' | 'cartoons';
 
 // Telegram WebApp Types
 declare global {
@@ -118,6 +119,9 @@ declare global {
         ready: () => void;
         expand: () => void;
         close: () => void;
+        requestFullscreen?: () => void;
+        exitFullscreen?: () => void;
+        isFullscreen?: boolean;
         setHeaderColor: (color: string) => void;
         setBackgroundColor: (color: string) => void;
         BackButton: {

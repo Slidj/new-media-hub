@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Loader2, Server, Tv, Film, Youtube, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Loader2, Server, Tv, Film, Youtube, AlertCircle, RefreshCw, Globe, ChevronRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Movie, Video } from '../types';
 import { API } from '../services/tmdb';
 import { addWatchTimeReward } from '../services/firebase';
@@ -19,6 +20,8 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [activeServer, setActiveServer] = useState<ServerType>('primary');
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
+  const [serverMenuState, setServerMenuState] = useState<'visible' | 'semi' | 'hidden'>('visible');
+  const [hintState, setHintState] = useState<'hidden' | 'circle' | 'expanded' | 'dismissed'>('hidden');
   const [imdbId, setImdbId] = useState<string | null>(null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [noSourceAvailable, setNoSourceAvailable] = useState(false);
@@ -27,7 +30,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   const accumulatedTimeRef = useRef(0); 
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
-  const dimTimerRef = useRef<any>(null);
+  const dimTimer1Ref = useRef<any>(null);
+  const dimTimer2Ref = useRef<any>(null);
+  const hintTimer1Ref = useRef<any>(null);
+  const hintTimer2Ref = useRef<any>(null);
+  const hintTimer3Ref = useRef<any>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -37,10 +44,22 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
 
   const resetDimTimer = () => {
     setIsControlsDimmed(false);
-    if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
-    dimTimerRef.current = setTimeout(() => {
+    setServerMenuState('visible');
+
+    if (dimTimer1Ref.current) clearTimeout(dimTimer1Ref.current);
+    if (dimTimer2Ref.current) clearTimeout(dimTimer2Ref.current);
+
+    // Stage 1 (0 - 4s): Fully visible
+    // Stage 2 (4s): Semi-transparent (both close button and server menu)
+    dimTimer1Ref.current = setTimeout(() => {
       setIsControlsDimmed(true);
-    }, 3500);
+      setServerMenuState('semi');
+    }, 4000);
+
+    // Stage 3 (8.5s): Server menu disappears completely! (Close button stays semi-transparent)
+    dimTimer2Ref.current = setTimeout(() => {
+      setServerMenuState('hidden');
+    }, 8500);
   };
 
   useEffect(() => {
@@ -107,6 +126,19 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       setIsLoading(false);
     }, 4500);
 
+    // Animated bottom suggestion timers: circle -> expanded -> auto-fade
+    hintTimer1Ref.current = setTimeout(() => {
+      setHintState(prev => prev === 'hidden' ? 'circle' : prev);
+    }, 1800);
+
+    hintTimer2Ref.current = setTimeout(() => {
+      setHintState(prev => prev === 'circle' ? 'expanded' : prev);
+    }, 2800);
+
+    hintTimer3Ref.current = setTimeout(() => {
+      setHintState(prev => prev === 'expanded' ? 'hidden' : prev);
+    }, 12500);
+
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -158,7 +190,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     return () => {
       isMounted = false;
       document.body.style.overflow = 'unset';
-      if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+      if (dimTimer1Ref.current) clearTimeout(dimTimer1Ref.current);
+      if (dimTimer2Ref.current) clearTimeout(dimTimer2Ref.current);
+      if (hintTimer1Ref.current) clearTimeout(hintTimer1Ref.current);
+      if (hintTimer2Ref.current) clearTimeout(hintTimer2Ref.current);
+      if (hintTimer3Ref.current) clearTimeout(hintTimer3Ref.current);
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -178,6 +214,9 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     setActiveServer(server);
     setIsLoading(true);
     resetDimTimer();
+    if (server === 'backup') {
+      setHintState('dismissed');
+    }
 
     const resolvedMediaType = movie.mediaType === 'tv' ? 'tv' : 'movie';
 
@@ -200,6 +239,11 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     }
   };
 
+  const handleHintSwitch = () => {
+    setHintState('dismissed');
+    handleSwitchServer('backup');
+  };
+
   // Localized UI labels
   const labels = {
     uk: {
@@ -209,9 +253,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       watchTrailer: "Дивитися трейлер",
       closePlayer: "Повернутися назад",
       primaryServer: "Основний",
+      primarySub: "Дубляж",
       backupServer: "Резервний",
+      backupSub: "Eng / Ориг",
       trailer: "Трейлер",
-      switchHint: "Не відтворюється? Спробуйте Резервний сервер"
+      hintTitle: "English / Мова оригіналу?",
+      hintDesc: "Увімкніть Резервний сервер",
+      hintAction: "Перемкнути",
     },
     ru: {
       loading: "Загрузка плеера...",
@@ -220,9 +268,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       watchTrailer: "Смотреть трейлер",
       closePlayer: "Вернуться назад",
       primaryServer: "Основной",
+      primarySub: "Дубляж",
       backupServer: "Резервный",
+      backupSub: "Eng / Ориг",
       trailer: "Трейлер",
-      switchHint: "Не воспроизводится? Попробуйте Резервный сервер"
+      hintTitle: "English / Язык оригинала?",
+      hintDesc: "Включите Резервный сервер",
+      hintAction: "Переключить",
     },
     en: {
       loading: "Loading Player...",
@@ -231,9 +283,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       watchTrailer: "Watch Trailer",
       closePlayer: "Go Back",
       primaryServer: "Primary",
+      primarySub: "Dubbed",
       backupServer: "Backup",
+      backupSub: "Original / Eng",
       trailer: "Trailer",
-      switchHint: "Not playing? Try Backup server"
+      hintTitle: "Prefer Original / English audio?",
+      hintDesc: "Switch to Backup server",
+      hintAction: "Switch",
     }
   }[lang] || {
     loading: "Завантаження плеєра...",
@@ -242,9 +298,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
     watchTrailer: "Дивитися трейлер",
     closePlayer: "Повернутися назад",
     primaryServer: "Основний",
+    primarySub: "Дубляж",
     backupServer: "Резервний",
+    backupSub: "Eng / Ориг",
     trailer: "Трейлер",
-    switchHint: "Не відтворюється? Спробуйте Резервний сервер"
+    hintTitle: "English / Мова оригіналу?",
+    hintDesc: "Увімкніть Резервний сервер",
+    hintAction: "Перемкнути",
   };
 
   return (
@@ -254,64 +314,76 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       onTouchStart={resetDimTimer}
       onMouseMove={resetDimTimer}
     >
-      {/* Top Controls Overlay: Title & Server Badges */}
-      <div 
-        className={`
-          absolute top-0 left-0 right-0 z-[9998] px-4 py-3
-          flex items-center justify-between
-          bg-gradient-to-b from-black/90 via-black/50 to-transparent
-          transition-opacity duration-500 ease-in-out pointer-events-none
-          ${isControlsDimmed ? 'opacity-0' : 'opacity-100'}
-        `}
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
-      >
-        {/* Title & Server Badges */}
-        <div className={`flex items-center gap-2 max-w-[calc(100%-64px)] ${isControlsDimmed ? 'pointer-events-none' : 'pointer-events-auto'}`}>
-          <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-xs font-semibold text-white/90">
-            {movie.mediaType === 'tv' ? <Tv className="w-3.5 h-3.5 text-[#E50914]" /> : <Film className="w-3.5 h-3.5 text-[#E50914]" />}
-            <span className="truncate max-w-[130px] sm:max-w-[220px] md:max-w-[320px]">{movie.title}</span>
-          </div>
+      {/* Top Controls: Sleek Server Switchers (Movie title removed as requested) */}
+      {imdbId && (
+        <div 
+          className={`
+            fixed left-4 z-[10000]
+            transition-all duration-700 ease-in-out
+            ${
+              serverMenuState === 'visible'
+                ? 'opacity-100 scale-100 pointer-events-auto'
+                : serverMenuState === 'semi'
+                ? 'opacity-40 hover:opacity-100 scale-100 pointer-events-auto'
+                : 'opacity-0 scale-95 pointer-events-none'
+            }
+          `}
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
+        >
+          <div className="flex items-center gap-1 p-1 bg-black/80 hover:bg-black/95 backdrop-blur-xl border border-white/15 rounded-full shadow-2xl shadow-black/90 transition-colors">
+            {/* Primary Server Button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleSwitchServer('primary'); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
+                activeServer === 'primary' 
+                  ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Server className="w-3.5 h-3.5" />
+              <span>{labels.primaryServer}</span>
+              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${
+                activeServer === 'primary' ? 'bg-black/30 text-white/90' : 'bg-white/10 text-gray-400'
+              }`}>
+                {labels.primarySub}
+              </span>
+            </button>
 
-          {/* Server Switchers (Only show if movie has imdb source) */}
-          {imdbId && (
-            <div className="flex items-center gap-1 bg-black/70 backdrop-blur-md p-0.5 rounded-full border border-white/10">
+            {/* Backup Server Button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleSwitchServer('backup'); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
+                activeServer === 'backup' 
+                  ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60 ring-1 ring-white/25' 
+                  : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 text-sky-400" />
+              <span>{labels.backupServer}</span>
+              <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${
+                activeServer === 'backup' ? 'bg-black/30 text-white/90' : 'bg-white/10 text-sky-300'
+              }`}>
+                {labels.backupSub}
+              </span>
+            </button>
+
+            {/* Trailer Button */}
+            {trailerKey && (
               <button
-                onClick={(e) => { e.stopPropagation(); handleSwitchServer('primary'); }}
-                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full transition-all ${
-                  activeServer === 'primary' 
-                    ? 'bg-[#E50914] text-white shadow' 
+                onClick={(e) => { e.stopPropagation(); handleSwitchServer('trailer'); }}
+                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300 ${
+                  activeServer === 'trailer' 
+                    ? 'bg-gradient-to-r from-[#E50914] to-[#B20710] text-white shadow-md shadow-red-950/60' 
                     : 'text-gray-300 hover:text-white hover:bg-white/10'
                 }`}
               >
-                {labels.primaryServer}
+                <Youtube className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden sm:inline">{labels.trailer}</span>
               </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleSwitchServer('backup'); }}
-                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full transition-all ${
-                  activeServer === 'backup' 
-                    ? 'bg-[#E50914] text-white shadow' 
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {labels.backupServer}
-              </button>
-              {trailerKey && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleSwitchServer('trailer'); }}
-                  className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold rounded-full transition-all ${
-                    activeServer === 'trailer' 
-                      ? 'bg-[#E50914] text-white shadow' 
-                      : 'text-gray-300 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <Youtube className="w-3 h-3 text-red-400" />
-                  <span>{labels.trailer}</span>
-                </button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Close Button - Located comfortably BELOW Telegram top bar (right: 4, top: safe-area + 100px). Dims to semi-transparent when idle */}
       <button 
@@ -397,18 +469,82 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
             onLoad={() => setIsLoading(false)}
           />
 
-          {/* Bottom subtle hint if user is on Server 1 and might want to switch */}
-          {activeServer === 'primary' && !isControlsDimmed && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
-              <button
-                onClick={() => handleSwitchServer('backup')}
-                className="flex items-center gap-2 px-3 py-1.5 bg-black/80 hover:bg-black text-gray-300 hover:text-white text-xs font-medium rounded-full border border-white/15 backdrop-blur-md shadow-lg transition-all"
+          {/* Animated Bottom Notification: Circle -> Expanded Text Pill -> Auto Hide */}
+          <AnimatePresence>
+            {activeServer === 'primary' && (hintState === 'circle' || hintState === 'expanded') && (
+              <div 
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
               >
-                <RefreshCw className="w-3 h-3 text-[#E50914]" />
-                <span>{labels.switchHint}</span>
-              </button>
-            </div>
-          )}
+                {hintState === 'circle' ? (
+                  <motion.button
+                    key="circle-hint"
+                    initial={{ y: 50, opacity: 0, scale: 0.6 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 25 }}
+                    onClick={() => setHintState('expanded')}
+                    className="relative w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-2xl shadow-black/80 hover:scale-105 active:scale-95 border-2 border-white/80 cursor-pointer"
+                    aria-label="Language options"
+                  >
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E50914] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#E50914]"></span>
+                    </span>
+                    <Globe className="w-5 h-5 text-[#E50914]" />
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="expanded-hint"
+                    initial={{ y: 30, opacity: 0, scale: 0.9 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 20, opacity: 0, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 26 }}
+                    className="flex items-center gap-3 p-2 pl-3.5 pr-2 bg-white/95 hover:bg-white text-neutral-900 rounded-full border border-white/40 shadow-2xl shadow-black/90 backdrop-blur-xl max-w-[92vw] sm:max-w-md"
+                  >
+                    {/* Icon container */}
+                    <div className="w-8 h-8 rounded-full bg-red-100 text-[#E50914] flex items-center justify-center shrink-0">
+                      <Globe className="w-4 h-4" />
+                    </div>
+
+                    {/* Text block */}
+                    <div 
+                      className="flex flex-col text-left cursor-pointer select-none"
+                      onClick={handleHintSwitch}
+                    >
+                      <span className="text-[12px] font-bold tracking-tight text-neutral-900 leading-tight flex items-center gap-1.5">
+                        {labels.hintTitle}
+                        <span className="text-[9px] bg-red-600 text-white px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wide">
+                          ORIG / ENG
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-neutral-600 font-medium leading-tight">
+                        {labels.hintDesc}
+                      </span>
+                    </div>
+
+                    {/* Action button */}
+                    <button
+                      onClick={handleHintSwitch}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#E50914] hover:bg-[#b80710] text-white text-[11px] font-bold rounded-full shadow transition-all active:scale-95 shrink-0 ml-1 cursor-pointer"
+                    >
+                      <span>{labels.hintAction}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Dismiss cross */}
+                    <button
+                      onClick={() => setHintState('dismissed')}
+                      className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer"
+                      aria-label="Dismiss hint"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

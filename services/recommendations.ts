@@ -1,5 +1,5 @@
 import { Movie } from '../types';
-import { API_KEY, BASE_URL, mapResultToMovie, genreMap } from './tmdb';
+import { API_KEY, BASE_URL, mapResultToMovie, genreMap, fetchTMDBJson } from './tmdb';
 
 interface UserTasteProfile {
   watchHistory: Movie[];
@@ -31,13 +31,11 @@ const getGenreIdFromName = (name: string): number | null => {
   return null;
 };
 
-// Safe TMDB fetch helper
-const safeFetchJson = async (url: string): Promise<any | null> => {
+// Safe TMDB fetch helper with dual-domain failover & caching
+const safeFetchJson = async (urlOrEndpoint: string): Promise<any | null> => {
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
+    return await fetchTMDBJson(urlOrEndpoint);
+  } catch {
     return null;
   }
 };

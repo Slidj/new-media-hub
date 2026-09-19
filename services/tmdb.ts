@@ -1,11 +1,12 @@
-
-// Update: TMDB Service - Added fetchUpcoming
+// Update: TMDB Service - High Availability Dual-Domain with Cache & Graceful Fallback
 import { Movie, Cast, Video } from '../types';
 import { MOVIES } from '../constants';
 import { getHeroQuality, getRowQuality } from '../utils/settings';
 
 export const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
-export const BASE_URL = 'https://api.themoviedb.org/3';
+export const TMDB_PRIMARY_BASE_URL = 'https://api.themoviedb.org/3';
+export const TMDB_BACKUP_BASE_URL = 'https://api.tmdb.org/3';
+export const BASE_URL = TMDB_PRIMARY_BASE_URL;
 
 // Dynamic Image URLs based on settings
 const getBannerBaseUrl = () => {
@@ -31,9 +32,122 @@ const getSmallPosterBaseUrl = () => {
 
 const PROFILE_BASE_URL = 'https://image.tmdb.org/t/p/w185';
 
-// Keep requests object for legacy or specific calls if needed
-const requests = {
-  fetchTopRated: `/movie/top_rated?api_key=${API_KEY}&language=en-US`,
+// High-performance in-memory and sessionStorage cache
+const memoryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL_MS = 6 * 60 * 1000; // 6 minutes
+
+/**
+ * Robust fetch helper that:
+ * 1. Checks memory & sessionStorage cache
+ * 2. Tries primary TMDB domain (api.themoviedb.org)
+ * 3. Automatically fails over to backup TMDB domain (api.tmdb.org) on network/DNS/adblocker failure
+ * 4. Implements request timeout via AbortController
+ * 5. Returns stale cached data if offline/completely blocked
+ */
+export const fetchTMDBJson = async (
+  endpointOrUrl: string,
+  options: { timeoutMs?: number; skipCache?: boolean } = {}
+): Promise<any | null> => {
+  // Normalize endpoint to relative path starting with /
+  let endpoint = endpointOrUrl;
+  if (endpoint.startsWith('https://api.themoviedb.org/3')) {
+    endpoint = endpoint.replace('https://api.themoviedb.org/3', '');
+  } else if (endpoint.startsWith('https://api.tmdb.org/3')) {
+    endpoint = endpoint.replace('https://api.tmdb.org/3', '');
+  } else if (endpoint.startsWith('http')) {
+    // If external URL, extract pathname + search
+    try {
+      const u = new URL(endpoint);
+      endpoint = u.pathname.replace(/^\/3/, '') + u.search;
+    } catch {}
+  }
+
+  if (!endpoint.startsWith('/')) {
+    endpoint = `/${endpoint}`;
+  }
+
+  const cacheKey = `tmdb_cache_v2_${endpoint}`;
+
+  // 1. Check in-memory cache
+  if (!options.skipCache) {
+    const memItem = memoryCache.get(cacheKey);
+    if (memItem && (Date.now() - memItem.timestamp < CACHE_TTL_MS)) {
+      return memItem.data;
+    }
+
+    // 2. Check sessionStorage
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const stored = window.sessionStorage.getItem(cacheKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (Date.now() - parsed.timestamp < CACHE_TTL_MS * 3)) {
+            memoryCache.set(cacheKey, parsed);
+            return parsed.data;
+          }
+        }
+      }
+    } catch {}
+  }
+
+  const domains = [TMDB_PRIMARY_BASE_URL, TMDB_BACKUP_BASE_URL];
+  const timeoutMs = options.timeoutMs || 7000;
+
+  for (let d = 0; d < domains.length; d++) {
+    const domain = domains[d];
+    const targetUrl = `${domain}${endpoint}`;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let timeoutId: any = null;
+      try {
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(targetUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          const entry = { data, timestamp: Date.now() };
+          memoryCache.set(cacheKey, entry);
+          try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+              window.sessionStorage.setItem(cacheKey, JSON.stringify(entry));
+            }
+          } catch {}
+          return data;
+        }
+
+        if (response.status === 404) {
+          return null;
+        }
+
+        // If 429 or 5xx, wait briefly and retry or try alternate domain
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 250));
+        }
+      } catch (networkError) {
+        if (timeoutId) clearTimeout(timeoutId);
+        // Failover to next attempt or backup domain
+        if (attempt === 0) {
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+    }
+  }
+
+  // Graceful fallback to expired cache if network is completely down
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const stale = window.sessionStorage.getItem(cacheKey);
+      if (stale) {
+        const parsed = JSON.parse(stale);
+        if (parsed?.data) return parsed.data;
+      }
+    }
+  } catch {}
+
+  return null;
 };
 
 // Multilingual Genre Map
@@ -62,22 +176,19 @@ export const genreMap: Record<string, Record<number, string>> = {
 };
 
 export const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
-  // Determine if it is TV or Movie based on media_type field or presence of 'name' vs 'title'
   const isTv = result.media_type === 'tv' || !!result.name;
-  
-  // Use correct genre map based on locale, fallback to English if not found
   const currentGenreMap = genreMap[language] || genreMap['en-US'];
 
   return {
     id: result.id.toString(),
-    title: result.title || result.name || result.original_name,
-    description: result.overview,
+    title: result.title || result.name || result.original_name || 'Untitled',
+    description: result.overview || '',
     bannerUrl: result.backdrop_path ? `${getBannerBaseUrl()}${result.backdrop_path}` : '',
     posterUrl: result.poster_path ? `${getPosterBaseUrl()}${result.poster_path}` : '',
     smallPosterUrl: result.poster_path ? `${getSmallPosterBaseUrl()}${result.poster_path}` : '',
     genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
     genreIds: result.genre_ids || [],
-    duration: 'N/A', // Placeholder, will be fetched in Modal
+    duration: 'N/A',
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
     year: parseInt((result.release_date || result.first_air_date || '2024').substring(0, 4)),
     releaseDate: result.release_date || result.first_air_date,
@@ -89,14 +200,15 @@ export const mapResultToMovie = (result: any, language: string = 'en-US'): Movie
 // Generic fetch
 export const fetchMovies = async (url: string, language: string = 'en-US'): Promise<Movie[]> => {
   try {
-    const request = await fetch(`${BASE_URL}${url}`);
-    if (!request.ok) throw new Error(request.statusText);
-    const data = await request.json();
-    return data.results
+    const data = await fetchTMDBJson(url);
+    if (data?.results && Array.isArray(data.results)) {
+      return data.results
         .filter((m: any) => m.backdrop_path || m.poster_path)
         .map((m: any) => mapResultToMovie(m, language));
+    }
+    return MOVIES;
   } catch (error) {
-    console.error("Error fetching movies:", error);
+    console.warn("fetchMovies fallback handled:", error);
     return MOVIES;
   }
 };
@@ -104,206 +216,175 @@ export const fetchMovies = async (url: string, language: string = 'en-US'): Prom
 // Dedicated function for paginated trending movies
 export const fetchTrending = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
   try {
-    const url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=${language}&page=${page}`;
-    const request = await fetch(url);
-    if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-    const data = await request.json();
-    return data.results
-      .filter((m: any) => m.poster_path)
-      .map((m: any) => mapResultToMovie(m, language));
+    const endpoint = `/trending/all/week?api_key=${API_KEY}&language=${language}&page=${page}`;
+    const data = await fetchTMDBJson(endpoint);
+    if (data?.results && Array.isArray(data.results)) {
+      return data.results
+        .filter((m: any) => m.poster_path)
+        .map((m: any) => mapResultToMovie(m, language));
+    }
+    return page === 1 ? MOVIES : [];
   } catch (error) {
-    console.error("Error fetching trending:", error);
+    console.warn("fetchTrending fallback handled:", error);
     return page === 1 ? MOVIES : [];
   }
 };
 
-// REPLACED: Fetch Upcoming (Smart Netflix-Style Hype List)
+// Fetch Upcoming (Smart Netflix-Style Hype List)
 export const fetchUpcoming = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
   try {
-    // FIX: Use LOCAL time to get the correct "today" date string, not UTC.
-    // This prevents "yesterday" issues in timezones ahead of UTC (like Ukraine).
     const todayDate = new Date();
     const offset = todayDate.getTimezoneOffset();
-    const localDate = new Date(todayDate.getTime() - (offset*60*1000));
+    const localDate = new Date(todayDate.getTime() - (offset * 60 * 1000));
     const todayStr = localDate.toISOString().split('T')[0];
     
-    // Look ahead 6 months to find the REAL hits
     const futureDate = new Date();
     futureDate.setMonth(futureDate.getMonth() + 6);
     const futureStr = futureDate.toISOString().split('T')[0];
-    
-    // STRATEGY CHANGE:
-    // Instead of sorting by date (which gives us low-budget trash released tomorrow),
-    // we sort by POPULARITY.DESC within the future date range.
-    // This gives us the MOST ANTICIPATED movies/shows.
-    // The UI component then sorts these "Hits" by date to create the timeline.
 
-    // 1. Fetch Popular Upcoming Movies
-    // popularity.gte=10 ensures some level of global awareness
-    // region=US ensures dates are consistent with global theatrical releases
-    const moviesUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&page=${page}&region=US&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&with_release_type=2|3&include_adult=false&include_video=false`;
+    const moviesUrl = `/discover/movie?api_key=${API_KEY}&language=${language}&page=${page}&region=US&primary_release_date.gte=${todayStr}&primary_release_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&with_release_type=2|3&include_adult=false&include_video=false`;
+    const tvUrl = `/discover/tv?api_key=${API_KEY}&language=${language}&page=${page}&first_air_date.gte=${todayStr}&first_air_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&include_null_first_air_dates=false&include_adult=false`;
 
-    // 2. Fetch Popular Upcoming TV Shows
-    // Just looking for new seasons/shows airing soon
-    const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&page=${page}&first_air_date.gte=${todayStr}&first_air_date.lte=${futureStr}&sort_by=popularity.desc&popularity.gte=10&include_null_first_air_dates=false&include_adult=false`;
-
-    // Run in parallel
-    const [moviesRes, tvRes] = await Promise.all([
-        fetch(moviesUrl),
-        fetch(tvUrl)
+    const [moviesData, tvData] = await Promise.all([
+      fetchTMDBJson(moviesUrl),
+      fetchTMDBJson(tvUrl)
     ]);
 
-    let results: any[] = [];
+    let results: Movie[] = [];
 
-    if (moviesRes.ok) {
-        const data = await moviesRes.json();
-        const movies = data.results
-             // Double check dates to ensure they are in future (API strictness varies)
-            .filter((m: any) => m.backdrop_path && m.release_date >= todayStr)
-            .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
-        results = [...results, ...movies];
+    if (moviesData?.results) {
+      const movies = moviesData.results
+        .filter((m: any) => m.backdrop_path && m.release_date >= todayStr)
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'movie' as const }));
+      results = [...results, ...movies];
     }
 
-    if (tvRes.ok) {
-        const data = await tvRes.json();
-        const shows = data.results
-            .filter((m: any) => m.backdrop_path && m.first_air_date >= todayStr)
-            .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'tv'}));
-        results = [...results, ...shows];
+    if (tvData?.results) {
+      const shows = tvData.results
+        .filter((m: any) => m.backdrop_path && m.first_air_date >= todayStr)
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'tv' as const }));
+      results = [...results, ...shows];
     }
     
-    // We return the mixed bag of Popular Future content.
-    // The ComingSoonView component handles the sorting by Date.
     return results;
-
   } catch (error) {
-    console.error("Error fetching upcoming:", error);
+    console.warn("fetchUpcoming fallback handled:", error);
     return [];
   }
 };
 
 // Fetch Movies only
 export const fetchDiscoverMovies = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
-    try {
-      const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
-      const request = await fetch(url);
-      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-      const data = await request.json();
+  try {
+    const endpoint = `/discover/movie?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
+    const data = await fetchTMDBJson(endpoint);
+    if (data?.results && Array.isArray(data.results)) {
       return data.results
         .filter((m: any) => m.poster_path)
-        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
-    } catch (error) {
-      console.error("Error fetching discover movies:", error);
-      return page === 1 ? MOVIES.filter(m => m.mediaType === 'movie') : [];
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'movie' as const }));
     }
+    return page === 1 ? MOVIES.filter(m => m.mediaType === 'movie') : [];
+  } catch (error) {
+    console.warn("fetchDiscoverMovies fallback handled:", error);
+    return page === 1 ? MOVIES.filter(m => m.mediaType === 'movie') : [];
+  }
 };
 
 // Fetch TV Shows only
 export const fetchDiscoverTV = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
-    try {
-      const url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
-      const request = await fetch(url);
-      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-      const data = await request.json();
+  try {
+    const endpoint = `/discover/tv?api_key=${API_KEY}&language=${language}&sort_by=popularity.desc&page=${page}`;
+    const data = await fetchTMDBJson(endpoint);
+    if (data?.results && Array.isArray(data.results)) {
       return data.results
         .filter((m: any) => m.poster_path)
-        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'tv'}));
-    } catch (error) {
-      console.error("Error fetching discover TV:", error);
-      return page === 1 ? MOVIES.filter(m => m.mediaType === 'tv') : [];
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'tv' as const }));
     }
+    return page === 1 ? MOVIES.filter(m => m.mediaType === 'tv') : [];
+  } catch (error) {
+    console.warn("fetchDiscoverTV fallback handled:", error);
+    return page === 1 ? MOVIES.filter(m => m.mediaType === 'tv') : [];
+  }
 };
 
 // Fetch Cartoons (Animation Genre ID = 16) - Supports both animated movies and animated TV series
 export const fetchDiscoverCartoons = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
-    try {
-      const [moviesRes, tvRes] = await Promise.all([
-        fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`),
-        fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`)
-      ]);
+  try {
+    const [moviesData, tvData] = await Promise.all([
+      fetchTMDBJson(`/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`),
+      fetchTMDBJson(`/discover/tv?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`)
+    ]);
 
-      const moviesData = moviesRes.ok ? await moviesRes.json() : { results: [] };
-      const tvData = tvRes.ok ? await tvRes.json() : { results: [] };
+    const movies: Movie[] = (moviesData?.results || [])
+      .filter((m: any) => m.poster_path)
+      .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'movie' as const }));
 
-      const movies: Movie[] = (moviesData.results || [])
-        .filter((m: any) => m.poster_path)
-        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'movie' as const }));
+    const tvShows: Movie[] = (tvData?.results || [])
+      .filter((m: any) => m.poster_path)
+      .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'tv' as const }));
 
-      const tvShows: Movie[] = (tvData.results || [])
-        .filter((m: any) => m.poster_path)
-        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'tv' as const }));
-
-      // Merge and sort by rating/popularity
-      const combined = [...movies, ...tvShows].sort((a, b) => (b.match || 0) - (a.match || 0));
-      return combined.length > 0 ? combined : (page === 1 ? MOVIES : []);
-    } catch (error) {
-      console.error("Error fetching cartoons:", error);
-      return page === 1 ? MOVIES : [];
-    }
+    const combined = [...movies, ...tvShows].sort((a, b) => (b.match || 0) - (a.match || 0));
+    return combined.length > 0 ? combined : (page === 1 ? MOVIES : []);
+  } catch (error) {
+    console.warn("fetchDiscoverCartoons fallback handled:", error);
+    return page === 1 ? MOVIES : [];
+  }
 };
 
 export const searchContent = async (query: string, language: string = 'en-US'): Promise<Movie[]> => {
-    if (!query) return [];
-    try {
-        const url = `${BASE_URL}/search/multi?api_key=${API_KEY}&language=${language}&query=${encodeURIComponent(query)}&page=1&include_adult=false`;
-        const request = await fetch(url);
-        if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-        const data = await request.json();
-        return data.results
-            .filter((m: any) => m.media_type !== 'person' && (m.poster_path || m.backdrop_path))
-            .map((m: any) => mapResultToMovie(m, language));
-    } catch (error) {
-        console.error("Error searching content:", error);
-        return MOVIES.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
+  if (!query) return [];
+  try {
+    const endpoint = `/search/multi?api_key=${API_KEY}&language=${language}&query=${encodeURIComponent(query)}&page=1&include_adult=false`;
+    const data = await fetchTMDBJson(endpoint);
+    if (data?.results && Array.isArray(data.results)) {
+      return data.results
+        .filter((m: any) => m.media_type !== 'person' && (m.poster_path || m.backdrop_path))
+        .map((m: any) => mapResultToMovie(m, language));
     }
-}
+    return MOVIES.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
+  } catch (error) {
+    console.warn("searchContent fallback handled:", error);
+    return MOVIES.filter(m => m.title.toLowerCase().includes(query.toLowerCase()));
+  }
+};
 
 export const fetchMovieLogo = async (movieId: string, isTv: boolean): Promise<string | undefined> => {
   try {
     const endpoint = isTv ? 'tv' : 'movie';
-    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}`);
-    
-    if (!request.ok) return undefined;
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}/images?api_key=${API_KEY}`);
+    if (!data) return undefined;
 
-    const data = await request.json();
     const logo = data.logos?.find((l: any) => l.iso_639_1 === 'en' || l.iso_639_1 === null) || data.logos?.[0];
-    
     if (logo) {
       return `${getBannerBaseUrl()}${logo.file_path}`;
     }
     return undefined;
-  } catch (error) {
+  } catch {
     return undefined;
   }
 };
 
 export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<{ poster?: string; banner?: string }> => {
-    try {
-        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-        // We include 'null' (standard for textless) and 'en' as fallback
-        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/images?api_key=${API_KEY}&include_image_language=null,en`);
-        
-        if (!request.ok) return {};
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}/images?api_key=${API_KEY}&include_image_language=null,en`);
+    if (!data) return {};
 
-        const data = await request.json();
-        
-        // Priority: Strictly textless (iso_639_1 === null) -> English (en) -> First available
-        const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || 
-                               data.posters?.find((p: any) => p.iso_639_1 === 'en') || 
-                               data.posters?.[0];
+    const cleanPosterObj = data.posters?.find((p: any) => p.iso_639_1 === null) || 
+                           data.posters?.find((p: any) => p.iso_639_1 === 'en') || 
+                           data.posters?.[0];
 
-        const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || 
-                               data.backdrops?.find((b: any) => b.iso_639_1 === 'en') || 
-                               data.backdrops?.[0];
+    const cleanBannerObj = data.backdrops?.find((b: any) => b.iso_639_1 === null) || 
+                           data.backdrops?.find((b: any) => b.iso_639_1 === 'en') || 
+                           data.backdrops?.[0];
 
-        return {
-            poster: cleanPosterObj ? `${getPosterBaseUrl()}${cleanPosterObj.file_path}` : undefined,
-            banner: cleanBannerObj ? `${getBannerBaseUrl()}${cleanBannerObj.file_path}` : undefined
-        };
-    } catch (error) {
-        console.error("Error fetching clean images:", error);
-        return {};
-    }
+    return {
+      poster: cleanPosterObj ? `${getPosterBaseUrl()}${cleanPosterObj.file_path}` : undefined,
+      banner: cleanBannerObj ? `${getBannerBaseUrl()}${cleanBannerObj.file_path}` : undefined
+    };
+  } catch {
+    return {};
+  }
 };
 
 export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv' = 'movie', language: string = 'en-US'): Promise<Movie | null> => {
@@ -317,26 +398,15 @@ export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv' 
   const tmdbLang = language === 'uk' ? 'uk-UA' : language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : language;
 
   const tryFetch = async (type: 'movie' | 'tv') => {
-    const url = `${BASE_URL}/${type}/${cleanId}?api_key=${API_KEY}&language=${tmdbLang}`;
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.genres && !data.genre_ids) {
-            data.genre_ids = data.genres.map((g: any) => g.id);
-          }
-          const movie = mapResultToMovie(data, language);
-          movie.mediaType = type;
-          return movie;
-        }
-        if (response.status === 404) {
-          return null;
-        }
-      } catch (err) {
-        if (attempt === 1) return null;
-        await new Promise(resolve => setTimeout(resolve, 350));
+    const endpoint = `/${type}/${cleanId}?api_key=${API_KEY}&language=${tmdbLang}`;
+    const data = await fetchTMDBJson(endpoint);
+    if (data) {
+      if (data.genres && !data.genre_ids) {
+        data.genre_ids = data.genres.map((g: any) => g.id);
       }
+      const movie = mapResultToMovie(data, language);
+      movie.mediaType = type;
+      return movie;
     }
     return null;
   };
@@ -346,13 +416,13 @@ export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv' 
     let result = await tryFetch(mediaType);
     if (result) return result;
 
-    // 2. Fallback to alternative mediaType (e.g. if TV series was requested with 'movie' endpoint)
+    // 2. Fallback to alternative mediaType
     const altType = mediaType === 'tv' ? 'movie' : 'tv';
     result = await tryFetch(altType);
     if (result) return result;
 
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -361,186 +431,167 @@ export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 't
   if (!movieId) return { duration: null, tagline: null, title: null };
   try {
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
-    
-    if (!request.ok) return { duration: null, tagline: null, title: null };
-    const data = await request.json();
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
+    if (!data) return { duration: null, tagline: null, title: null };
 
     let durationStr = null;
 
     if (mediaType === 'movie') {
-        const runtime = data.runtime;
-        if (runtime) {
-             const h = Math.floor(runtime / 60);
-             const m = runtime % 60;
-             durationStr = `${h}h ${m}m`;
-        }
+      const runtime = data.runtime;
+      if (runtime) {
+        const h = Math.floor(runtime / 60);
+        const m = runtime % 60;
+        durationStr = `${h}h ${m}m`;
+      }
     } else {
-        const seasons = data.number_of_seasons;
-        if (seasons) {
-            durationStr = `${seasons} Season${seasons !== 1 ? 's' : ''}`;
-        }
+      const seasons = data.number_of_seasons;
+      if (seasons) {
+        durationStr = `${seasons} Season${seasons !== 1 ? 's' : ''}`;
+      }
     }
 
     return {
-        duration: durationStr,
-        tagline: data.tagline || null,
-        title: data.title || data.name || null
+      duration: durationStr,
+      tagline: data.tagline || null,
+      title: data.title || data.name || null
     };
-
-  } catch (error) {
+  } catch {
     return { duration: null, tagline: null, title: null };
   }
 };
 
 export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Cast[]> => {
-    try {
-        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/credits?api_key=${API_KEY}`);
-        
-        if (!request.ok) return [];
-        const data = await request.json();
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}/credits?api_key=${API_KEY}`);
+    if (!data?.cast) return [];
 
-        return data.cast
-            .filter((p: any) => p.profile_path)
-            .slice(0, 15)
-            .map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                character: p.character,
-                profilePath: `${PROFILE_BASE_URL}${p.profile_path}`
-            }));
-    } catch (error) {
-        return [];
-    }
+    return data.cast
+      .filter((p: any) => p.profile_path)
+      .slice(0, 15)
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        character: p.character,
+        profilePath: `${PROFILE_BASE_URL}${p.profile_path}`
+      }));
+  } catch {
+    return [];
+  }
 };
 
 export const fetchVideos = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Video[]> => {
-    try {
-        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-        const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}/videos?api_key=${API_KEY}`);
-        
-        if (!request.ok) return [];
-        const data = await request.json();
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}/videos?api_key=${API_KEY}`);
+    if (!data?.results) return [];
 
-        return data.results
-            .filter((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
-            .map((v: any) => ({
-                id: v.id,
-                key: v.key,
-                name: v.name,
-                site: v.site,
-                type: v.type
-            }));
-    } catch (error) {
-        return [];
-    }
+    return data.results
+      .filter((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'))
+      .map((v: any) => ({
+        id: v.id,
+        key: v.key,
+        name: v.name,
+        site: v.site,
+        type: v.type
+      }));
+  } catch {
+    return [];
+  }
 };
 
 export const fetchRecommendations = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<Movie[]> => {
-    try {
-        const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-        const url = `${BASE_URL}/${endpoint}/${movieId}/recommendations?api_key=${API_KEY}&language=${language}&page=1`;
-        const request = await fetch(url);
-        if (!request.ok) return [];
-        const data = await request.json();
-        return data.results
-            .filter((m: any) => m.poster_path)
-            .slice(0, 12)
-            .map((m: any) => mapResultToMovie(m, language));
-    } catch (error) {
-        return [];
-    }
+  try {
+    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
+    const data = await fetchTMDBJson(`/${endpoint}/${movieId}/recommendations?api_key=${API_KEY}&language=${language}&page=1`);
+    if (!data?.results) return [];
+
+    return data.results
+      .filter((m: any) => m.poster_path)
+      .slice(0, 12)
+      .map((m: any) => mapResultToMovie(m, language));
+  } catch {
+    return [];
+  }
 };
 
 export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<string | null> => {
-    const details = await fetchMovieDetails(movieId, mediaType);
-    return details.duration;
-}
+  const details = await fetchMovieDetails(movieId, mediaType);
+  return details.duration;
+};
 
 export const fetchExternalIds = async (
-    id: string, 
-    type?: 'movie' | 'tv', 
-    title?: string, 
-    year?: number
+  id: string, 
+  type?: 'movie' | 'tv', 
+  title?: string, 
+  year?: number
 ): Promise<{ imdb_id?: string | null; id?: number; mediaType?: 'movie' | 'tv' } | null> => {
-    if (!id && !title) return null;
+  if (!id && !title) return null;
 
-    const cleanId = id?.toString().trim();
-    const isRealNumericId = cleanId && /^\d+$/.test(cleanId) && parseInt(cleanId, 10) > 10;
+  const cleanId = id?.toString().trim();
+  const isRealNumericId = cleanId && /^\d+$/.test(cleanId) && parseInt(cleanId, 10) > 10;
 
-    const tryEndpoint = async (endpointType: 'movie' | 'tv') => {
-        try {
-            const url = `${BASE_URL}/${endpointType}/${cleanId}/external_ids?api_key=${API_KEY}`;
-            const req = await fetch(url);
-            if (!req.ok) return null;
-            const data = await req.json();
-            if (data?.imdb_id) {
-                return { ...data, mediaType: endpointType };
-            }
-            return null;
-        } catch {
-            return null;
-        }
-    };
-
-    // 1. Try primary requested mediaType
-    if (isRealNumericId) {
-        const primaryType = type === 'tv' ? 'tv' : 'movie';
-        const res1 = await tryEndpoint(primaryType);
-        if (res1?.imdb_id) return res1;
-
-        // 2. Try alternate mediaType (movie vs tv)
-        const altType = primaryType === 'tv' ? 'movie' : 'tv';
-        const res2 = await tryEndpoint(altType);
-        if (res2?.imdb_id) return res2;
-
-        // 3. Check direct movie details (TMDB has imdb_id directly in movie details)
-        try {
-            const detailsReq = await fetch(`${BASE_URL}/movie/${cleanId}?api_key=${API_KEY}`);
-            if (detailsReq.ok) {
-                const details = await detailsReq.json();
-                if (details?.imdb_id) {
-                    return { imdb_id: details.imdb_id, id: details.id, mediaType: 'movie' };
-                }
-            }
-        } catch {}
+  const tryEndpoint = async (endpointType: 'movie' | 'tv') => {
+    try {
+      const data = await fetchTMDBJson(`/${endpointType}/${cleanId}/external_ids?api_key=${API_KEY}`);
+      if (data?.imdb_id) {
+        return { ...data, mediaType: endpointType };
+      }
+      return null;
+    } catch {
+      return null;
     }
+  };
 
-    // 4. Robust fallback: search by title (and optional year)
-    if (title && title.trim().length > 0) {
-        try {
-            const cleanTitle = title.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
-            const searchUrl = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=false&page=1`;
-            const searchReq = await fetch(searchUrl);
-            if (searchReq.ok) {
-                const searchData = await searchReq.json();
-                const candidates = (searchData.results || [])
-                    .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
+  // 1. Try primary requested mediaType
+  if (isRealNumericId) {
+    const primaryType = type === 'tv' ? 'tv' : 'movie';
+    const res1 = await tryEndpoint(primaryType);
+    if (res1?.imdb_id) return res1;
 
-                for (const candidate of candidates.slice(0, 5)) {
-                    if (cleanId && candidate.id.toString() === cleanId) continue;
-                    const candType = candidate.media_type as 'movie' | 'tv';
-                    const extUrl = `${BASE_URL}/${candType}/${candidate.id}/external_ids?api_key=${API_KEY}`;
-                    const extReq = await fetch(extUrl);
-                    if (extReq.ok) {
-                        const extData = await extReq.json();
-                        if (extData?.imdb_id) {
-                            return { ...extData, mediaType: candType };
-                        }
-                    }
-                }
-            }
-        } catch (searchErr) {
-            console.error("Error during fallback search for external IDs:", searchErr);
+    // 2. Try alternate mediaType (movie vs tv)
+    const altType = primaryType === 'tv' ? 'movie' : 'tv';
+    const res2 = await tryEndpoint(altType);
+    if (res2?.imdb_id) return res2;
+
+    // 3. Check direct movie details (TMDB has imdb_id directly in movie details)
+    try {
+      const details = await fetchTMDBJson(`/movie/${cleanId}?api_key=${API_KEY}`);
+      if (details?.imdb_id) {
+        return { imdb_id: details.imdb_id, id: details.id, mediaType: 'movie' };
+      }
+    } catch {}
+  }
+
+  // 4. Robust fallback: search by title (and optional year)
+  if (title && title.trim().length > 0) {
+    try {
+      const cleanTitle = title.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+      const searchData = await fetchTMDBJson(`/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=false&page=1`);
+      if (searchData?.results) {
+        const candidates = (searchData.results || [])
+          .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
+
+        for (const candidate of candidates.slice(0, 5)) {
+          if (cleanId && candidate.id.toString() === cleanId) continue;
+          const candType = candidate.media_type as 'movie' | 'tv';
+          const extData = await fetchTMDBJson(`/${candType}/${candidate.id}/external_ids?api_key=${API_KEY}`);
+          if (extData?.imdb_id) {
+            return { ...extData, mediaType: candType };
+          }
         }
-    }
+      }
+    } catch {}
+  }
 
-    return null;
+  return null;
 };
 
 export const API = {
-  requests,
+  requests: {
+    fetchTopRated: `/movie/top_rated?api_key=${API_KEY}&language=en-US`,
+  },
+  fetchTMDBJson,
   fetchMovies,
   fetchTrending,
   fetchDiscoverMovies,

@@ -495,7 +495,7 @@ function App() {
           }
         }
     } catch (error) {
-        console.error("Failed to load movies", error);
+        console.warn("Notice: handled movie loading fallback:", error);
     } finally {
         setLoading(false);
         isLoadingRef.current = false;
