@@ -17,17 +17,15 @@ export interface SmartRecommendationsData {
 }
 
 // Reverse map localized genre name to TMDB ID if needed
-const getGenreIdFromName = (name: string, lang: string): number | null => {
-  const currentMap = genreMap[lang] || genreMap['en-US'];
-  for (const [idStr, gName] of Object.entries(currentMap)) {
-    if (gName.toLowerCase() === name.toLowerCase()) {
-      return parseInt(idStr, 10);
-    }
-  }
-  // Check English fallback
-  for (const [idStr, gName] of Object.entries(genreMap['en-US'])) {
-    if (gName.toLowerCase() === name.toLowerCase()) {
-      return parseInt(idStr, 10);
+const getGenreIdFromName = (name: string): number | null => {
+  if (!name) return null;
+  const clean = name.trim().toLowerCase();
+  for (const localeKey of Object.keys(genreMap)) {
+    const map = genreMap[localeKey];
+    for (const [idStr, gName] of Object.entries(map)) {
+      if (gName.toLowerCase() === clean) {
+        return parseInt(idStr, 10);
+      }
     }
   }
   return null;
@@ -84,7 +82,7 @@ export const generateSmartRecommendations = async ({
     let ids: number[] = movie.genreIds || [];
     if (ids.length === 0 && movie.genre && movie.genre.length > 0) {
       ids = movie.genre
-        .map(g => getGenreIdFromName(g, locale))
+        .map(g => getGenreIdFromName(g))
         .filter((id): id is number => id !== null);
     }
 
@@ -132,6 +130,7 @@ export const generateSmartRecommendations = async ({
 
   const topGenreIds = sortedGenreEntries.slice(0, 3).map(g => g.id);
   const primaryGenreId = topGenreIds[0];
+  const secondaryGenreId = topGenreIds[1];
   const primaryGenreName = primaryGenreId ? localizedGenres[primaryGenreId] : undefined;
 
   const hasPersonalData = watchHistory.length > 0 || likedMovieIds.length > 0 || myList.length > 0;
@@ -149,18 +148,17 @@ export const generateSmartRecommendations = async ({
   const candidatePool: Candidate[] = [];
 
   if (hasPersonalData && topGenreIds.length > 0) {
-    // Pick 1-2 seed movies for direct TMDB recommendations
+    // Pick 1-3 seed movies for direct TMDB recommendations
     const seedCandidates = [
       ...watchHistory.filter(m => likedSet.has(m.id.toString())),
-      ...watchHistory
-    ].slice(0, 2);
+      ...watchHistory,
+      ...myList
+    ].slice(0, 3);
 
-    const genreFilter = topGenreIds.slice(0, 2).join('|');
-    const minRating = userAvgRating >= 7.5 ? '7.0' : '6.5';
-
+    const minRating = userAvgRating >= 7.5 ? '7.0' : '6.4';
     const queries: Promise<any>[] = [];
 
-    // 2.1 Seed Recommendations
+    // 2.1 Direct Seed Recommendations (Films similar to what this user explicitly loved/watched)
     seedCandidates.forEach(seed => {
       const endpoint = seed.mediaType === 'tv' ? 'tv' : 'movie';
       queries.push(
@@ -169,28 +167,39 @@ export const generateSmartRecommendations = async ({
       );
     });
 
-    // 2.2 Modern Hits in Favorite Genres (2019 - Present)
-    queries.push(
-      safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${genreFilter}&sort_by=popularity.desc&vote_count.gte=300&vote_average.gte=${minRating}&primary_release_date.gte=2019-01-01&page=1`)
-        .then(data => ({ type: 'modern', data }))
-    );
-
-    // 2.3 Golden Classics / Older Masterpieces (Year <= 2017, vote_count >= 800, vote_avg >= 7.5)
-    // Matches explicit request: "Видавати можна не тільки свіжі фільми чи серіали або мультики а і старіше"
-    queries.push(
-      safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${genreFilter}&sort_by=vote_average.desc&vote_count.gte=800&vote_average.gte=7.5&primary_release_date.lte=2017-12-31&page=1`)
-        .then(data => ({ type: 'classic', data }))
-    );
-
-    // 2.4 If user watches TV series or likes Animation, discover them
-    if (prefersTv) {
+    // 2.2 Modern Hits in User's #1 Favorite Genre
+    if (primaryGenreId) {
       queries.push(
-        safeFetchJson(`${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${locale}&with_genres=${genreFilter}&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=7.0&page=1`)
+        safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${primaryGenreId}&sort_by=popularity.desc&vote_count.gte=250&vote_average.gte=${minRating}&primary_release_date.gte=2019-01-01&page=1`)
+          .then(data => ({ type: 'modern', data }))
+      );
+    }
+
+    // 2.3 Hits in User's #2 Favorite Genre (adds varied taste dimensions)
+    if (secondaryGenreId) {
+      queries.push(
+        safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${secondaryGenreId}&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=${minRating}&page=1`)
+          .then(data => ({ type: 'modern', data }))
+      );
+    }
+
+    // 2.4 Golden Classics / Masterpieces in User's #1 Genre (Release <= 2017, High Rating)
+    if (primaryGenreId) {
+      queries.push(
+        safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=${primaryGenreId}&sort_by=vote_average.desc&vote_count.gte=700&vote_average.gte=7.5&primary_release_date.lte=2017-12-31&page=1`)
+          .then(data => ({ type: 'classic', data }))
+      );
+    }
+
+    // 2.5 If user watches TV series or likes Animation, discover them specifically
+    if (prefersTv && primaryGenreId) {
+      queries.push(
+        safeFetchJson(`${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${locale}&with_genres=${primaryGenreId}&sort_by=popularity.desc&vote_count.gte=200&vote_average.gte=7.0&page=1`)
           .then(data => ({ type: 'tv', data }))
       );
     } else if (lovesAnimation) {
       queries.push(
-        safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=16&sort_by=vote_average.desc&vote_count.gte=700&vote_average.gte=7.5&page=1`)
+        safeFetchJson(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${locale}&with_genres=16&sort_by=vote_average.desc&vote_count.gte=600&vote_average.gte=7.5&page=1`)
           .then(data => ({ type: 'classic', data }))
       );
     }

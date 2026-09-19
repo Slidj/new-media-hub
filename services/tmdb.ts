@@ -294,28 +294,57 @@ export const fetchCleanImages = async (movieId: string, mediaType: 'movie' | 'tv
     }
 };
 
-export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<Movie | null> => {
-  try {
-    const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
-    const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
-    
-    if (!request.ok) return null;
-    const data = await request.json();
-    
-    // mapResultToMovie expects a result from a list, but details response is similar enough
-    // We just need to ensure genre_ids is populated from genres
-    if (data.genres && !data.genre_ids) {
-        data.genre_ids = data.genres.map((g: any) => g.id);
+export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv' = 'movie', language: string = 'en-US'): Promise<Movie | null> => {
+  if (!movieId || movieId === 'undefined' || movieId === 'null') {
+    return null;
+  }
+
+  const cleanId = movieId.toString().trim();
+  if (!cleanId) return null;
+
+  const tryFetch = async (type: 'movie' | 'tv') => {
+    const url = `${BASE_URL}/${type}/${cleanId}?api_key=${API_KEY}&language=${language}`;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.genres && !data.genre_ids) {
+            data.genre_ids = data.genres.map((g: any) => g.id);
+          }
+          const movie = mapResultToMovie(data, language);
+          movie.mediaType = type;
+          return movie;
+        }
+        if (response.status === 404) {
+          return null;
+        }
+      } catch (err) {
+        if (attempt === 1) return null;
+        await new Promise(resolve => setTimeout(resolve, 350));
+      }
     }
-    
-    return mapResultToMovie(data, language);
+    return null;
+  };
+
+  try {
+    // 1. Try with requested mediaType
+    let result = await tryFetch(mediaType);
+    if (result) return result;
+
+    // 2. Fallback to alternative mediaType (e.g. if TV series was requested with 'movie' endpoint)
+    const altType = mediaType === 'tv' ? 'movie' : 'tv';
+    result = await tryFetch(altType);
+    if (result) return result;
+
+    return null;
   } catch (error) {
-    console.error("Error fetching movie by id", error);
     return null;
   }
 };
 
 export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 'tv', language: string = 'en-US'): Promise<{ duration: string | null, tagline: string | null, title: string | null }> => {
+  if (!movieId) return { duration: null, tagline: null, title: null };
   try {
     const endpoint = mediaType === 'tv' ? 'tv' : 'movie';
     const request = await fetch(`${BASE_URL}/${endpoint}/${movieId}?api_key=${API_KEY}&language=${language}`);
@@ -346,10 +375,9 @@ export const fetchMovieDetails = async (movieId: string, mediaType: 'movie' | 't
     };
 
   } catch (error) {
-    console.error("Error fetching details", error);
     return { duration: null, tagline: null, title: null };
   }
-}
+};
 
 export const fetchCredits = async (movieId: string, mediaType: 'movie' | 'tv'): Promise<Cast[]> => {
     try {
