@@ -263,7 +263,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
           transition-opacity duration-500 ease-in-out pointer-events-none
           ${isControlsDimmed ? 'opacity-0' : 'opacity-100'}
         `}
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
       >
         {/* Title & Server Badges */}
         <div className={`flex items-center gap-2 max-w-[calc(100%-64px)] ${isControlsDimmed ? 'pointer-events-none' : 'pointer-events-auto'}`}>
@@ -313,7 +313,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
         </div>
       </div>
 
-      {/* Close Button - Located comfortably BELOW Telegram top bar (right: 4, top: safe-area + 56px). Dims to semi-transparent when idle */}
+      {/* Close Button - Located comfortably BELOW Telegram top bar (right: 4, top: safe-area + 100px). Dims to semi-transparent when idle */}
       <button 
         id="player-close-btn"
         onClick={(e) => { e.stopPropagation(); onClose(); }}
@@ -326,7 +326,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
             : 'opacity-100 bg-black/80 hover:bg-[#E50914] text-white border-white/20 shadow-black/80'
           }
         `}
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 100px)' }}
         aria-label="Close Player"
         title={labels.closePlayer}
       >
