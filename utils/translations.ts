@@ -107,6 +107,8 @@ export const translations = {
     monthAgo: "Month ago",
     never: "Never",
     nowWatching: "Now Watching",
+    recommendedForYou: "Recommended for You",
+    recommendedSubtitle: "Curated based on your watch history & tastes",
     // Donate
     donate: "Donate",
     donateDescription: "Support the development of MediaHub by donating Telegram Stars. Your support helps us improve the app and add new features!",
@@ -228,6 +230,8 @@ export const translations = {
     monthAgo: "Місяць тому",
     never: "Ніколи",
     nowWatching: "Зараз дивляться",
+    recommendedForYou: "Рекомендовано для вас",
+    recommendedSubtitle: "Підібрано на основі вашої історії та вподобань",
     // Donate
     donate: "Підтримати",
     donateDescription: "Підтримайте розробку MediaHub, задонативши Telegram Stars. Ваша підтримка допомагає нам покращувати додаток та додавати нові функції!",
@@ -349,6 +353,8 @@ export const translations = {
     monthAgo: "Месяц назад",
     never: "Никогда",
     nowWatching: "Сейчас смотрят",
+    recommendedForYou: "Рекомендовано для вас",
+    recommendedSubtitle: "Подобрано на основе вашей истории и предпочтений",
     // Donate
     donate: "Поддержать",
     donateDescription: "Поддержите разработку MediaHub, задонатив Telegram Stars. Ваша поддержка помогает нам улучшать приложение и добавлять новые функции!",

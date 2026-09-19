@@ -9,12 +9,14 @@ export interface Movie {
   logoUrl?: string; // New field for clear logo (PNG)
   tagline?: string; // Slogan
   genre: string[];
+  genreIds?: number[];
   duration: string;
   rating: string;
   year: number;
   releaseDate?: string; // New field for Coming Soon
   match: number;
   mediaType: 'movie' | 'tv';
+  recommendationReason?: string;
 }
 
 export interface Cast {

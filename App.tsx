@@ -42,6 +42,8 @@ import { Audio } from './utils/audio';
 import { AnimatePresence, motion } from 'framer-motion';
 import { HorizontalRow } from './components/HorizontalRow';
 import { NowWatchingRow } from './components/NowWatchingRow';
+import { SmartRecommendationsRow } from './components/SmartRecommendationsRow';
+import { generateSmartRecommendations } from './services/recommendations';
 import { RandomButton } from './components/RandomButton';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
 import { SkeletonCard } from './components/SkeletonCard';
@@ -119,6 +121,11 @@ function App() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  
+  // Smart Recommendations States
+  const [smartRecommendations, setSmartRecommendations] = useState<Movie[]>([]);
+  const [recommendationsSubtitle, setRecommendationsSubtitle] = useState<string>('');
+  const [recommendationsLoading, setRecommendationsLoading] = useState<boolean>(true);
   
   const isLoadingRef = useRef(false);
 
@@ -368,6 +375,42 @@ function App() {
       setShowGlobalPopup(true);
   };
 
+  // SMART RECOMMENDATIONS EFFECT (Analyzes watch history, likes, dislikes, watchlist, and genres)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRecommendations = async () => {
+      try {
+        setRecommendationsLoading(true);
+        const data = await generateSmartRecommendations({
+          watchHistory,
+          likedMovieIds: likedMovies,
+          dislikedMovieIds: dislikedMovies,
+          myList,
+          lang
+        });
+        if (isMounted) {
+          setSmartRecommendations(data.movies);
+          setRecommendationsSubtitle(data.subtitle);
+        }
+      } catch (error) {
+        console.error("Failed to generate smart recommendations:", error);
+      } finally {
+        if (isMounted) {
+          setRecommendationsLoading(false);
+        }
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchRecommendations();
+    }, 350);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [watchHistory, likedMovies, dislikedMovies, myList, lang]);
+
   const handleCloseGlobalPopup = () => {
       setShowGlobalPopup(false);
       if (globalPopup?.id) {
@@ -585,6 +628,18 @@ function App() {
                           />
                       </section>
                   )}
+
+                  {/* SMART RECOMMENDATIONS ROW (Placed directly below Now Watching) */}
+                  <section className="pt-3 pb-1">
+                      <SmartRecommendationsRow 
+                          title={translations[lang].recommendedForYou || "Рекомендовано для вас"}
+                          subtitle={recommendationsSubtitle || translations[lang].recommendedSubtitle}
+                          movies={smartRecommendations}
+                          loading={recommendationsLoading}
+                          onMovieClick={handleMovieClick}
+                          lang={lang}
+                      />
+                  </section>
 
                   <section className="px-2 md:px-12 pb-10 pt-0">
                       {/* Separator Line */}

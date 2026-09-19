@@ -4,8 +4,8 @@ import { Movie, Cast, Video } from '../types';
 import { MOVIES } from '../constants';
 import { getHeroQuality, getRowQuality } from '../utils/settings';
 
-const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
-const BASE_URL = 'https://api.themoviedb.org/3';
+export const API_KEY = '4dac8d33b5f9ef7b7c69d94b3f9cd56b';
+export const BASE_URL = 'https://api.themoviedb.org/3';
 
 // Dynamic Image URLs based on settings
 const getBannerBaseUrl = () => {
@@ -37,7 +37,7 @@ const requests = {
 };
 
 // Multilingual Genre Map
-const genreMap: Record<string, Record<number, string>> = {
+export const genreMap: Record<string, Record<number, string>> = {
   'en-US': {
     28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
     99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
@@ -61,7 +61,7 @@ const genreMap: Record<string, Record<number, string>> = {
   }
 };
 
-const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
+export const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
   // Determine if it is TV or Movie based on media_type field or presence of 'name' vs 'title'
   const isTv = result.media_type === 'tv' || !!result.name;
   
@@ -76,6 +76,7 @@ const mapResultToMovie = (result: any, language: string = 'en-US'): Movie => {
     posterUrl: result.poster_path ? `${getPosterBaseUrl()}${result.poster_path}` : '',
     smallPosterUrl: result.poster_path ? `${getSmallPosterBaseUrl()}${result.poster_path}` : '',
     genre: result.genre_ids ? result.genre_ids.map((id: number) => currentGenreMap[id] || 'General') : ['General'],
+    genreIds: result.genre_ids || [],
     duration: 'N/A', // Placeholder, will be fetched in Modal
     rating: result.vote_average ? result.vote_average.toFixed(1) : 'NR',
     year: parseInt((result.release_date || result.first_air_date || '2024').substring(0, 4)),
