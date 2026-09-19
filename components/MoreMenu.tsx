@@ -497,7 +497,7 @@ export const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, lang, user,
         {/* Footer Info */}
         <div className="p-6 border-t border-white/5 text-center">
              <h3 className="text-lg font-bebas text-gray-600 tracking-wider">MEDIA HUB</h3>
-             <p className="text-[10px] text-gray-700 mt-1">Version 9.2 (BETA)</p>
+             <p className="text-[10px] text-gray-700 mt-1">Version 9.5</p>
         </div>
               </motion.div>
           )}

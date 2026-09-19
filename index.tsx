@@ -37,8 +37,8 @@ if (typeof JSON !== 'undefined' && JSON.stringify) {
   };
 }
 
-// FORCE CACHE CLEAR v9.0
-const CURRENT_VERSION = '9.0';
+// FORCE CACHE CLEAR v9.5
+const CURRENT_VERSION = '9.5';
 
 const clearCacheSafe = async () => {
   try {
