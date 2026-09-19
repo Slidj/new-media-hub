@@ -50,8 +50,16 @@ export const SmartRecommendationsRow: React.FC<SmartRecommendationsRowProps> = (
           </div>
 
           {subtitle && (
-            <p className="text-xs text-gray-400 mt-1 pl-7 line-clamp-1">
-              {subtitle}
+            <p className="text-xs text-gray-400 mt-1 pl-7 leading-relaxed flex flex-wrap items-center gap-1.5">
+              {subtitle.includes('•') ? (
+                <>
+                  <span>{subtitle.split('•')[0].trim()}</span>
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500/60" />
+                  <span className="text-gray-200 font-medium">{subtitle.split('•')[1].trim()}</span>
+                </>
+              ) : (
+                <span>{subtitle}</span>
+              )}
             </p>
           )}
         </div>

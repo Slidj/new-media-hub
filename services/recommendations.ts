@@ -494,57 +494,36 @@ export const generateSmartRecommendations = async ({
   // Interleave and sort by match score and rating
   scoredMovies.sort((a, b) => b.match - a.match || parseFloat(b.rating) - parseFloat(a.rating));
 
-  // Determine dynamic user subtitle reflecting top genres proportionally
+  // Determine dynamic user subtitle reflecting top genres (capped at max 2 for perfect mobile readability)
   let subtitle = '';
   
-  // Format dynamic genre phrase (e.g. "Бойовик" or "Бойовик та Трилер" or "Бойовик, Комедія та Пригоди")
+  // Format dynamic genre phrase (e.g. "Бойовик" or "Бойовик та Комедія")
   let genrePhrase = '';
   if (primaryGenreName) {
     const top1Score = genreList[0]?.totalScore || 1;
     const top2Score = genreList[1]?.totalScore || 0;
-    const top3Score = genreList[2]?.totalScore || 0;
 
-    // Check if secondary genre is strong (at least 60% of top 1 score)
-    const hasStrongSecondary = secondaryGenreName && (top2Score >= top1Score * 0.6);
-    // Check if tertiary genre is also strong (at least 50% of top 1 score)
-    const hasStrongTertiary = hasStrongSecondary && tertiaryGenreName && (top3Score >= top1Score * 0.5);
+    // Show 2 genres only if secondary genre is strong (at least 65% of top 1 score)
+    const hasStrongSecondary = secondaryGenreName && (top2Score >= top1Score * 0.65);
 
     if (lang === 'uk') {
-      if (hasStrongTertiary) {
-        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} та ${tertiaryGenreName}`;
-      } else if (hasStrongSecondary) {
-        genrePhrase = `${primaryGenreName} та ${secondaryGenreName}`;
-      } else {
-        genrePhrase = primaryGenreName;
-      }
-      subtitle = `На основі ваших переглядів • Акцент на ${genrePhrase}`;
+      genrePhrase = hasStrongSecondary ? `${primaryGenreName} та ${secondaryGenreName}` : primaryGenreName;
+      subtitle = `На основі переглядів • ${genrePhrase}`;
     } else if (lang === 'ru') {
-      if (hasStrongTertiary) {
-        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} и ${tertiaryGenreName}`;
-      } else if (hasStrongSecondary) {
-        genrePhrase = `${primaryGenreName} и ${secondaryGenreName}`;
-      } else {
-        genrePhrase = primaryGenreName;
-      }
-      subtitle = `На основе ваших просмотров • Акцент на ${genrePhrase}`;
+      genrePhrase = hasStrongSecondary ? `${primaryGenreName} и ${secondaryGenreName}` : primaryGenreName;
+      subtitle = `На основе просмотров • ${genrePhrase}`;
     } else {
-      if (hasStrongTertiary) {
-        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} & ${tertiaryGenreName}`;
-      } else if (hasStrongSecondary) {
-        genrePhrase = `${primaryGenreName} & ${secondaryGenreName}`;
-      } else {
-        genrePhrase = primaryGenreName;
-      }
-      subtitle = `Based on your watch activity • Focus on ${genrePhrase}`;
+      genrePhrase = hasStrongSecondary ? `${primaryGenreName} & ${secondaryGenreName}` : primaryGenreName;
+      subtitle = `Based on your taste • ${genrePhrase}`;
     }
   } else if (hasPersonalData) {
     if (lang === 'uk') subtitle = 'На основі вашої історії та вподобань';
     else if (lang === 'ru') subtitle = 'На основе вашей истории и предпочтений';
     else subtitle = 'Based on your watch history and taste';
   } else {
-    if (lang === 'uk') subtitle = 'Персональний старт: шедеври кіно та світові хіти';
-    else if (lang === 'ru') subtitle = 'Персональный старт: шедевры кино и мировые хиты';
-    else subtitle = 'Curated starter pack: cinema masterpieces & hits';
+    if (lang === 'uk') subtitle = 'Шедеври кіно та світові хіти';
+    else if (lang === 'ru') subtitle = 'Шедевры кино и мировые хиты';
+    else subtitle = 'Cinema masterpieces & hits';
   }
 
   return {
