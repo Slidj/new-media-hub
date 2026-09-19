@@ -4,6 +4,39 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
+// Guard JSON.stringify against circular structures across all environments
+if (typeof JSON !== 'undefined' && JSON.stringify) {
+  const nativeStringify = JSON.stringify;
+  JSON.stringify = function (value: any, replacer?: any, space?: any) {
+    const seen = new WeakSet();
+    const safeReplacer = function (this: any, key: string, val: any) {
+      if (typeof val === 'object' && val !== null) {
+        if (seen.has(val)) {
+          return '[Circular]';
+        }
+        seen.add(val);
+      }
+      if (typeof replacer === 'function') {
+        return replacer.call(this, key, val);
+      }
+      return val;
+    };
+    try {
+      return nativeStringify(
+        value,
+        typeof replacer === 'function' ? safeReplacer : (Array.isArray(replacer) ? replacer : safeReplacer),
+        space
+      );
+    } catch {
+      try {
+        return nativeStringify(value, safeReplacer, space);
+      } catch {
+        return '"[Unserializable Object]"';
+      }
+    }
+  };
+}
+
 // FORCE CACHE CLEAR v9.0
 const CURRENT_VERSION = '9.0';
 

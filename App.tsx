@@ -788,6 +788,7 @@ function App() {
           movie={playingMovie} 
           onClose={() => setPlayingMovie(null)} 
           userId={user?.id} 
+          lang={lang}
         />
       )}
 

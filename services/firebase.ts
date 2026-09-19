@@ -1,6 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { 
+  initializeFirestore,
   getFirestore, 
   doc, 
   setDoc, 
@@ -33,7 +34,28 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Using experimentalAutoDetectLongPolling prevents WebChannel streaming failure loops in iframes and proxies
+const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
+
+// Helper to sanitize movie object for Firestore (strip any React/DOM or circular properties)
+const sanitizeMovie = (movie: Movie): Movie => {
+  return {
+    id: String(movie.id || ''),
+    title: String(movie.title || ''),
+    description: String(movie.description || ''),
+    bannerUrl: String(movie.bannerUrl || ''),
+    posterUrl: String(movie.posterUrl || ''),
+    smallPosterUrl: String(movie.smallPosterUrl || movie.posterUrl || ''),
+    genre: Array.isArray(movie.genre) ? [...movie.genre] : [],
+    duration: String(movie.duration || ''),
+    rating: String(movie.rating || 'N/A'),
+    year: Number(movie.year) || 0,
+    match: Number(movie.match) || 0,
+    mediaType: movie.mediaType || 'movie'
+  };
+};
 
 // Initialize or update user in Firestore based on Telegram ID
 export const syncUser = async (user: WebAppUser) => {
@@ -166,16 +188,17 @@ export const addWatchTimeReward = async (userId: number, secondsWatched: number 
 export const toggleMyList = async (userId: number, movie: Movie, isInList: boolean) => {
   const userRef = doc(db, "users", userId.toString());
   try {
+    const cleanMovie = sanitizeMovie(movie);
     if (isInList) {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
           const currentList = userSnap.data().myList || [];
-          const updatedList = currentList.filter((m: Movie) => m.id !== movie.id);
+          const updatedList = currentList.filter((m: any) => m && m.id !== cleanMovie.id);
           await updateDoc(userRef, { myList: updatedList });
       }
     } else {
       await updateDoc(userRef, {
-        myList: arrayUnion(movie)
+        myList: arrayUnion(cleanMovie)
       });
     }
   } catch (error: any) {
@@ -187,11 +210,12 @@ export const toggleMyList = async (userId: number, movie: Movie, isInList: boole
 export const addToHistory = async (userId: number, movie: Movie) => {
     const userRef = doc(db, "users", userId.toString());
     try {
+        const cleanMovie = sanitizeMovie(movie);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
             let currentHistory = userSnap.data().watchHistory || [];
-            currentHistory = currentHistory.filter((m: Movie) => m.id !== movie.id);
-            currentHistory.unshift(movie);
+            currentHistory = currentHistory.filter((m: any) => m && m.id !== cleanMovie.id);
+            currentHistory.unshift(cleanMovie);
             if (currentHistory.length > 20) {
                 currentHistory = currentHistory.slice(0, 20);
             }
@@ -503,16 +527,17 @@ export const recordGlobalActivity = async (
     action: 'watching' | 'viewing' = 'watching'
 ) => {
     try {
+        const cleanMovie = sanitizeMovie(movie);
         const activityRef = collection(db, "global_activity");
         await addDoc(activityRef, {
-            userId: user.id,
-            username: user.username || user.first_name || "Anonymous",
-            userPhoto: user.photo_url || "",
-            movieId: movie.id,
-            movieTitle: movie.title || "Unknown Title",
-            moviePoster: movie.posterUrl || "",
-            movieBackdrop: movie.bannerUrl || "",
-            mediaType: movie.mediaType || 'movie',
+            userId: Number(user.id) || 0,
+            username: String(user.username || user.first_name || "Anonymous"),
+            userPhoto: String(user.photo_url || ""),
+            movieId: String(cleanMovie.id || ""),
+            movieTitle: String(cleanMovie.title || "Unknown Title"),
+            moviePoster: String(cleanMovie.posterUrl || ""),
+            movieBackdrop: String(cleanMovie.bannerUrl || ""),
+            mediaType: cleanMovie.mediaType || 'movie',
             action,
             timestamp: new Date().toISOString()
         });

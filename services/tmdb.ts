@@ -214,16 +214,28 @@ export const fetchDiscoverTV = async (page: number = 1, language: string = 'en-U
     }
 };
 
-// Fetch Cartoons (Animation Genre ID = 16)
+// Fetch Cartoons (Animation Genre ID = 16) - Supports both animated movies and animated TV series
 export const fetchDiscoverCartoons = async (page: number = 1, language: string = 'en-US'): Promise<Movie[]> => {
     try {
-      const url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`;
-      const request = await fetch(url);
-      if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-      const data = await request.json();
-      return data.results
+      const [moviesRes, tvRes] = await Promise.all([
+        fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`),
+        fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&language=${language}&with_genres=16&sort_by=popularity.desc&page=${page}`)
+      ]);
+
+      const moviesData = moviesRes.ok ? await moviesRes.json() : { results: [] };
+      const tvData = tvRes.ok ? await tvRes.json() : { results: [] };
+
+      const movies: Movie[] = (moviesData.results || [])
         .filter((m: any) => m.poster_path)
-        .map((m: any) => ({...mapResultToMovie(m, language), mediaType: 'movie'}));
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'movie' as const }));
+
+      const tvShows: Movie[] = (tvData.results || [])
+        .filter((m: any) => m.poster_path)
+        .map((m: any) => ({ ...mapResultToMovie(m, language), mediaType: 'tv' as const }));
+
+      // Merge and sort by rating/popularity
+      const combined = [...movies, ...tvShows].sort((a, b) => (b.match || 0) - (a.match || 0));
+      return combined.length > 0 ? combined : (page === 1 ? MOVIES : []);
     } catch (error) {
       console.error("Error fetching cartoons:", error);
       return page === 1 ? MOVIES : [];
@@ -302,8 +314,10 @@ export const fetchMovieById = async (movieId: string, mediaType: 'movie' | 'tv' 
   const cleanId = movieId.toString().trim();
   if (!cleanId) return null;
 
+  const tmdbLang = language === 'uk' ? 'uk-UA' : language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : language;
+
   const tryFetch = async (type: 'movie' | 'tv') => {
-    const url = `${BASE_URL}/${type}/${cleanId}?api_key=${API_KEY}&language=${language}`;
+    const url = `${BASE_URL}/${type}/${cleanId}?api_key=${API_KEY}&language=${tmdbLang}`;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const response = await fetch(url);
@@ -444,17 +458,85 @@ export const fetchMovieDuration = async (movieId: string, mediaType: 'movie' | '
     return details.duration;
 }
 
-export const fetchExternalIds = async (id: string, type: 'movie' | 'tv'): Promise<any> => {
-    try {
-        const url = `${BASE_URL}/${type}/${id}/external_ids?api_key=${API_KEY}`;
-        const request = await fetch(url);
-        if (!request.ok) throw new Error(`HTTP Error: ${request.status}`);
-        const data = await request.json();
-        return data;
-    } catch (error) {
-        console.error("Error fetching external IDs:", error);
-        return null;
+export const fetchExternalIds = async (
+    id: string, 
+    type?: 'movie' | 'tv', 
+    title?: string, 
+    year?: number
+): Promise<{ imdb_id?: string | null; id?: number; mediaType?: 'movie' | 'tv' } | null> => {
+    if (!id && !title) return null;
+
+    const cleanId = id?.toString().trim();
+    const isRealNumericId = cleanId && /^\d+$/.test(cleanId) && parseInt(cleanId, 10) > 10;
+
+    const tryEndpoint = async (endpointType: 'movie' | 'tv') => {
+        try {
+            const url = `${BASE_URL}/${endpointType}/${cleanId}/external_ids?api_key=${API_KEY}`;
+            const req = await fetch(url);
+            if (!req.ok) return null;
+            const data = await req.json();
+            if (data?.imdb_id) {
+                return { ...data, mediaType: endpointType };
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    };
+
+    // 1. Try primary requested mediaType
+    if (isRealNumericId) {
+        const primaryType = type === 'tv' ? 'tv' : 'movie';
+        const res1 = await tryEndpoint(primaryType);
+        if (res1?.imdb_id) return res1;
+
+        // 2. Try alternate mediaType (movie vs tv)
+        const altType = primaryType === 'tv' ? 'movie' : 'tv';
+        const res2 = await tryEndpoint(altType);
+        if (res2?.imdb_id) return res2;
+
+        // 3. Check direct movie details (TMDB has imdb_id directly in movie details)
+        try {
+            const detailsReq = await fetch(`${BASE_URL}/movie/${cleanId}?api_key=${API_KEY}`);
+            if (detailsReq.ok) {
+                const details = await detailsReq.json();
+                if (details?.imdb_id) {
+                    return { imdb_id: details.imdb_id, id: details.id, mediaType: 'movie' };
+                }
+            }
+        } catch {}
     }
+
+    // 4. Robust fallback: search by title (and optional year)
+    if (title && title.trim().length > 0) {
+        try {
+            const cleanTitle = title.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+            const searchUrl = `${BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(cleanTitle)}&include_adult=false&page=1`;
+            const searchReq = await fetch(searchUrl);
+            if (searchReq.ok) {
+                const searchData = await searchReq.json();
+                const candidates = (searchData.results || [])
+                    .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
+
+                for (const candidate of candidates.slice(0, 5)) {
+                    if (cleanId && candidate.id.toString() === cleanId) continue;
+                    const candType = candidate.media_type as 'movie' | 'tv';
+                    const extUrl = `${BASE_URL}/${candType}/${candidate.id}/external_ids?api_key=${API_KEY}`;
+                    const extReq = await fetch(extUrl);
+                    if (extReq.ok) {
+                        const extData = await extReq.json();
+                        if (extData?.imdb_id) {
+                            return { ...extData, mediaType: candType };
+                        }
+                    }
+                }
+            }
+        } catch (searchErr) {
+            console.error("Error during fallback search for external IDs:", searchErr);
+        }
+    }
+
+    return null;
 };
 
 export const API = {

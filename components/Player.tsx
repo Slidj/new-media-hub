@@ -1,179 +1,356 @@
-
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Loader2 } from 'lucide-react';
-import { Movie } from '../types';
+import { X, Loader2, Server, Tv, Film, Youtube, AlertCircle, RefreshCw } from 'lucide-react';
+import { Movie, Video } from '../types';
 import { API } from '../services/tmdb';
 import { addWatchTimeReward } from '../services/firebase';
+import { Language } from '../utils/translations';
 
 interface PlayerProps {
   movie: Movie;
   onClose: () => void;
   userId?: number;
+  lang?: Language;
 }
 
-export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
+type ServerType = 'primary' | 'backup' | 'trailer';
+
+export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = 'uk' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [activeServer, setActiveServer] = useState<ServerType>('primary');
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
+  const [imdbId, setImdbId] = useState<string | null>(null);
+  const [trailerKey, setTrailerKey] = useState<string | null>(null);
+  const [noSourceAvailable, setNoSourceAvailable] = useState(false);
   
   // Watch Time Tracking Refs
   const accumulatedTimeRef = useRef(0); 
   const timerRef = useRef<any>(null); 
   const isTabActiveRef = useRef(true); 
+  const dimTimerRef = useRef<any>(null);
 
   // --- SERVER CONFIGURATION ---
-  // Updated with the FULL token from the working example
   const SERVER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
   const SERVER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ3OS1hNDBjLTA2YTY0MTE0MzNhOSIsInNjb3BlIjoiRExFIn0.4PmKGf512P-ov-tEjwr3gfOVxccjx8SSt28slJXypYU';
+
+  const resetDimTimer = () => {
+    setIsControlsDimmed(false);
+    if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+    dimTimerRef.current = setTimeout(() => {
+      setIsControlsDimmed(true);
+    }, 3500);
+  };
 
   useEffect(() => {
     // Lock scroll
     document.body.style.overflow = 'hidden';
     setIsLoading(true);
+    setNoSourceAvailable(false);
+
+    let isMounted = true;
 
     const preparePlayer = async () => {
-        try {
-            // Fetch external IDs (IMDB is key)
-            const externalIds = await API.fetchExternalIds(movie.id, movie.mediaType);
-            const imdbId = externalIds?.imdb_id;
-            const title = encodeURIComponent(movie.title);
+      try {
+        // 1. Fetch external IDs using multi-step robust lookup (movie/tv fallback, title search)
+        const [externalIds, videos] = await Promise.all([
+          API.fetchExternalIds(movie.id, movie.mediaType, movie.title, movie.year),
+          API.fetchVideos(movie.id, movie.mediaType).catch(() => [] as Video[])
+        ]);
 
-            // Construct URL parameters
-            const params = new URLSearchParams();
-            params.append('token', SERVER_TOKEN);
-            
-            if (imdbId) {
-                params.append('imdb', imdbId);
-            }
-            
-            params.append('tmdb', movie.id);
-            params.append('title', movie.title);
-            params.append('autoplay', '1');
-            params.append('disabled_share', '1'); // As per working example
-            params.append('d', 'media-hub.app'); // Domain parameter for ad configuration
+        if (!isMounted) return;
 
-            const finalUrl = `${SERVER_BASE}?${params.toString()}`;
-            console.log("Player URL:", finalUrl);
-            
-            setEmbedUrl(finalUrl);
-            
-        } catch (e) {
-            console.error("Error preparing player:", e);
-            // Fallback to just title search if IDs fail
-            const params = new URLSearchParams();
-            params.append('token', SERVER_TOKEN);
-            params.append('title', movie.title);
-            setEmbedUrl(`${SERVER_BASE}?${params.toString()}`);
+        // Extract trailer key if present
+        const officialTrailer = videos.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')) || videos[0];
+        if (officialTrailer?.key) {
+          setTrailerKey(officialTrailer.key);
         }
+
+        const resolvedImdb = externalIds?.imdb_id;
+        const resolvedMediaType = externalIds?.mediaType || movie.mediaType || 'movie';
+
+        if (resolvedImdb) {
+          setImdbId(resolvedImdb);
+
+          // Build primary server URL (balancer with valid imdb key)
+          const primaryParams = new URLSearchParams();
+          primaryParams.append('token', SERVER_TOKEN);
+          primaryParams.append('imdb', resolvedImdb);
+          primaryParams.append('autoplay', '1');
+          primaryParams.append('disabled_share', '1');
+          primaryParams.append('d', 'media-hub.app');
+
+          const finalPrimaryUrl = `${SERVER_BASE}?${primaryParams.toString()}`;
+          setEmbedUrl(finalPrimaryUrl);
+          setActiveServer('primary');
+        } else {
+          // If no IMDB id could be resolved anywhere, do NOT load broken iframe
+          console.warn("No IMDb ID found for movie:", movie.title);
+          setNoSourceAvailable(true);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.error("Error preparing player:", e);
+        if (isMounted) {
+          setNoSourceAvailable(true);
+          setIsLoading(false);
+        }
+      }
     };
 
     preparePlayer();
+    resetDimTimer();
 
-    const dimTimer = setTimeout(() => {
-      setIsControlsDimmed(true);
-    }, 3000);
-
-    // Timeout to hide loader if iframe takes too long (or fails silently)
+    // Timeout to hide loader if iframe takes too long
     const loadTimer = setTimeout(() => {
       setIsLoading(false);
-    }, 5000);
+    }, 4500);
 
     // --- REWARD SYSTEM ---
     const handleVisibilityChange = () => {
-        if (document.hidden) {
-            isTabActiveRef.current = false;
-        } else {
-            isTabActiveRef.current = true;
-        }
+      if (document.hidden) {
+        isTabActiveRef.current = false;
+      } else {
+        isTabActiveRef.current = true;
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     if (userId) {
-        timerRef.current = setInterval(() => {
-            if (isTabActiveRef.current) {
-                accumulatedTimeRef.current += 1; 
-                // Reward every 60 seconds
-                if (accumulatedTimeRef.current >= 60) {
-                    addWatchTimeReward(userId, 60);
-                    accumulatedTimeRef.current = 0;
-                }
-            }
-        }, 1000);
+      timerRef.current = setInterval(() => {
+        if (isTabActiveRef.current) {
+          accumulatedTimeRef.current += 1; 
+          // Reward every 60 seconds
+          if (accumulatedTimeRef.current >= 60) {
+            addWatchTimeReward(userId, 60);
+            accumulatedTimeRef.current = 0;
+          }
+        }
+      }, 1000);
     }
 
     // Request Telegram Fullscreen or Expand
     if (window.Telegram?.WebApp) {
-        try {
-            if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.requestFullscreen) {
-                window.Telegram.WebApp.requestFullscreen();
-            } else if (window.Telegram.WebApp.expand) {
-                window.Telegram.WebApp.expand(); // Fallback for older versions
-            }
-        } catch (e) {
-            console.error("Failed to request fullscreen/expand:", e);
+      try {
+        if (window.Telegram.WebApp.isVersionAtLeast && window.Telegram.WebApp.isVersionAtLeast('8.0') && window.Telegram.WebApp.requestFullscreen) {
+          window.Telegram.WebApp.requestFullscreen();
+        } else if (window.Telegram.WebApp.expand) {
+          window.Telegram.WebApp.expand();
         }
+      } catch (e) {
+        console.error("Failed to request fullscreen/expand:", e);
+      }
     }
 
     return () => {
+      isMounted = false;
       document.body.style.overflow = 'unset';
-      clearTimeout(dimTimer);
+      if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
       clearTimeout(loadTimer);
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [movie, userId]);
 
+  // Server Switch Handler
+  const handleSwitchServer = (server: ServerType) => {
+    setActiveServer(server);
+    setIsLoading(true);
+    resetDimTimer();
+
+    const resolvedMediaType = movie.mediaType === 'tv' ? 'tv' : 'movie';
+
+    if (server === 'primary' && imdbId) {
+      const primaryParams = new URLSearchParams();
+      primaryParams.append('token', SERVER_TOKEN);
+      primaryParams.append('imdb', imdbId);
+      primaryParams.append('autoplay', '1');
+      primaryParams.append('disabled_share', '1');
+      primaryParams.append('d', 'media-hub.app');
+      setEmbedUrl(`${SERVER_BASE}?${primaryParams.toString()}`);
+    } else if (server === 'backup' && imdbId) {
+      // Backup Server (vidsrc embed)
+      const backupUrl = `https://vidsrc.to/embed/${resolvedMediaType}/${imdbId}`;
+      setEmbedUrl(backupUrl);
+    } else if (server === 'trailer' && trailerKey) {
+      setEmbedUrl(`https://www.youtube.com/embed/${trailerKey}?autoplay=1`);
+    }
+  };
+
+  // Localized UI labels
+  const labels = {
+    uk: {
+      loading: "Завантаження плеєра...",
+      unavailableTitle: "Відео наразі недоступне",
+      unavailableDesc: "Цей фільм, серіал або мультфільм ще не з'явився у базі онлайн-плеєра або очікує офіційного релізу.",
+      watchTrailer: "Дивитися трейлер",
+      closePlayer: "Повернутися назад",
+      primaryServer: "Основний",
+      backupServer: "Резервний",
+      trailer: "Трейлер",
+      switchHint: "Не відтворюється? Спробуйте Резервний сервер"
+    },
+    ru: {
+      loading: "Загрузка плеера...",
+      unavailableTitle: "Видео пока недоступно",
+      unavailableDesc: "Этот фильм, сериал или мультфильм еще не добавлен в базу плеера или ожидает официального релиза.",
+      watchTrailer: "Смотреть трейлер",
+      closePlayer: "Вернуться назад",
+      primaryServer: "Основной",
+      backupServer: "Резервный",
+      trailer: "Трейлер",
+      switchHint: "Не воспроизводится? Попробуйте Резервный сервер"
+    },
+    en: {
+      loading: "Loading Player...",
+      unavailableTitle: "Video Currently Unavailable",
+      unavailableDesc: "This movie, TV show, or cartoon is not yet available in the player database or is awaiting official release.",
+      watchTrailer: "Watch Trailer",
+      closePlayer: "Go Back",
+      primaryServer: "Primary",
+      backupServer: "Backup",
+      trailer: "Trailer",
+      switchHint: "Not playing? Try Backup server"
+    }
+  }[lang] || {
+    loading: "Завантаження плеєра...",
+    unavailableTitle: "Відео наразі недоступне",
+    unavailableDesc: "Цей фільм, серіал або мультфільм ще не з'явився у базі онлайн-плеєра або очікує офіційного релізу.",
+    watchTrailer: "Дивитися трейлер",
+    closePlayer: "Повернутися назад",
+    primaryServer: "Основний",
+    backupServer: "Резервний",
+    trailer: "Трейлер",
+    switchHint: "Не відтворюється? Спробуйте Резервний сервер"
+  };
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto">
-      
-      {/* Close Button */}
-      <button 
-        onClick={onClose}
+    <div 
+      className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center pointer-events-auto select-none"
+      onClick={resetDimTimer}
+      onTouchStart={resetDimTimer}
+      onMouseMove={resetDimTimer}
+    >
+      {/* Top Controls Overlay */}
+      <div 
         className={`
-            absolute right-6 z-[9999] p-2.5 
-            bg-black/60 text-white rounded-full 
-            border border-white/10 shadow-lg
-            transition-all duration-700 ease-in-out
-            hover:bg-[#E50914] hover:opacity-100 hover:scale-110 active:opacity-100
-            ${isControlsDimmed ? 'opacity-30' : 'opacity-100'}
+          absolute top-0 left-0 right-0 z-[9999] px-4 py-3
+          flex items-center justify-between
+          bg-gradient-to-b from-black/90 via-black/50 to-transparent
+          transition-opacity duration-500 ease-in-out
+          ${isControlsDimmed ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}
         `}
-        style={{ top: 'calc(70px + env(safe-area-inset-top))' }}
+        style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}
       >
-        <X className="w-8 h-8" />
-      </button>
+        {/* Title & Server Badges */}
+        <div className="flex items-center gap-2 max-w-[70%]">
+          <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-xs font-semibold text-white/90">
+            {movie.mediaType === 'tv' ? <Tv className="w-3.5 h-3.5 text-[#E50914]" /> : <Film className="w-3.5 h-3.5 text-[#E50914]" />}
+            <span className="truncate max-w-[140px] md:max-w-[260px]">{movie.title}</span>
+          </div>
+
+          {/* Server Switchers (Only show if movie has imdb source) */}
+          {imdbId && (
+            <div className="flex items-center gap-1 bg-black/70 backdrop-blur-md p-0.5 rounded-full border border-white/10">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSwitchServer('primary'); }}
+                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full transition-all ${
+                  activeServer === 'primary' 
+                    ? 'bg-[#E50914] text-white shadow' 
+                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {labels.primaryServer}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSwitchServer('backup'); }}
+                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-full transition-all ${
+                  activeServer === 'backup' 
+                    ? 'bg-[#E50914] text-white shadow' 
+                    : 'text-gray-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {labels.backupServer}
+              </button>
+              {trailerKey && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSwitchServer('trailer'); }}
+                  className={`flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold rounded-full transition-all ${
+                    activeServer === 'trailer' 
+                      ? 'bg-[#E50914] text-white shadow' 
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Youtube className="w-3 h-3 text-red-400" />
+                  <span>{labels.trailer}</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Close Button */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          className="p-2 bg-black/70 hover:bg-[#E50914] text-white rounded-full border border-white/15 shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+          aria-label="Close Player"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && !noSourceAvailable && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-black">
           <Loader2 className="w-12 h-12 text-[#E50914] animate-spin mb-4" />
           <p className="text-gray-400 text-xs font-bold tracking-widest uppercase animate-pulse">
-             Loading Player...
+            {labels.loading}
           </p>
         </div>
       )}
 
-      {/* Error State */}
-      {!isLoading && !embedUrl && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-black text-center px-6">
-            <div className="text-[#E50914] text-5xl mb-4">:(</div>
-            <h3 className="text-white text-xl font-bold mb-2">Video Not Found</h3>
-            <p className="text-gray-400 text-sm max-w-md">
-                We couldn't find this title. It might be missing or blocked.
-            </p>
+      {/* Friendly Fallback / Unavailable State (Never show broken Russian balancer error) */}
+      {noSourceAvailable && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-40 bg-gradient-to-b from-[#141414] to-black text-center px-6">
+          <div className="relative mb-6">
+            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+              <AlertCircle className="w-10 h-10 text-[#E50914]" />
+            </div>
+          </div>
+
+          <h3 className="text-white text-2xl font-bold mb-3 tracking-tight">
+            {labels.unavailableTitle}
+          </h3>
+
+          <p className="text-gray-400 text-sm max-w-md leading-relaxed mb-8">
+            {labels.unavailableDesc}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-xs">
+            {trailerKey && (
+              <button 
+                onClick={() => handleSwitchServer('trailer')}
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-[#E50914] hover:bg-[#b80710] text-white font-bold rounded-lg transition-all shadow-lg active:scale-95"
+              >
+                <Youtube className="w-5 h-5" />
+                <span>{labels.watchTrailer}</span>
+              </button>
+            )}
+
             <button 
-                onClick={onClose}
-                className="mt-6 px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-200 transition"
+              onClick={onClose}
+              className="w-full px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg border border-white/10 transition-all active:scale-95"
             >
-                Close Player
+              {labels.closePlayer}
             </button>
+          </div>
         </div>
       )}
 
-      {/* Iframe Player */}
-      {embedUrl && (
+      {/* Iframe Video Player */}
+      {embedUrl && !noSourceAvailable && (
         <div className="w-full h-full relative z-10 bg-black">
-            <iframe
+          <iframe
             key={embedUrl}
             src={embedUrl}
             title={movie.title}
@@ -184,7 +361,20 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId }) => {
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             referrerPolicy="origin"
             onLoad={() => setIsLoading(false)}
-            />
+          />
+
+          {/* Bottom subtle hint if user is on Server 1 and might want to switch */}
+          {activeServer === 'primary' && !isControlsDimmed && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+              <button
+                onClick={() => handleSwitchServer('backup')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-black/80 hover:bg-black text-gray-300 hover:text-white text-xs font-medium rounded-full border border-white/15 backdrop-blur-md shadow-lg transition-all"
+              >
+                <RefreshCw className="w-3 h-3 text-[#E50914]" />
+                <span>{labels.switchHint}</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
