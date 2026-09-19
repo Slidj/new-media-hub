@@ -354,11 +354,13 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
         className="fixed left-0 right-0 z-[10000] px-3 sm:px-6 pointer-events-none transition-all duration-300 ease-out"
         style={{
           top: isLandscape 
-            ? 'calc(env(safe-area-inset-top, 0px) + 14px)' 
+            ? 'calc(env(safe-area-inset-top, 0px) + 56px)' 
             : 'calc(env(safe-area-inset-top, 0px) + 86px)',
+          paddingLeft: isLandscape ? 'calc(env(safe-area-inset-left, 0px) + 16px)' : undefined,
+          paddingRight: isLandscape ? 'calc(env(safe-area-inset-right, 0px) + 16px)' : undefined,
         }}
       >
-        <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
+        <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-3">
           {/* Server Switchers Pill Container */}
           {imdbId ? (
             <div 
