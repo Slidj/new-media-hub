@@ -124,7 +124,6 @@ export const generateSmartRecommendations = async ({
 
   if (missingIds.length > 0) {
     const fetchPromises = missingIds.map(async (id) => {
-      // Try movie endpoint first, then tv if not found
       let data = await safeFetchJson(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${locale}`);
       if (!data || !data.id) {
         data = await safeFetchJson(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${locale}`);
@@ -137,28 +136,33 @@ export const generateSmartRecommendations = async ({
     await Promise.allSettled(fetchPromises);
   }
 
-  // 1. ANALYZE USER TASTE PROFILE
-  const genreWeights: Record<number, number> = {};
+  // 1. ANALYZE USER TASTE PROFILE WITH PRECISE GENRE HIERARCHY
+  // Map genre ID -> { score, primaryCount, recencyScore }
+  interface GenreStat {
+    id: number;
+    score: number;
+    primaryCount: number;
+    recencyBoost: number;
+  }
+
+  const genreStatsMap = new Map<number, GenreStat>();
+  const getOrCreateStat = (id: number): GenreStat => {
+    let stat = genreStatsMap.get(id);
+    if (!stat) {
+      stat = { id, score: 0, primaryCount: 0, recencyBoost: 0 };
+      genreStatsMap.set(id, stat);
+    }
+    return stat;
+  };
+
   let totalRatingSum = 0;
   let totalRatingCount = 0;
   let tvCount = 0;
   let movieCount = 0;
   let animationCount = 0;
 
-  // Process movies helper
-  const processMovieTastes = (movie: Movie, baseWeight: number) => {
-    if (movie.rating && movie.rating !== 'NR') {
-      const val = parseFloat(movie.rating);
-      if (!isNaN(val) && val > 0) {
-        totalRatingSum += val;
-        totalRatingCount += 1;
-      }
-    }
-
-    if (movie.mediaType === 'tv') tvCount += 1;
-    else movieCount += 1;
-
-    // Collect genre IDs
+  // Extract ordered genre IDs for a movie (preserving main primary genre at index 0)
+  const getMovieGenreIds = (movie: Movie): number[] => {
     let ids: number[] = Array.isArray(movie.genreIds) && movie.genreIds.length > 0 
       ? [...movie.genreIds] 
       : [];
@@ -175,62 +179,111 @@ export const generateSmartRecommendations = async ({
         });
       });
     }
-
-    ids.forEach(id => {
-      if (id === 16) animationCount += 1;
-      genreWeights[id] = (genreWeights[id] || 0) + baseWeight;
-    });
+    return ids;
   };
 
-  // Weight 1: Liked movies (strongest explicit taste signal: +5.0)
+  // Process movie tastes with positional genre weighting:
+  // Primary (1st) genre = 100% weight, Secondary = 40%, Tertiary = 20%, others = 10%
+  const processMovieTastes = (movie: Movie, baseWeight: number, isRecent: boolean = false) => {
+    if (movie.rating && movie.rating !== 'NR') {
+      const val = parseFloat(movie.rating);
+      if (!isNaN(val) && val > 0) {
+        totalRatingSum += val;
+        totalRatingCount += 1;
+      }
+    }
+
+    if (movie.mediaType === 'tv') tvCount += 1;
+    else movieCount += 1;
+
+    const ids = getMovieGenreIds(movie);
+    if (ids.length === 0) return;
+
+    // The FIRST genre is the defining primary archetype
+    const primaryId = ids[0];
+    const primaryStat = getOrCreateStat(primaryId);
+    primaryStat.score += baseWeight * 1.0;
+    primaryStat.primaryCount += 1;
+    if (isRecent) primaryStat.recencyBoost += 3.0;
+
+    if (primaryId === 16) animationCount += 1;
+
+    // Secondary & Tertiary genres receive diminishing fractional weights
+    for (let i = 1; i < ids.length; i++) {
+      const gid = ids[i];
+      const stat = getOrCreateStat(gid);
+      const positionFactor = i === 1 ? 0.40 : i === 2 ? 0.20 : 0.10;
+      stat.score += baseWeight * positionFactor;
+      if (isRecent) stat.recencyBoost += 0.8;
+      if (gid === 16) animationCount += 1;
+    }
+  };
+
+  // Weight 1: Liked movies (strongest explicit taste signal: +6.0 to +4.0)
   likedMovieIds.forEach((likedId, index) => {
     const known = knownMovieMap.get(likedId.toString());
     if (known) {
-      // Recent likes have higher immediate priority
-      const weight = Math.max(2.5, 5.0 - index * 0.2);
-      processMovieTastes(known, weight);
+      const isRecent = index < 3;
+      const weight = Math.max(3.0, 6.0 - index * 0.3);
+      processMovieTastes(known, weight, isRecent);
     }
   });
 
-  // Weight 2: Watchlist (+3.0)
+  // Weight 2: Watchlist (+3.5 to +2.0)
   myList.forEach((movie, index) => {
-    const weight = Math.max(1.5, 3.0 - index * 0.1);
-    processMovieTastes(movie, weight);
+    const isRecent = index < 2;
+    const weight = Math.max(2.0, 3.5 - index * 0.15);
+    processMovieTastes(movie, weight, isRecent);
   });
 
-  // Weight 3: Watch History (Recency weighted: recent items +4.0 down to +1.5)
+  // Weight 3: Watch History (Recency weighted: latest watched +5.0 down to +1.5)
   watchHistory.forEach((movie, index) => {
-    const recencyWeight = Math.max(1.5, 4.0 - index * 0.2);
-    processMovieTastes(movie, recencyWeight);
+    const isRecent = index < 3;
+    const recencyWeight = Math.max(1.5, 5.0 - index * 0.25);
+    processMovieTastes(movie, recencyWeight, isRecent);
   });
 
-  // Weight 4: Disliked movies (negative signal -4.0)
+  // Weight 4: Disliked movies (negative signal -5.0)
   dislikedMovieIds.forEach(dislikedId => {
     const known = knownMovieMap.get(dislikedId.toString());
     if (known) {
-      let ids: number[] = Array.isArray(known.genreIds) && known.genreIds.length > 0 ? known.genreIds : [];
-      if (ids.length === 0 && Array.isArray(known.genre)) {
-        known.genre.forEach(g => {
-          const gId = getGenreIdFromName(g);
-          if (gId) ids.push(gId);
-        });
-      }
-      ids.forEach(id => {
-        genreWeights[id] = (genreWeights[id] || 0) - 4.0;
+      const ids = getMovieGenreIds(known);
+      ids.forEach((id, idx) => {
+        const stat = getOrCreateStat(id);
+        const factor = idx === 0 ? 5.0 : 2.5;
+        stat.score -= factor;
       });
     }
   });
 
-  // Sort top genres by weighted score
-  const sortedGenreEntries = Object.entries(genreWeights)
-    .map(([id, weight]) => ({ id: parseInt(id, 10), weight }))
-    .filter(g => g.weight > 0)
-    .sort((a, b) => b.weight - a.weight);
+  // Calculate composite rank for each genre and sort descending
+  const genreList = Array.from(genreStatsMap.values())
+    .map(g => ({
+      ...g,
+      totalScore: g.score + g.recencyBoost + (g.primaryCount * 1.5)
+    }))
+    .filter(g => g.totalScore > 0)
+    .sort((a, b) => {
+      // Sort primarily by composite totalScore
+      if (Math.abs(b.totalScore - a.totalScore) > 0.01) {
+        return b.totalScore - a.totalScore;
+      }
+      // Tie breaker 1: Primary occurrence count
+      if (b.primaryCount !== a.primaryCount) {
+        return b.primaryCount - a.primaryCount;
+      }
+      // Tie breaker 2: Recency boost
+      return b.recencyBoost - a.recencyBoost;
+    });
 
-  const topGenreIds = sortedGenreEntries.slice(0, 3).map(g => g.id);
+  const topGenreIds = genreList.slice(0, 3).map(g => g.id);
   const primaryGenreId = topGenreIds[0];
   const secondaryGenreId = topGenreIds[1];
+  const tertiaryGenreId = topGenreIds[2];
+
   const primaryGenreName = primaryGenreId ? (localizedGenres[primaryGenreId] || 'Фільми') : undefined;
+  const secondaryGenreName = secondaryGenreId ? localizedGenres[secondaryGenreId] : undefined;
+  const tertiaryGenreName = tertiaryGenreId ? localizedGenres[tertiaryGenreId] : undefined;
 
   const hasPersonalData = watchHistory.length > 0 || likedMovieIds.length > 0 || myList.length > 0;
   const userAvgRating = totalRatingCount > 0 ? totalRatingSum / totalRatingCount : 7.2;
@@ -441,32 +494,57 @@ export const generateSmartRecommendations = async ({
   // Interleave and sort by match score and rating
   scoredMovies.sort((a, b) => b.match - a.match || parseFloat(b.rating) - parseFloat(a.rating));
 
-  // Determine user subtitle
+  // Determine dynamic user subtitle reflecting top genres proportionally
   let subtitle = '';
-  if (lang === 'uk') {
-    if (primaryGenreName) {
-      subtitle = `На основі ваших переглядів • Акцент на ${primaryGenreName}`;
-    } else if (hasPersonalData) {
-      subtitle = 'На основі вашої історії та вподобань';
+  
+  // Format dynamic genre phrase (e.g. "Бойовик" or "Бойовик та Трилер" or "Бойовик, Комедія та Пригоди")
+  let genrePhrase = '';
+  if (primaryGenreName) {
+    const top1Score = genreList[0]?.totalScore || 1;
+    const top2Score = genreList[1]?.totalScore || 0;
+    const top3Score = genreList[2]?.totalScore || 0;
+
+    // Check if secondary genre is strong (at least 60% of top 1 score)
+    const hasStrongSecondary = secondaryGenreName && (top2Score >= top1Score * 0.6);
+    // Check if tertiary genre is also strong (at least 50% of top 1 score)
+    const hasStrongTertiary = hasStrongSecondary && tertiaryGenreName && (top3Score >= top1Score * 0.5);
+
+    if (lang === 'uk') {
+      if (hasStrongTertiary) {
+        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} та ${tertiaryGenreName}`;
+      } else if (hasStrongSecondary) {
+        genrePhrase = `${primaryGenreName} та ${secondaryGenreName}`;
+      } else {
+        genrePhrase = primaryGenreName;
+      }
+      subtitle = `На основі ваших переглядів • Акцент на ${genrePhrase}`;
+    } else if (lang === 'ru') {
+      if (hasStrongTertiary) {
+        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} и ${tertiaryGenreName}`;
+      } else if (hasStrongSecondary) {
+        genrePhrase = `${primaryGenreName} и ${secondaryGenreName}`;
+      } else {
+        genrePhrase = primaryGenreName;
+      }
+      subtitle = `На основе ваших просмотров • Акцент на ${genrePhrase}`;
     } else {
-      subtitle = 'Персональний старт: шедеври кіно та світові хіти';
+      if (hasStrongTertiary) {
+        genrePhrase = `${primaryGenreName}, ${secondaryGenreName} & ${tertiaryGenreName}`;
+      } else if (hasStrongSecondary) {
+        genrePhrase = `${primaryGenreName} & ${secondaryGenreName}`;
+      } else {
+        genrePhrase = primaryGenreName;
+      }
+      subtitle = `Based on your watch activity • Focus on ${genrePhrase}`;
     }
-  } else if (lang === 'ru') {
-    if (primaryGenreName) {
-      subtitle = `На основе ваших просмотров • Акцент на ${primaryGenreName}`;
-    } else if (hasPersonalData) {
-      subtitle = 'На основе вашей истории и предпочтений';
-    } else {
-      subtitle = 'Персональный старт: шедевры кино и мировые хиты';
-    }
+  } else if (hasPersonalData) {
+    if (lang === 'uk') subtitle = 'На основі вашої історії та вподобань';
+    else if (lang === 'ru') subtitle = 'На основе вашей истории и предпочтений';
+    else subtitle = 'Based on your watch history and taste';
   } else {
-    if (primaryGenreName) {
-      subtitle = `Based on your watch activity • Focus on ${primaryGenreName}`;
-    } else if (hasPersonalData) {
-      subtitle = 'Based on your watch history and taste';
-    } else {
-      subtitle = 'Curated starter pack: cinema masterpieces & hits';
-    }
+    if (lang === 'uk') subtitle = 'Персональний старт: шедеври кіно та світові хіти';
+    else if (lang === 'ru') subtitle = 'Персональный старт: шедевры кино и мировые хиты';
+    else subtitle = 'Curated starter pack: cinema masterpieces & hits';
   }
 
   return {
