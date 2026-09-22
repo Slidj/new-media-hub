@@ -19,10 +19,12 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   const [isLoading, setIsLoading] = useState(true);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [activeServer, setActiveServer] = useState<ServerType>('primary');
+  const [backupMirrorIndex, setBackupMirrorIndex] = useState(0);
   const [isControlsDimmed, setIsControlsDimmed] = useState(false);
   const [serverMenuState, setServerMenuState] = useState<'visible' | 'semi' | 'hidden'>('visible');
   const [hintState, setHintState] = useState<'hidden' | 'circle' | 'expanded' | 'dismissed'>('hidden');
   const [imdbId, setImdbId] = useState<string | null>(null);
+  const [tmdbId, setTmdbId] = useState<number | null>(null);
   const [trailerKey, setTrailerKey] = useState<string | null>(null);
   const [noSourceAvailable, setNoSourceAvailable] = useState(false);
   const [isLandscape, setIsLandscape] = useState(() => 
@@ -44,6 +46,30 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   // --- SERVER CONFIGURATION ---
   const SERVER_BASE = 'https://api.rstprgapipt.com/balancer-api/iframe';
   const SERVER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ3ZWJTaXRlIjoiMzQiLCJpc3MiOiJhcGktd2VibWFzdGVyIiwic3ViIjoiNDEiLCJpYXQiOjE3NDMwNjA3ODAsImp0aSI6IjIzMTQwMmE0LTM3NTMtNGQ3OS1hNDBjLTA2YTY0MTE0MzNhOSIsInNjb3BlIjoiRExFIn0.4PmKGf512P-ov-tEjwr3gfOVxccjx8SSt28slJXypYU';
+
+  // Multi-mirror pool for original / english audio source with auto-failover
+  const getBackupUrl = (mirrorIdx: number, imdb: string, tmdb: number | null, mediaType: 'movie' | 'tv') => {
+    const mirrors = [
+      // Mirror 0: VidSrc CC (Fast & reliable multi-provider stream)
+      mediaType === 'tv'
+        ? `https://vidsrc.cc/v2/embed/tv/${imdb || tmdb}`
+        : `https://vidsrc.cc/v2/embed/movie/${imdb || tmdb}`,
+      // Mirror 1: VidSrc PM / XYZ (Primary fallback)
+      mediaType === 'tv'
+        ? `https://vidsrc.pm/embed/tv?imdb=${imdb}`
+        : `https://vidsrc.pm/embed/movie?imdb=${imdb}`,
+      // Mirror 2: VidSrc IN (Clean fallback with minimal headers)
+      mediaType === 'tv'
+        ? `https://vidsrc.in/embed/tv?imdb=${imdb}`
+        : `https://vidsrc.in/embed/movie?imdb=${imdb}`,
+      // Mirror 3: Embed.su (Ultra-fast TMDB/IMDb multi-server engine)
+      mediaType === 'tv'
+        ? `https://embed.su/embed/tv/${tmdb || imdb}/1/1`
+        : `https://embed.su/embed/movie/${tmdb || imdb}`
+    ];
+    const safeIndex = ((mirrorIdx % mirrors.length) + mirrors.length) % mirrors.length;
+    return mirrors[safeIndex];
+  };
 
   const resetDimTimer = () => {
     setIsControlsDimmed(false);
@@ -94,6 +120,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
 
         if (resolvedImdb) {
           setImdbId(resolvedImdb);
+          setTmdbId(movie.id);
 
           // Build primary server URL (balancer with valid imdb key)
           const primaryParams = new URLSearchParams();
@@ -233,7 +260,7 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
   }, [movie, userId]);
 
   // Server Switch Handler
-  const handleSwitchServer = (server: ServerType) => {
+  const handleSwitchServer = (server: ServerType, overrideMirrorIdx?: number) => {
     setActiveServer(server);
     setIsLoading(true);
     resetDimTimer();
@@ -251,11 +278,14 @@ export const Player: React.FC<PlayerProps> = ({ movie, onClose, userId, lang = '
       primaryParams.append('disabled_share', '1');
       primaryParams.append('d', 'media-hub.app');
       setEmbedUrl(`${SERVER_BASE}?${primaryParams.toString()}`);
-    } else if (server === 'backup' && imdbId) {
-      // Backup Server (vidsrc.pm embed - does not block sandboxed frames unlike vidsrc.to)
-      const backupUrl = resolvedMediaType === 'tv'
-        ? `https://vidsrc.pm/embed/tv?imdb=${imdbId}`
-        : `https://vidsrc.pm/embed/movie?imdb=${imdbId}`;
+    } else if (server === 'backup' && (imdbId || tmdbId)) {
+      // Determine mirror index (if user clicks again on backup, cycle to next mirror silently)
+      const targetMirror = overrideMirrorIdx !== undefined 
+        ? overrideMirrorIdx 
+        : (activeServer === 'backup' ? (backupMirrorIndex + 1) % 4 : backupMirrorIndex);
+      
+      setBackupMirrorIndex(targetMirror);
+      const backupUrl = getBackupUrl(targetMirror, imdbId || '', tmdbId, resolvedMediaType);
       setEmbedUrl(backupUrl);
     } else if (server === 'trailer' && trailerKey) {
       setEmbedUrl(`https://www.youtube.com/embed/${trailerKey}?autoplay=1`);
